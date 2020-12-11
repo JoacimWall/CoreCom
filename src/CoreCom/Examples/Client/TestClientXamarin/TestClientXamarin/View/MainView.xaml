@@ -1,0 +1,57 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://xamarin.com/schemas/2014/forms"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:d="http://xamarin.com/schemas/2014/forms/design"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" xmlns:viewmodel="clr-namespace:TestClientXamarin.ViewModel"
+             mc:Ignorable="d"
+             x:Class="TestClientXamarin.View.MainView">
+    <ContentPage.BindingContext>
+        <viewmodel:MainViewModel  />
+    </ContentPage.BindingContext>
+    <Grid Margin="{OnPlatform Android='5,5,5,5', iOS='5,20,5,5'}">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="Auto" />
+            <ColumnDefinition Width="Auto" />
+        </Grid.ColumnDefinitions>
+        <StackLayout Orientation="Horizontal" HorizontalOptions="Center">
+            <Label Text="Client is online:"/>
+            <Label Text="{Binding ServiceCoreCom.CoreComClient.IsOnline}"/>
+        </StackLayout>
+        <StackLayout Grid.Row="1" Orientation="Horizontal">
+            <Button x:Name="CheckCueProject" Text="Check Cue" Command="{Binding  CheckCueCommand}" />
+            <Button x:Name="GetProjects" Text="Get Projects" Command="{Binding  GetProjectsCommand}" />
+           
+        </StackLayout>
+        <StackLayout Grid.Row="2" Orientation="Horizontal">
+           
+            <Button x:Name="AddProject" Text="Add Projects" Command="{Binding  AddProjectsCommand}" />
+            <Entry Placeholder="Project Name" Text="{Binding AddProjectName}"/>
+        </StackLayout>
+        <ListView Grid.Row="3" ItemsSource="{Binding Projects}" BackgroundColor="White" >
+            <ListView.ItemTemplate>
+                <DataTemplate>
+                    <ViewCell>
+                        <Grid Margin="0" >
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <Label  Grid.Row="0" Text="{Binding Name}" FontAttributes="Bold"/>
+                            <Label  Grid.Row="1" Text="{Binding Description}"/>
+                        </Grid>
+                    </ViewCell>
+                </DataTemplate>
+            </ListView.ItemTemplate>
+        </ListView>
+    </Grid>
+
+</ContentPage>

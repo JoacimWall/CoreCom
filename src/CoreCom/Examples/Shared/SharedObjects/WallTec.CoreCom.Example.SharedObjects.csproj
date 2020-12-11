@@ -1,0 +1,12 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.1</TargetFramework>
+    <AssemblyName>WallTec.CoreCom.Example.SharedObjects</AssemblyName>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\Source\WallTec.CoreCom.Sheard\WallTec.CoreCom.Sheard.csproj" />
+  </ItemGroup>
+
+</Project>

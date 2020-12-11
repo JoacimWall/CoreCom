@@ -1,0 +1,21 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netcoreapp3.0</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Grpc.AspNetCore" Version="2.33.1" />
+    <PackageReference Include="Grpc.AspNetCore.Web" Version="2.33.1" />
+    <PackageReference Include="System.Text.Json" Version="4.7.2" />
+  </ItemGroup>
+
+
+  <ItemGroup>
+    <Protobuf Include="Protos\corecom.proto" />
+  </ItemGroup>
+  
+  <ItemGroup>
+    <ProjectReference Include="..\WallTec.CoreCom.Sheard\WallTec.CoreCom.Sheard.csproj" />
+  </ItemGroup>
+</Project>
