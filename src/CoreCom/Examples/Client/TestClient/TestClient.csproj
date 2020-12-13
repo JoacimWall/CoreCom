@@ -9,7 +9,17 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\..\Source\WallTec.CoreCom.Client\WallTec.CoreCom.Client.csproj" />
-    <ProjectReference Include="..\..\Shared\SharedObjects\WallTec.CoreCom.Example.SharedObjects.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Entitys\" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="..\..\Shared\SharedObjects\Entitys\Project.cs">
+      <Link>Entitys\Project.cs</Link>
+    </Compile>
+    <Compile Include="..\..\Shared\SharedObjects\CoreComSignatures.cs">
+      <Link>CoreComSignatures.cs</Link>
+    </Compile>
+  </ItemGroup>
 </Project>

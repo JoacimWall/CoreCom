@@ -39,7 +39,7 @@ namespace TestClientXamarin.Services
             //local debug
             coreComOptions.ServerAddress =  (Device.RuntimePlatform == Device.Android ? "https://10.0.2.2:5001" : "https://192.168.2.121:5001");
             //azure debug
-            coreComOptions.ServerAddress =  "https://corecomtestappservice.azurewebsites.net";
+            //coreComOptions.ServerAddress =  "https://corecomtestappservice.azurewebsites.net";
 
             coreComOptions.ClientIsMobile = true;
             _coreComClient.Connect(coreComOptions);
