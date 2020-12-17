@@ -348,3 +348,12 @@ MigrationBackup/
 
 # Ionide (cross platform F# VS Code tools) working folder
 .ionide/
+src/CoreCom/Examples/.DS_Store
+src/CoreCom/Examples/Client/.DS_Store
+src/CoreCom/Examples/Client/TestClientXamarin/.DS_Store
+src/CoreCom/Examples/Client/TestClientXamarin/TestClientXamarin/.DS_Store
+src/CoreCom/Source/WallTec.CoreCom.Client/.DS_Store
+src/CoreCom/Source/.DS_Store
+src/CoreCom/.DS_Store
+src/.DS_Store
+.DS_Store
