@@ -62,38 +62,35 @@ namespace WallTec.CoreCom.TestServerAppService
 
 
             app.UseRouting();
-
+            app.UseAuthentication();
+            app.UseAuthorization();
             app.UseGrpcWeb();
 
-            //app.Use((c, next) =>
-            //{
-            //    if (c.Request.ContentType == "application/grpc")
-            //    {
-            //        var current = c.Features.Get<IHttpResponseFeature>();
-            //        c.Features.Set<IHttpResponseFeature>(new HttpSysWorkaroundHttpResponseFeature(current));
-            //    }
-            //    return next();
-            //});
-
+           
             app.UseEndpoints(endpoints =>
             {
                 endpoints.MapGrpcService<CoreComService>().EnableGrpcWeb();
 
                 endpoints.MapGet("/generateJwtToken", context =>
                 {
-                    return context.Response.WriteAsync(GenerateJwtToken(context.Request.Query["name"]));
+                    return context.Response.WriteAsync(GenerateJwtToken(context.Request.Query["username"], context.Request.Query["password"]));
                 });
             });
         }
 
-        private string GenerateJwtToken(string name)
+        private string GenerateJwtToken(string username, string password)
         {
-            if (string.IsNullOrEmpty(name))
+            if (string.IsNullOrEmpty(username) || string.IsNullOrEmpty(password))
             {
-                throw new InvalidOperationException("Name is not specified.");
+                throw new InvalidOperationException("Name or password is not specified.");
             }
 
-            var claims = new[] { new Claim(ClaimTypes.Name, name) };
+            if (username != "demo" && password != "1234")
+            { 
+                throw new InvalidOperationException("Name or password is not specified.");
+            }
+
+            var claims = new[] { new Claim(ClaimTypes.Name, username) };
             var credentials = new SigningCredentials(SecurityKey, SecurityAlgorithms.HmacSha256);
             var token = new JwtSecurityToken("ExampleServer", "ExampleClients", claims, expires: DateTime.Now.AddSeconds(60), signingCredentials: credentials);
             return JwtTokenHandler.WriteToken(token);

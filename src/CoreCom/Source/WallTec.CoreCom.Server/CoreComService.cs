@@ -1,5 +1,6 @@
 ﻿using Google.Protobuf.WellKnownTypes;
 using Grpc.Core;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.Extensions.Configuration;
 using System;
 using System.Collections.Generic;
@@ -16,13 +17,15 @@ namespace WallTec.CoreCom.Server
     public class CoreComService : Proto.CoreCom.CoreComBase
     {
         public List<Client> Clients = new List<Client>();
-
+        //Public functions needs no token
         private List<Tuple<Func<CoreComUserInfo, Task>, string>> _receiveDelegatesOneParm = new List<Tuple<Func<CoreComUserInfo, Task>, string>>();
         private List<Tuple<Func<object, CoreComUserInfo, Task>, string, System.Type>> _receiveDelegatesTwoParm = new List<Tuple<Func<object, CoreComUserInfo, Task>, string, System.Type>>();
+        //Authenticated functions
+        private List<Tuple<Func<CoreComUserInfo, Task>, string>> _receiveDelegatesOneParmAuth = new List<Tuple<Func<CoreComUserInfo, Task>, string>>();
+        private List<Tuple<Func<object, CoreComUserInfo, Task>, string, System.Type>> _receiveDelegatesTwoParmAuth = new List<Tuple<Func<object, CoreComUserInfo, Task>, string, System.Type>>();
 
-        //private Func<CoreComMessage, Task> _actionClientToServerMessage;
 
-       
+
         private CoreComOptions _coreComOptions;
         private IConfiguration _config;
         public CoreComService(IConfiguration config)
@@ -46,16 +49,19 @@ namespace WallTec.CoreCom.Server
         public void Register(Func<CoreComUserInfo, Task> callback, string messageSignature)
         {
             _receiveDelegatesOneParm.Add(Tuple.Create(callback, messageSignature));
-
-
         }
         public void Register(Func<object, CoreComUserInfo, Task> callback, string messageSignature, System.Type type)
         {
             _receiveDelegatesTwoParm.Add(Tuple.Create(callback, messageSignature, type));
-
-
         }
-
+        public void RegisterAuth(Func<CoreComUserInfo, Task> callback, string messageSignature)
+        {
+            _receiveDelegatesOneParmAuth.Add(Tuple.Create(callback, messageSignature));
+        }
+        public void RegisterAuth(Func<object, CoreComUserInfo, Task> callback, string messageSignature, System.Type type)
+        {
+            _receiveDelegatesTwoParmAuth.Add(Tuple.Create(callback, messageSignature, type));
+        }
 
         public override async Task<ConnectToServerResponse> ClientConnectToServer(ConnectToServerRequest request, ServerCallContext context)
         {
@@ -67,6 +73,57 @@ namespace WallTec.CoreCom.Server
             var client = Clients.FirstOrDefault(x => x.CoreComUserInfo.ClientInstallId == request.ClientInstallId);
 
             await ParseClientToServerMessage(request);
+
+            if (client.ClientIsSending)
+            {
+                //Exit
+            }
+
+
+            while (!context.CancellationToken.IsCancellationRequested && client.ServerToClientMessages.Count > 0)
+            {
+                client.ClientIsSending = true;
+
+                //Send message
+                //await client.SendCue();
+
+                //send old messages 
+                while (client.ServerToClientMessages.Count > 0)
+                {
+                    try
+                    {   //send
+                        await responseStream.WriteAsync(client.ServerToClientMessages[0]);
+                        //logging
+                        await WriteOutgoingMessagesLog(client.ServerToClientMessages[0]);
+                        //Remove messages
+                        client.ServerToClientMessages.RemoveAt(0);
+                    }
+                    catch
+                    {
+                        //TODO:Add timer to send
+                        //Reconnect
+                        //if (!_isConnecting)
+                        //{
+                        //    IsOnline = false;
+                        //    _timer.Enabled = true;
+                        //}
+                        //return false;
+                    }
+                }
+
+
+            }
+
+        }
+
+        //Authenticated functions
+        [Authorize]
+        public override async Task SubscribeServerToClientAuth(CoreComMessage request, IServerStreamWriter<CoreComMessage> responseStream, ServerCallContext context)
+        {
+            AddClient(request);
+            var client = Clients.FirstOrDefault(x => x.CoreComUserInfo.ClientInstallId == request.ClientInstallId);
+
+            await ParseClientToServerMessageAuth(request);
 
             if (client.ClientIsSending)
             {
@@ -197,6 +254,45 @@ namespace WallTec.CoreCom.Server
             else
             {
                 var funcToRun = _receiveDelegatesTwoParm.FirstOrDefault(x => x.Item2 == request.MessageSignature);
+                if (funcToRun != null)
+                {
+                    var objectDeser = JsonSerializer.Deserialize(request.JsonObject, funcToRun.Item3);
+                    await funcToRun.Item1.Invoke(objectDeser, coreComUserInfo);
+                }
+                else
+                {
+                    //TODO:Report error
+                }
+            }
+        }
+        private async Task ParseClientToServerMessageAuth(CoreComMessage request)
+        {
+            //this only hapend after first messages bin sent
+            if (request.MessageSignature.StartsWith("CoreComInternal"))
+            {
+                await ParseCoreComFrameworkMessage(request);
+                return;
+            }
+            //Logg messages
+            await WriteIncommingMessagesLog(request);
+
+
+            CoreComUserInfo coreComUserInfo = new CoreComUserInfo { ClientInstallId = request.ClientInstallId, ClientId = "" };
+            if (string.IsNullOrEmpty(request.JsonObject))
+            {
+                var funcToRun = _receiveDelegatesOneParmAuth.FirstOrDefault(x => x.Item2 == request.MessageSignature);
+                if (funcToRun != null)
+                {
+                    await funcToRun.Item1.Invoke(coreComUserInfo);
+                }
+                else
+                {
+                    //TODO:Report error
+                }
+            }
+            else
+            {
+                var funcToRun = _receiveDelegatesTwoParmAuth.FirstOrDefault(x => x.Item2 == request.MessageSignature);
                 if (funcToRun != null)
                 {
                     var objectDeser = JsonSerializer.Deserialize(request.JsonObject, funcToRun.Item3);

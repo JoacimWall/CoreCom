@@ -17,9 +17,10 @@ namespace WallTec.CoreCom.TestServerAppService.Service
         public MyService(CoreComService coreComService)
         {
             _coreComService = coreComService;
-
+            //This public
             _coreComService.Register(GetAllProjectsFromDb, CoreComSignatures.RequestAllProjects);
-            _coreComService.Register(AddProjectsToDb, CoreComSignatures.AddProject, new Project().GetType());
+            //This need that the user got token
+            _coreComService.RegisterAuth(AddProjectsToDb, CoreComSignatures.AddProject, new Project().GetType());
 
         }
 
