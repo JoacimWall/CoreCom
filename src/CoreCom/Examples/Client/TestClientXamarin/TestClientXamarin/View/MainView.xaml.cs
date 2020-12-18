@@ -5,7 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using TestClientXamarin.Messages;
-using WallTec.CoreCom.Example.SharedObjects;
+using WallTec.CoreCom.Example.Shared;
 using Xamarin.Forms;
 
 namespace TestClientXamarin.View

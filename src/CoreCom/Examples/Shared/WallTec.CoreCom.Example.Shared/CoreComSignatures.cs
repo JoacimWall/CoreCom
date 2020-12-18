@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace WallTec.CoreCom.Example.SharedObjects
+namespace WallTec.CoreCom.Example.Shared
 {
     public static class CoreComSignatures
     {

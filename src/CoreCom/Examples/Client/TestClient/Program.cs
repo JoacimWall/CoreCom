@@ -1,7 +1,9 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using WallTec.CoreCom.Client.Models;
-using WallTec.CoreCom.Example.SharedObjects;
+using WallTec.CoreCom.Example.Shared.Entitys;
+using WallTec.CoreCom.Example.Shared;
 using WallTec.CoreCom.Sheard;
 
 namespace TestClient
@@ -20,10 +22,11 @@ namespace TestClient
             {
               
 
-                //Console.WriteLine("Connection response: " + response.ToString());
-                //coreComClient.Register(GetAllProjectsFromDb, CoreComSignatures.ResponseAllProjects, new WallTec.CoreCom.Example.SharedObjects.Project().GetType());
-                
-                //coreComClient.SendAsync(CoreComSignatures.RequestAllProjects);
+                Console.WriteLine("Connection response: " + response.ToString());
+                coreComClient.Register(GetAllProjectsFromDb, CoreComSignatures.ResponseAllProjects, new Project().GetType());
+                Console.WriteLine("Press any key to exit...");
+                Console.ReadKey();
+                coreComClient.SendAsync(CoreComSignatures.RequestAllProjects);
                
                // coreComClient.ShutdownAsync().Wait();
                 Console.WriteLine("Press any key to exit...");
@@ -35,8 +38,11 @@ namespace TestClient
         }
         private static async Task GetAllProjectsFromDb(object value, CoreComUserInfo coreComUserInfo)
         {
-            var project = value as Project;
-
+            var project = value as List<Project>;
+            foreach (var item in project)
+            {
+                Console.WriteLine(item.Name);
+            }
         }
     }
 }

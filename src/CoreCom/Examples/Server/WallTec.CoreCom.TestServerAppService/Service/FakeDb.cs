@@ -1,8 +1,6 @@
-﻿using System;
+﻿
 using System.Collections.Generic;
-using System.ComponentModel;
-using System.Text;
-using WallTec.CoreCom.Example.SharedObjects;
+using WallTec.CoreCom.Example.Shared.Entitys;
 
 namespace WallTec.CoreCom.TestServerAppService.Service
 {

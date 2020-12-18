@@ -17,11 +17,18 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "WallTec.CoreCom.Client", ".
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TestClient", "TestClient\TestClient.csproj", "{7F28EF1D-78F1-4C6A-862E-89EB6441C47F}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "WallTec.CoreCom.Sheard", "..\..\Source\WallTec.CoreCom.Sheard\WallTec.CoreCom.Sheard.csproj", "{9F419F59-2EDB-4711-88DB-3751FE6D1E68}"
+Project("{D954291E-2A0B-460D-934E-DC6B0785DB48}") = "WallTec.CoreCom.Example.Shared", "..\Shared\WallTec.CoreCom.Example.Shared\WallTec.CoreCom.Example.Shared.shproj", "{A1ED5317-A967-494E-98E5-749BC982BC67}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "WallTec.CoreCom.Example.SharedObjects", "..\Shared\SharedObjects\WallTec.CoreCom.Example.SharedObjects.csproj", "{071D1ED1-B2D2-4E48-AAEC-8617DFF7D5A3}"
+Project("{D954291E-2A0B-460D-934E-DC6B0785DB48}") = "WallTec.CoreCom.Sheard", "..\..\Source\WallTec.CoreCom.Sheard\WallTec.CoreCom.Sheard.shproj", "{CE4B9BF9-A212-4054-89F6-537697F9FBF2}"
 EndProject
 Global
+	GlobalSection(SharedMSBuildProjectFiles) = preSolution
+		..\Shared\WallTec.CoreCom.Example.Shared\WallTec.CoreCom.Example.Shared.projitems*{1e183736-d13d-4cb9-8371-652150b2f198}*SharedItemsImports = 5
+		..\Shared\WallTec.CoreCom.Example.Shared\WallTec.CoreCom.Example.Shared.projitems*{7f28ef1d-78f1-4c6a-862e-89eb6441c47f}*SharedItemsImports = 5
+		..\Shared\WallTec.CoreCom.Example.Shared\WallTec.CoreCom.Example.Shared.projitems*{a1ed5317-a967-494e-98e5-749bc982bc67}*SharedItemsImports = 13
+		..\..\Source\WallTec.CoreCom.Sheard\WallTec.CoreCom.Sheard.projitems*{b0499b29-ae9d-4c55-815b-1af61ff409c3}*SharedItemsImports = 5
+		..\..\Source\WallTec.CoreCom.Sheard\WallTec.CoreCom.Sheard.projitems*{ce4b9bf9-a212-4054-89f6-537697f9fbf2}*SharedItemsImports = 13
+	EndGlobalSection
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
 		Debug|ARM = Debug|ARM
@@ -185,61 +192,13 @@ Global
 		{7F28EF1D-78F1-4C6A-862E-89EB6441C47F}.Release|x64.Build.0 = Release|Any CPU
 		{7F28EF1D-78F1-4C6A-862E-89EB6441C47F}.Release|x86.ActiveCfg = Release|Any CPU
 		{7F28EF1D-78F1-4C6A-862E-89EB6441C47F}.Release|x86.Build.0 = Release|Any CPU
-		{9F419F59-2EDB-4711-88DB-3751FE6D1E68}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{9F419F59-2EDB-4711-88DB-3751FE6D1E68}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{9F419F59-2EDB-4711-88DB-3751FE6D1E68}.Debug|ARM.ActiveCfg = Debug|Any CPU
-		{9F419F59-2EDB-4711-88DB-3751FE6D1E68}.Debug|ARM.Build.0 = Debug|Any CPU
-		{9F419F59-2EDB-4711-88DB-3751FE6D1E68}.Debug|iPhone.ActiveCfg = Debug|Any CPU
-		{9F419F59-2EDB-4711-88DB-3751FE6D1E68}.Debug|iPhone.Build.0 = Debug|Any CPU
-		{9F419F59-2EDB-4711-88DB-3751FE6D1E68}.Debug|iPhoneSimulator.ActiveCfg = Debug|Any CPU
-		{9F419F59-2EDB-4711-88DB-3751FE6D1E68}.Debug|iPhoneSimulator.Build.0 = Debug|Any CPU
-		{9F419F59-2EDB-4711-88DB-3751FE6D1E68}.Debug|x64.ActiveCfg = Debug|Any CPU
-		{9F419F59-2EDB-4711-88DB-3751FE6D1E68}.Debug|x64.Build.0 = Debug|Any CPU
-		{9F419F59-2EDB-4711-88DB-3751FE6D1E68}.Debug|x86.ActiveCfg = Debug|Any CPU
-		{9F419F59-2EDB-4711-88DB-3751FE6D1E68}.Debug|x86.Build.0 = Debug|Any CPU
-		{9F419F59-2EDB-4711-88DB-3751FE6D1E68}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{9F419F59-2EDB-4711-88DB-3751FE6D1E68}.Release|Any CPU.Build.0 = Release|Any CPU
-		{9F419F59-2EDB-4711-88DB-3751FE6D1E68}.Release|ARM.ActiveCfg = Release|Any CPU
-		{9F419F59-2EDB-4711-88DB-3751FE6D1E68}.Release|ARM.Build.0 = Release|Any CPU
-		{9F419F59-2EDB-4711-88DB-3751FE6D1E68}.Release|iPhone.ActiveCfg = Release|Any CPU
-		{9F419F59-2EDB-4711-88DB-3751FE6D1E68}.Release|iPhone.Build.0 = Release|Any CPU
-		{9F419F59-2EDB-4711-88DB-3751FE6D1E68}.Release|iPhoneSimulator.ActiveCfg = Release|Any CPU
-		{9F419F59-2EDB-4711-88DB-3751FE6D1E68}.Release|iPhoneSimulator.Build.0 = Release|Any CPU
-		{9F419F59-2EDB-4711-88DB-3751FE6D1E68}.Release|x64.ActiveCfg = Release|Any CPU
-		{9F419F59-2EDB-4711-88DB-3751FE6D1E68}.Release|x64.Build.0 = Release|Any CPU
-		{9F419F59-2EDB-4711-88DB-3751FE6D1E68}.Release|x86.ActiveCfg = Release|Any CPU
-		{9F419F59-2EDB-4711-88DB-3751FE6D1E68}.Release|x86.Build.0 = Release|Any CPU
-		{071D1ED1-B2D2-4E48-AAEC-8617DFF7D5A3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{071D1ED1-B2D2-4E48-AAEC-8617DFF7D5A3}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{071D1ED1-B2D2-4E48-AAEC-8617DFF7D5A3}.Debug|ARM.ActiveCfg = Debug|Any CPU
-		{071D1ED1-B2D2-4E48-AAEC-8617DFF7D5A3}.Debug|ARM.Build.0 = Debug|Any CPU
-		{071D1ED1-B2D2-4E48-AAEC-8617DFF7D5A3}.Debug|iPhone.ActiveCfg = Debug|Any CPU
-		{071D1ED1-B2D2-4E48-AAEC-8617DFF7D5A3}.Debug|iPhone.Build.0 = Debug|Any CPU
-		{071D1ED1-B2D2-4E48-AAEC-8617DFF7D5A3}.Debug|iPhoneSimulator.ActiveCfg = Debug|Any CPU
-		{071D1ED1-B2D2-4E48-AAEC-8617DFF7D5A3}.Debug|iPhoneSimulator.Build.0 = Debug|Any CPU
-		{071D1ED1-B2D2-4E48-AAEC-8617DFF7D5A3}.Debug|x64.ActiveCfg = Debug|Any CPU
-		{071D1ED1-B2D2-4E48-AAEC-8617DFF7D5A3}.Debug|x64.Build.0 = Debug|Any CPU
-		{071D1ED1-B2D2-4E48-AAEC-8617DFF7D5A3}.Debug|x86.ActiveCfg = Debug|Any CPU
-		{071D1ED1-B2D2-4E48-AAEC-8617DFF7D5A3}.Debug|x86.Build.0 = Debug|Any CPU
-		{071D1ED1-B2D2-4E48-AAEC-8617DFF7D5A3}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{071D1ED1-B2D2-4E48-AAEC-8617DFF7D5A3}.Release|Any CPU.Build.0 = Release|Any CPU
-		{071D1ED1-B2D2-4E48-AAEC-8617DFF7D5A3}.Release|ARM.ActiveCfg = Release|Any CPU
-		{071D1ED1-B2D2-4E48-AAEC-8617DFF7D5A3}.Release|ARM.Build.0 = Release|Any CPU
-		{071D1ED1-B2D2-4E48-AAEC-8617DFF7D5A3}.Release|iPhone.ActiveCfg = Release|Any CPU
-		{071D1ED1-B2D2-4E48-AAEC-8617DFF7D5A3}.Release|iPhone.Build.0 = Release|Any CPU
-		{071D1ED1-B2D2-4E48-AAEC-8617DFF7D5A3}.Release|iPhoneSimulator.ActiveCfg = Release|Any CPU
-		{071D1ED1-B2D2-4E48-AAEC-8617DFF7D5A3}.Release|iPhoneSimulator.Build.0 = Release|Any CPU
-		{071D1ED1-B2D2-4E48-AAEC-8617DFF7D5A3}.Release|x64.ActiveCfg = Release|Any CPU
-		{071D1ED1-B2D2-4E48-AAEC-8617DFF7D5A3}.Release|x64.Build.0 = Release|Any CPU
-		{071D1ED1-B2D2-4E48-AAEC-8617DFF7D5A3}.Release|x86.ActiveCfg = Release|Any CPU
-		{071D1ED1-B2D2-4E48-AAEC-8617DFF7D5A3}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{B0499B29-AE9D-4C55-815B-1AF61FF409C3} = {02F5B801-C659-4DF0-844D-B0F7035751A9}
-		{9F419F59-2EDB-4711-88DB-3751FE6D1E68} = {02F5B801-C659-4DF0-844D-B0F7035751A9}
+		{CE4B9BF9-A212-4054-89F6-537697F9FBF2} = {02F5B801-C659-4DF0-844D-B0F7035751A9}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {6C3E9A9B-28BC-44E4-B41B-C1C23B2303B4}

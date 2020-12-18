@@ -3,7 +3,7 @@ using Xamarin.Forms;
 using Xamarin.Forms.Xaml;
 using WallTec.CoreCom.Client;
 using System.Threading.Tasks;
-using WallTec.CoreCom.Example.SharedObjects;
+using WallTec.CoreCom.Example.Shared;
 using WallTec.CoreCom.Sheard;
 using System.Collections.Generic;
 using TestClientXamarin.View;

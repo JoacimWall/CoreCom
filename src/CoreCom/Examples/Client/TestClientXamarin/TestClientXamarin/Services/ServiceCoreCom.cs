@@ -6,7 +6,8 @@ using TestClientXamarin.Messages;
 using TestClientXamarin.Repository;
 using WallTec.CoreCom.Client;
 using WallTec.CoreCom.Client.Models;
-using WallTec.CoreCom.Example.SharedObjects;
+using WallTec.CoreCom.Example.Shared;
+using WallTec.CoreCom.Example.Shared.Entitys;
 using WallTec.CoreCom.Sheard;
 using Xamarin.Forms;
 

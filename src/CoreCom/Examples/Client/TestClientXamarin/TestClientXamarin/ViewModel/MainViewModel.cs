@@ -6,7 +6,8 @@ using System.Threading.Tasks;
 using System.Windows.Input;
 using TestClientXamarin.Messages;
 using TestClientXamarin.Services;
-using WallTec.CoreCom.Example.SharedObjects;
+using WallTec.CoreCom.Example.Shared;
+using WallTec.CoreCom.Example.Shared.Entitys;
 using Xamarin.Forms;
 
 namespace TestClientXamarin.ViewModel

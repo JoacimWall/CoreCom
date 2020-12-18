@@ -1,7 +1,7 @@
 ﻿using System;
 using WallTec.CoreCom.Sheard;
 
-namespace WallTec.CoreCom.Example.SharedObjects
+namespace WallTec.CoreCom.Example.Shared.Entitys
 {
     public class Project 
     {

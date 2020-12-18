@@ -25,7 +25,6 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\..\..\Source\WallTec.CoreCom.Client\WallTec.CoreCom.Client.csproj" />
-    <ProjectReference Include="..\..\..\Shared\SharedObjects\WallTec.CoreCom.Example.SharedObjects.csproj" />
   </ItemGroup>
 
   <ItemGroup>
@@ -37,4 +36,5 @@
     <None Include="View\MainView.xaml" />
     <None Include="App.xaml" />
   </ItemGroup>
+  <Import Project="..\..\..\Shared\WallTec.CoreCom.Example.Shared\WallTec.CoreCom.Example.Shared.projitems" Label="Shared" />
 </Project>

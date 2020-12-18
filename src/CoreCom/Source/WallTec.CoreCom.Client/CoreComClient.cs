@@ -23,7 +23,7 @@ namespace WallTec.CoreCom.Client
         #region Private Propertys
         //GRPC Propertys
         
-        private HttpClientHandler _httpHandler;
+        private GrpcWebHandler _httpHandler;
         private GrpcChannel _channel;
         private CoreComOptions _coreComOptions;
         private Proto.CoreCom.CoreComClient _coreComClient;
@@ -145,18 +145,18 @@ namespace WallTec.CoreCom.Client
                 _isConnecting = true;
                 IsOnline = false;
 
-                _httpHandler = new HttpClientHandler();
-                if (_coreComOptions.ClientIsMobile)
-                {  
-                    //case Device.Android:
-                    //AppContext.SetSwitch("System.Net.Http.SocketsHttpHandler.Http2UnencryptedSupport", true);
-                    _httpHandler.ServerCertificateCustomValidationCallback = HttpClientHandler.DangerousAcceptAnyServerCertificateValidator;
-                }
+                _httpHandler = new GrpcWebHandler(GrpcWebMode.GrpcWebText,new HttpClientHandler());
+                //if (_coreComOptions.ClientIsMobile)
+                //{  
+                //    //case Device.Android:
+                //    //AppContext.SetSwitch("System.Net.Http.SocketsHttpHandler.Http2UnencryptedSupport", true);
+                //    _httpHandler.ServerCertificateCustomValidationCallback = HttpClientHandler.DangerousAcceptAnyServerCertificateValidator;
+                //}
 
                 _channel = GrpcChannel.ForAddress($"{_coreComOptions.ServerAddress}", new GrpcChannelOptions
                 {
-                    HttpHandler = new GrpcWebHandler(_httpHandler)
-                });
+                    HttpHandler =  _httpHandler
+                }); 
 
                 CallOptions calloptions = new CallOptions().WithWaitForReady(true);
                 calloptions = calloptions.WithDeadline(DateTime.UtcNow.AddSeconds(20));

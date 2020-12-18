@@ -18,9 +18,7 @@
   <ItemGroup>
     <Protobuf Include="Protos\corecom.proto" />
   </ItemGroup>
-  
-  <ItemGroup>
-    <ProjectReference Include="..\WallTec.CoreCom.Sheard\WallTec.CoreCom.Sheard.csproj" />
-  </ItemGroup>
+
+  <Import Project="..\WallTec.CoreCom.Sheard\WallTec.CoreCom.Sheard.projitems" Label="Shared" />
 
 </Project>

@@ -2,7 +2,8 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using WallTec.CoreCom.Example.SharedObjects;
+using WallTec.CoreCom.Example.Shared.Entitys;
+using WallTec.CoreCom.Example.Shared;
 using WallTec.CoreCom.Server;
 using WallTec.CoreCom.Sheard;
 
