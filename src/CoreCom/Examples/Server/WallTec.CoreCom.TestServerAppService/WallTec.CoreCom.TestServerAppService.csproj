@@ -2,6 +2,7 @@
 
   <PropertyGroup>
     <TargetFramework>netcoreapp3.1</TargetFramework>
+    <UserSecretsId>cdcbef42-ff99-4aad-8a91-7bbd5d48d694</UserSecretsId>
   </PropertyGroup>
 
   <ItemGroup>
@@ -12,7 +13,6 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\..\Source\WallTec.CoreCom.Server\WallTec.CoreCom.Server.csproj" />
-    <ProjectReference Include="..\..\..\Source\WallTec.CoreCom.Sheard\WallTec.CoreCom.Sheard.csproj" />
   </ItemGroup>
 
   <Import Project="..\..\Shared\WallTec.CoreCom.Example.Shared\WallTec.CoreCom.Example.Shared.projitems" Label="Shared" />

@@ -10,7 +10,10 @@ import "google/protobuf/timestamp.proto";
 service CoreCom {
 	
 	rpc ClientConnectToServer(ConnectToServerRequest) returns (ConnectToServerResponse);
+	//Public functions needs no token
 	rpc SubscribeServerToClient(CoreComMessage) returns (stream CoreComMessage);
+	//Authenticated functions
+	rpc SubscribeServerToClientAuth(CoreComMessage) returns (stream CoreComMessage);
 	//rpc ClientToServerCoreComMessage(CoreComMessage) returns (CoreComMessageResponse);
 }
 message ConnectToServerRequest {
