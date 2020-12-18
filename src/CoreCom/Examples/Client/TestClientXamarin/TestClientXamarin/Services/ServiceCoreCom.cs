@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
+using System.Web;
 using TestClientXamarin.Messages;
 using TestClientXamarin.Repository;
 using WallTec.CoreCom.Client;
@@ -26,23 +28,58 @@ namespace TestClientXamarin.Services
         }
         public ServiceCoreCom()
         {
-          
-
-
+        
         }
+        private static async Task<string> Authenticate(CoreComOptions coreComOptions, string username,string password)
+        {
+            try
+            {
 
-       
+            
+            
+            Console.WriteLine($"Authenticating as {username}...");
+            var httpClient = new HttpClient();
+            var request = new HttpRequestMessage
+            {
+                RequestUri = new Uri($"{coreComOptions.ServerAddress}/generateJwtToken?username={HttpUtility.UrlEncode(username)}&password={HttpUtility.UrlEncode(password)}"),
+                Method = HttpMethod.Get,
+                Version = new Version(2, 0)
+            };
+            var tokenResponse = await httpClient.SendAsync(request);
+            tokenResponse.EnsureSuccessStatusCode();
+
+            var token = await tokenResponse.Content.ReadAsStringAsync();
+            Console.WriteLine("Successfully authenticated.");
+
+            return token;
+            }
+            catch (Exception ex)
+            {
+                return string.Empty;
+            }
+        }
+        
+
 
         public async Task<bool> SetupCoreComServer()
         {
+           
 
             CoreComOptions coreComOptions = new CoreComOptions();
             //local debug
-            coreComOptions.ServerAddress =  (Device.RuntimePlatform == Device.Android ? "https://10.0.2.2:5001" : "https://192.168.2.121:5001");
+            //coreComOptions.ServerAddress =  (Device.RuntimePlatform == Device.Android ? "https://10.0.2.2:5001" : "https://192.168.2.121:5001");
             //azure debug
-            //coreComOptions.ServerAddress =  "https://corecomtestappservice.azurewebsites.net";
+            coreComOptions.ServerAddress =  "https://wallteccorecomtestserver.azurewebsites.net";
+            //coreComOptions.ServerAddress =  "https://192.68.76.2:5001";
 
-            coreComOptions.ClientIsMobile = true;
+            //Get Token
+            var token = await Authenticate(coreComOptions, "demo","1234");
+            if (string.IsNullOrEmpty(token))
+                return false;
+
+            coreComOptions.ClientToken = token;
+
+            
             _coreComClient.Connect(coreComOptions);
             //if (!response)
             //{

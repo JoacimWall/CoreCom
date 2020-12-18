@@ -61,6 +61,7 @@
     <MtouchArch>ARM64</MtouchArch>
     <CodesignKey>iPhone Developer</CodesignKey>
     <CodesignEntitlements>Entitlements.plist</CodesignEntitlements>
+    <MtouchLink>SdkOnly</MtouchLink>
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="Main.cs" />
@@ -126,14 +127,14 @@
    <PackageReference Include="Google.Protobuf" Version="3.14.0" />
     <PackageReference Include="Grpc.Net.Client" Version="2.34.0" />
     <PackageReference Include="Grpc.Net.Client.Web" Version="2.34.0" />
-    <PackageReference Include="Grpc.Tools" Version="2.34.0"/>
-    <PackageReference Include="Xamarin.Forms" Version="4.6.0.800" />
+    <PackageReference Include="Grpc.Tools" Version="2.34.0" />
+    <PackageReference Include="Xamarin.Forms" Version="4.8.0.1821" />
     <PackageReference Include="Xamarin.Essentials" Version="1.5.3.2" />
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath)\Xamarin\iOS\Xamarin.iOS.CSharp.targets" />
   <ItemGroup>
     <ProjectReference Include="..\TestClientXamarin\TestClientXamarin.csproj">
-      <Project>{3D6C2E8E-AF7E-4050-9F99-0DED7E4B8D43}</Project>
+      <Project>{1E183736-D13D-4CB9-8371-652150B2F198}</Project>
       <Name>TestClientXamarin</Name>
     </ProjectReference>
   </ItemGroup>
