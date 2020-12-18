@@ -31,7 +31,7 @@ namespace WallTec.CoreCom.Client
         private CancellationToken _cancellationToken;
         private AsyncServerStreamingCall<CoreComMessage> _serverStream;
         private Task _responseTask; //keep this
-
+        private string _token;
         //Messages propertys
         Guid _clientInstallId;
         private readonly List<Tuple<Func<CoreComUserInfo, Task>, string>> _receiveDelegatesOneParm = new List<Tuple<Func<CoreComUserInfo, Task>, string>>();
@@ -117,6 +117,14 @@ namespace WallTec.CoreCom.Client
         {
             return await SendInternalAsync(null, messageSignature);
         }
+        public async Task<bool> SendAuthAsync(object outgoingObject, string messageSignature)
+        {
+            return await SendInternalAsync(outgoingObject, messageSignature);
+        }
+        public async Task<bool> SendAuthAsync(string messageSignature)
+        {
+            return await SendInternalAsync(null, messageSignature);
+        }
         #endregion
 
         #region Private Functions
@@ -158,14 +166,24 @@ namespace WallTec.CoreCom.Client
                     HttpHandler =  _httpHandler
                 }); 
 
-                CallOptions calloptions = new CallOptions().WithWaitForReady(true);
-                calloptions = calloptions.WithDeadline(DateTime.UtcNow.AddSeconds(20));
-
+                
                 _coreComClient = new Proto.CoreCom.CoreComClient(_channel);
-                
+                CallOptions calloptions;
+                if (!string.IsNullOrEmpty(_coreComOptions.ClientToken))
+                {
+                    var headers = new Metadata();
+                    headers.Add("Authorization", $"Bearer {_coreComOptions.ClientToken}");
+                     calloptions = new CallOptions(headers).WithWaitForReady(true);
+                    calloptions = calloptions.WithDeadline(DateTime.UtcNow.AddSeconds(20));
+                }
+                else
+                {
+                     calloptions = new CallOptions().WithWaitForReady(true);
+                    calloptions = calloptions.WithDeadline(DateTime.UtcNow.AddSeconds(20));
+                }
                 //Wait for channel to open for 20 sec
-                var response = await _coreComClient.ClientConnectToServerAsync( new ConnectToServerRequest { ClientInstallId = _clientInstallId.ToString() }, calloptions);
-                
+                var response = await _coreComClient.ClientConnectToServerAsync(new ConnectToServerRequest { ClientInstallId = _clientInstallId.ToString() }, calloptions);
+
                 Console.WriteLine("Connected to Server " + _coreComOptions.ServerAddress);
                 _isConnecting = false;
                 IsOnline = true;
@@ -234,9 +252,18 @@ namespace WallTec.CoreCom.Client
                 var cts = new CancellationTokenSource(TimeSpan.FromSeconds(100));
                 while (_messagesOutgoing.Count > 0 && !_isConnecting)
                 {
-                   
-                   
-                    using var streamingCall = _coreComClient.SubscribeServerToClient(_messagesOutgoing[0], cancellationToken: cts.Token);
+                    AsyncServerStreamingCall<CoreComMessage> streamingCall;
+                    Metadata? metadata = null;
+                    if (!string.IsNullOrEmpty(_coreComOptions.ClientToken))
+                    {
+                        metadata = new Metadata();
+                        metadata.Add("Authorization", $"Bearer {_coreComOptions.ClientToken}");
+                          streamingCall = _coreComClient.SubscribeServerToClient(_messagesOutgoing[0], metadata, cancellationToken: cts.Token);
+                    }
+                    else
+                    {
+                          streamingCall = _coreComClient.SubscribeServerToClient(_messagesOutgoing[0], cancellationToken: cts.Token);
+                    }
                     _messagesOutgoing.RemoveAt(0);
                     try
                     {
