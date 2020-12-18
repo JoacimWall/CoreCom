@@ -24,7 +24,7 @@
         </StackLayout>
         <StackLayout Grid.Row="2" Grid.ColumnSpan="2" Orientation="Horizontal">
            
-            <Button x:Name="AddProject" Padding="5" Margin="5" Text="Add Projects" Command="{Binding  AddProjectsCommand}" BackgroundColor="LightGray" />
+            <Button x:Name="AddProject" Padding="5" Margin="5" Text="Add Project" Command="{Binding  AddProjectsCommand}" BackgroundColor="LightGray" />
             <Entry Placeholder="Project Name" Margin="5" Text="{Binding AddProjectName}" HorizontalOptions="FillAndExpand" />
         </StackLayout>
         <ListView Grid.Row="3" Grid.ColumnSpan="2" SeparatorVisibility="None" HasUnevenRows="True" ItemsSource="{Binding Projects}" BackgroundColor="White" >

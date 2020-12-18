@@ -30,13 +30,11 @@ namespace TestClientXamarin.Services
         {
         
         }
-        private static async Task<string> Authenticate(CoreComOptions coreComOptions, string username,string password)
+        private async Task<string> Authenticate(CoreComOptions coreComOptions, string username,string password)
         {
             try
             {
-
-            
-            
+  
             Console.WriteLine($"Authenticating as {username}...");
             var httpClient = new HttpClient();
             var request = new HttpRequestMessage
@@ -63,14 +61,17 @@ namespace TestClientXamarin.Services
 
         public async Task<bool> SetupCoreComServer()
         {
-           
+
+            //Setup events
+            _coreComClient.Register(GetAllProjects, CoreComSignatures.ResponseAllProjects, new List<Project>().GetType());
+            _coreComClient.Register(GetAddedProject, CoreComSignatures.AddProject, new Project().GetType());
 
             CoreComOptions coreComOptions = new CoreComOptions();
             //local debug
             //coreComOptions.ServerAddress =  (Device.RuntimePlatform == Device.Android ? "https://10.0.2.2:5001" : "https://192.168.2.121:5001");
             //azure debug
             coreComOptions.ServerAddress =  "https://wallteccorecomtestserver.azurewebsites.net";
-            //coreComOptions.ServerAddress =  "https://192.68.76.2:5001";
+           
 
             //Get Token
             var token = await Authenticate(coreComOptions, "demo","1234");
@@ -85,9 +86,7 @@ namespace TestClientXamarin.Services
             //{
             //    return false;
             //}
-            //Setup events
-            _coreComClient.Register(GetAllProjects, CoreComSignatures.ResponseAllProjects, new List<Project>().GetType());
-            _coreComClient.Register(GetAddedProject, CoreComSignatures.AddProject, new Project().GetType());
+           
             return true;
         }
 
@@ -98,6 +97,14 @@ namespace TestClientXamarin.Services
         public async void SendAsync(string messageSignature)
         {
             await _coreComClient.SendAsync(messageSignature);
+        }
+        public async void SendAuthAsync(object outgoingObject, string messageSignature)
+        {
+            await _coreComClient.SendAuthAsync(outgoingObject, messageSignature);
+        }
+        public async void SendAuthAsync(string messageSignature)
+        {
+            await _coreComClient.SendAuthAsync(messageSignature);
         }
         private static async Task GetAllProjects(object value, CoreComUserInfo coreComUserInfo)
         {

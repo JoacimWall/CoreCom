@@ -23,7 +23,7 @@
 	<key>MinimumOSVersion</key>
 	<string>8.0</string>
 	<key>CFBundleDisplayName</key>
-	<string>TestClientXamarin</string>
+	<string>CoreCom</string>
 	<key>CFBundleIdentifier</key>
 	<string>com.companyname.TestClientXamarin</string>
 	<key>CFBundleVersion</key>

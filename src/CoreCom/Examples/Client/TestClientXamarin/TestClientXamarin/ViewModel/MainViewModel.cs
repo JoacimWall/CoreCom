@@ -37,7 +37,7 @@ namespace TestClientXamarin.ViewModel
         
         private async Task AddProjectsCAsync()
         {
-            App.ServiceCoreCom.SendAsync(new Project { Name = AddProjectName, Description = "project added from client" }, CoreComSignatures.AddProject);
+            App.ServiceCoreCom.SendAuthAsync(new Project { Name = AddProjectName, Description = "project added from client" }, CoreComSignatures.AddProject);
             
         }
         private async Task CheckCueCommandAsync()
