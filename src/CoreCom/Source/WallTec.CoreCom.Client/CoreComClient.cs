@@ -36,7 +36,8 @@ namespace WallTec.CoreCom.Client
         Guid _clientInstallId;
         private readonly List<Tuple<Func<CoreComUserInfo, Task>, string>> _receiveDelegatesOneParm = new List<Tuple<Func<CoreComUserInfo, Task>, string>>();
         private readonly List<Tuple<Func<object, CoreComUserInfo, Task>, string, Type>> _receiveDelegatesTwoParm = new List<Tuple<Func<object, CoreComUserInfo, Task>, string, Type>>();
-        private readonly List<CoreComMessage> _messagesOutgoing = new List<CoreComMessage>();
+      
+        private readonly List<MessageCureRecord> _messagesOutgoing = new List<MessageCureRecord>();
         
         //Offline Propertys
         bool _isConnecting;
@@ -111,19 +112,19 @@ namespace WallTec.CoreCom.Client
         }
         public async Task<bool> SendAsync(object outgoingObject, string messageSignature)
         {
-            return await SendInternalAsync(outgoingObject, messageSignature);
+            return await SendInternalAsync(outgoingObject, messageSignature,false);
         }
         public async Task<bool> SendAsync(string messageSignature)
         {
-            return await SendInternalAsync(null, messageSignature);
+            return await SendInternalAsync(null, messageSignature,false);
         }
         public async Task<bool> SendAuthAsync(object outgoingObject, string messageSignature)
         {
-            return await SendInternalAsync(outgoingObject, messageSignature);
+            return await SendInternalAsync(outgoingObject, messageSignature,true);
         }
         public async Task<bool> SendAuthAsync(string messageSignature)
         {
-            return await SendInternalAsync(null, messageSignature);
+            return await SendInternalAsync(null, messageSignature,true);
         }
         #endregion
 
@@ -142,6 +143,30 @@ namespace WallTec.CoreCom.Client
             }
             await OpenChannel();
 
+        }
+        private CallOptions GetCallOptions(bool isConnectToServer=false)
+        {
+
+            int deadlineSec;
+            if (isConnectToServer)
+                deadlineSec = _coreComOptions.ConnectToServerDeadLineSec;
+            else
+                deadlineSec = _coreComOptions.MessageDeadLineSec;
+
+            CallOptions calloptions;
+            if (!string.IsNullOrEmpty(_coreComOptions.ClientToken))
+            {
+                var headers = new Metadata();
+                headers.Add("Authorization", $"Bearer {_coreComOptions.ClientToken}");
+                calloptions = new CallOptions(headers).WithWaitForReady(true);
+                calloptions = calloptions.WithDeadline(DateTime.UtcNow.AddSeconds(deadlineSec));
+            }
+            else
+            {
+                calloptions = new CallOptions().WithWaitForReady(true);
+                calloptions = calloptions.WithDeadline(DateTime.UtcNow.AddSeconds(deadlineSec));
+            }
+            return calloptions;
         }
         private async Task<bool> OpenChannel()
         {
@@ -168,21 +193,10 @@ namespace WallTec.CoreCom.Client
 
                 
                 _coreComClient = new Proto.CoreCom.CoreComClient(_channel);
-                CallOptions calloptions;
-                if (!string.IsNullOrEmpty(_coreComOptions.ClientToken))
-                {
-                    var headers = new Metadata();
-                    headers.Add("Authorization", $"Bearer {_coreComOptions.ClientToken}");
-                     calloptions = new CallOptions(headers).WithWaitForReady(true);
-                    calloptions = calloptions.WithDeadline(DateTime.UtcNow.AddSeconds(20));
-                }
-                else
-                {
-                     calloptions = new CallOptions().WithWaitForReady(true);
-                    calloptions = calloptions.WithDeadline(DateTime.UtcNow.AddSeconds(20));
-                }
-                //Wait for channel to open for 20 sec
-                var response = await _coreComClient.ClientConnectToServerAsync(new ConnectToServerRequest { ClientInstallId = _clientInstallId.ToString() }, calloptions);
+               
+                //Wait for channel to open for 5 sec default
+                var response = await _coreComClient.ClientConnectToServerAsync(new ConnectToServerRequest
+                                    { ClientInstallId = _clientInstallId.ToString() }, GetCallOptions(true));
 
                 Console.WriteLine("Connected to Server " + _coreComOptions.ServerAddress);
                 _isConnecting = false;
@@ -219,7 +233,7 @@ namespace WallTec.CoreCom.Client
 
         }
         
-        private async Task<bool> SendInternalAsync(object outgoingObject, string messageSignature)
+        private async Task<bool> SendInternalAsync(object outgoingObject, string messageSignature,bool sendAuth)
         {
             string jsonObjectType = string.Empty;
             string jsonObject= string.Empty;
@@ -245,29 +259,25 @@ namespace WallTec.CoreCom.Client
 
 
            
-                 _messagesOutgoing.Add(coreComMessage);
+                 _messagesOutgoing.Add(new MessageCureRecord { CoreComMessage = coreComMessage, SendAuth =sendAuth } );
                 
-               
-                //TODO: token 100 sec?
-                var cts = new CancellationTokenSource(TimeSpan.FromSeconds(100));
+                
                 while (_messagesOutgoing.Count > 0 && !_isConnecting)
                 {
                     AsyncServerStreamingCall<CoreComMessage> streamingCall;
-                    Metadata? metadata = null;
-                    if (!string.IsNullOrEmpty(_coreComOptions.ClientToken))
+                    if (_messagesOutgoing[0].SendAuth)
                     {
-                        metadata = new Metadata();
-                        metadata.Add("Authorization", $"Bearer {_coreComOptions.ClientToken}");
-                          streamingCall = _coreComClient.SubscribeServerToClient(_messagesOutgoing[0], metadata, cancellationToken: cts.Token);
+                        streamingCall = _coreComClient.SubscribeServerToClientAuth(_messagesOutgoing[0].CoreComMessage, GetCallOptions());
                     }
                     else
                     {
-                          streamingCall = _coreComClient.SubscribeServerToClient(_messagesOutgoing[0], cancellationToken: cts.Token);
+                        streamingCall = _coreComClient.SubscribeServerToClient(_messagesOutgoing[0].CoreComMessage, GetCallOptions());
                     }
+                    //using var streamingCall = _coreComClient.SubscribeServerToClient(_messagesOutgoing[0].CoreComMessage, GetCallOptions());
                     _messagesOutgoing.RemoveAt(0);
                     try
                     {
-                        await foreach (var returnMessage in streamingCall.ResponseStream.ReadAllAsync(cancellationToken: cts.Token))
+                        await foreach (var returnMessage in streamingCall.ResponseStream.ReadAllAsync())
                         {
                            await ParseServerToClientMessage(returnMessage);
                         }
