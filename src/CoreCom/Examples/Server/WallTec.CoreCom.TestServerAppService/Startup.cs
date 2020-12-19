@@ -12,6 +12,7 @@ using Microsoft.AspNetCore.Http.Features;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.IdentityModel.Tokens;
+using WallTec.CoreCom.Example.Shared.Entitys;
 using WallTec.CoreCom.Server;
 using WallTec.CoreCom.TestServerAppService.Service;
 
@@ -78,22 +79,30 @@ namespace WallTec.CoreCom.TestServerAppService
             });
         }
 
-        private string GenerateJwtToken(string username, string password)
+        private String GenerateJwtToken(string username, string password)
         {
+            string clientId_From_Db;
             if (string.IsNullOrEmpty(username) || string.IsNullOrEmpty(password))
             {
                 throw new InvalidOperationException("Name or password is not specified.");
             }
 
-            if (username != "demo" && password != "1234")
-            { 
+            if ((username != "demoIos" || username != "demoDroid") && password != "1234")
+            {
                 throw new InvalidOperationException("Name or password is not specified.");
             }
-
-            var claims = new[] { new Claim(ClaimTypes.Name, username) };
+            else
+            {
+                if (username != "demoIos")
+                    clientId_From_Db = "Ios_clientid";
+                else
+                    clientId_From_Db = "Droid_clientid";
+            }
+            var claims = new[] { new Claim(ClaimTypes.Name, username), new Claim("ClientId", clientId_From_Db) };
             var credentials = new SigningCredentials(SecurityKey, SecurityAlgorithms.HmacSha256);
-            var token = new JwtSecurityToken("ExampleServer", "ExampleClients", claims, expires: DateTime.Now.AddSeconds(60), signingCredentials: credentials);
-            return JwtTokenHandler.WriteToken(token);
+            var token = new JwtSecurityToken("ExampleServer", "ExampleClients", claims, expires: DateTime.Now.AddMinutes(60), signingCredentials: credentials);
+            return String.Format("{0}|{1}", JwtTokenHandler.WriteToken(token), clientId_From_Db);
+            
         }
     }
 }
