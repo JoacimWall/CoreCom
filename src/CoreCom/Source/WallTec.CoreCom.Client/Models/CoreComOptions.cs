@@ -15,5 +15,7 @@ namespace WallTec.CoreCom.Client.Models
         public int MessageDeadLineSec { get; set; }
         public string ServerAddress { get; set; }
         public string ClientToken { get;  set; }
+        public string ClientId { get; set; }
+        
     }
 }

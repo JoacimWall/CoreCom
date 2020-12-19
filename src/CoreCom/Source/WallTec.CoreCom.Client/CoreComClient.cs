@@ -21,22 +21,12 @@ namespace WallTec.CoreCom.Client
     public class CoreComClient : INotifyPropertyChanged
     {
         #region Private Propertys
-        //GRPC Propertys
-        
         private GrpcWebHandler _httpHandler;
         private GrpcChannel _channel;
         private CoreComOptions _coreComOptions;
         private Proto.CoreCom.CoreComClient _coreComClient;
-        
-        private CancellationToken _cancellationToken;
-        private AsyncServerStreamingCall<CoreComMessage> _serverStream;
-        private Task _responseTask; //keep this
-        private string _token;
-        //Messages propertys
-        Guid _clientInstallId;
         private readonly List<Tuple<Func<CoreComUserInfo, Task>, string>> _receiveDelegatesOneParm = new List<Tuple<Func<CoreComUserInfo, Task>, string>>();
         private readonly List<Tuple<Func<object, CoreComUserInfo, Task>, string, Type>> _receiveDelegatesTwoParm = new List<Tuple<Func<object, CoreComUserInfo, Task>, string, Type>>();
-      
         private readonly List<MessageCureRecord> _messagesOutgoing = new List<MessageCureRecord>();
         
         //Offline Propertys
@@ -77,9 +67,8 @@ namespace WallTec.CoreCom.Client
         public bool Connect(CoreComOptions coreComOptions)
         {
             _coreComOptions = coreComOptions;
-             //Xamarin
-             //System.Guid? installId = await AppCenter.GetInstallIdAsync(); 
-             _clientInstallId = Guid.NewGuid();
+             
+            
 
             _timer.Interval = 2000;
             _timer.Enabled = true;
@@ -88,9 +77,7 @@ namespace WallTec.CoreCom.Client
         }
         public async Task<bool> ShutdownAsync()
         {
-            //await _duplexStream.RequestStream.CompleteAsync();
             await _channel.ShutdownAsync();
-
             return true;
         }
         public void Register(Func<CoreComUserInfo, Task> callback, string messageSignature)
@@ -196,7 +183,7 @@ namespace WallTec.CoreCom.Client
                
                 //Wait for channel to open for 5 sec default
                 var response = await _coreComClient.ClientConnectToServerAsync(new ConnectToServerRequest
-                                    { ClientInstallId = _clientInstallId.ToString() }, GetCallOptions(true));
+                                    { ClientId = _coreComOptions.ClientId }, GetCallOptions(true));
 
                 Console.WriteLine("Connected to Server " + _coreComOptions.ServerAddress);
                 _isConnecting = false;
@@ -251,7 +238,7 @@ namespace WallTec.CoreCom.Client
                 coreComMessage = new CoreComMessage
                 {
                     TransactionId = Guid.NewGuid().ToString(),
-                    ClientInstallId = _clientInstallId.ToString(),
+                    ClientId = _coreComOptions.ClientId.ToString(),
                     MessageSignature = messageSignature,
                     JsonObjectType = jsonObjectType,
                     JsonObject = jsonObject
@@ -292,52 +279,11 @@ namespace WallTec.CoreCom.Client
             {
                 return false;
             }
-            //Send message
-            //await SendCue();
+           
 
             return true;
         }
-        //private async Task<bool> SendCue()
-        //{
-        //    //send old messages 
-        //    while (_messagesOutgoing.Count > 0 && !_isConnecting)
-        //    {
-        //        try
-        //        {
-        //           var result = _coreComClient.ClientToServerCoreComMessageAsync(_messagesOutgoing[0]);
-        //            _messagesOutgoing.RemoveAt(0);
-        //        }
-        //        catch (Exception ex)
-        //        {
-        //            //Reconnect
-        //            if (!_isConnecting)
-        //            {
-        //                IsOnline = false;
-        //                _timer.Enabled = true;
-        //            }
-        //            return false;
-        //        }
-        //    }
-        //   // await GetCue();
-
-        //    return true;
-        //}
-        //private async Task<bool> GetCue()
-        //{
-
-        //    if (_serverStream == null)
-        //        _serverStream = _coreComClient.SubscribeServerToClient(new CoreComMessage { ClientInstallId = _clientInstallId.ToString(), MessageSignature = CoreComInternalSignatures.CoreComInternal_ConnectInstallId });
-
-        //    while (await _serverStream.ResponseStream.MoveNext())
-        //    {
-        //        //Console.WriteLine("Greeting: " + call.ResponseStream.Current.Message);
-        //        await ParseServerToClientMessage(_serverStream.ResponseStream.Current);
-
-        //    }
-
-        //    return true;
-
-        //}
+     
         private async Task ParseServerToClientMessage(CoreComMessage request)
         {
             if (request.MessageSignature.StartsWith("CoreComInternal"))
@@ -347,7 +293,7 @@ namespace WallTec.CoreCom.Client
             }
 
 
-            CoreComUserInfo coreComUserInfo = new CoreComUserInfo { ClientId = "", ClientInstallId = request.ClientInstallId };
+            CoreComUserInfo coreComUserInfo = new CoreComUserInfo { ClientId =  request.ClientId };
             if (string.IsNullOrEmpty(request.JsonObject))
             {
                 var funcToRun = _receiveDelegatesOneParm.FirstOrDefault(x => x.Item2 == request.MessageSignature);
@@ -378,42 +324,7 @@ namespace WallTec.CoreCom.Client
         {
 
         }
-        //private async Task HandleResponsesAsync(CancellationToken token)
-        //{
-
-        //    try
-        //    {
-        //        //if (_serverStream == null)
-        //        var callOptions = new CallOptions();
-        //        CallOptions calloptions = new CallOptions().WithWaitForReady(true);
-        //        calloptions = calloptions.WithDeadline(DateTime.UtcNow.AddSeconds(80));
-        //        using var  serverStream = _coreComClient.SubscribeServerToClient(new CoreComMessage { ClientInstallId = _clientInstallId.ToString(), MessageSignature = CoreComInternalSignatures.CoreComInternal_ConnectInstallId },callOptions);
-                
-                
-        //            while (await serverStream.ResponseStream.MoveNext())
-        //            {
-        //                Console.WriteLine("Incoming message: " + serverStream.ResponseStream.Current.MessageSignature);
-        //                await ParseServerToClientMessage(serverStream.ResponseStream.Current);
-
-
-        //            }
-                
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        //Reconnect
-        //        if (!_isConnecting)
-        //        {
-        //            IsOnline = false;
-        //            _timer.Enabled = true;
-        //        }
-        //    }
-        //    //Detta kräver .net standard 2.1 and Grpc.Net.Common
-        //    //await foreach (var update in stream.ReadAllAsync(token))
-        //    //{
-        //    //    Debug.WriteLine(update.MessageSignature);
-        //    //}
-        //}
+        
 
         #endregion
     }
