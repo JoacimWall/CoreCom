@@ -6,7 +6,7 @@ namespace WallTec.CoreCom.Sheard
 {
     public class CoreComUserInfo
     {
-        public string ClientInstallId { get; set; }
+        //public string ClientInstallId { get; set; }
         public string ClientId { get; set; }
     }
 }

@@ -31,11 +31,11 @@ namespace WallTec.CoreCom.Server
         public CoreComService(IConfiguration config)
         {
             _coreComOptions = new CoreComOptions();
-           
+
 
             _config = config;
             _coreComOptions.LogSettings.logSource = (logSource)Convert.ToInt32(_config["CoreCome:CoreComOptions:LogSettings_logSource"]);
-           
+
         }
 
         public async Task<bool> SendAsync(object outgoingObject, string messageSignature, CoreComUserInfo coreComUserInfo)
@@ -62,109 +62,100 @@ namespace WallTec.CoreCom.Server
         {
             _receiveDelegatesTwoParmAuth.Add(Tuple.Create(callback, messageSignature, type));
         }
-
+        
         public override async Task<ConnectToServerResponse> ClientConnectToServer(ConnectToServerRequest request, ServerCallContext context)
         {
-            return new ConnectToServerResponse { Response = "Hi you are connected", ServerDateTime = Timestamp.FromDateTime(DateTime.UtcNow) };
+            //Add Client
+            AddClient(request.ClientId);
+
+            return new ConnectToServerResponse { Response = "Client are connected", ServerDateTime = Timestamp.FromDateTime(DateTime.UtcNow) };
         }
         public override async Task SubscribeServerToClient(CoreComMessage request, IServerStreamWriter<CoreComMessage> responseStream, ServerCallContext context)
         {
-            AddClient(request);
-            var client = Clients.FirstOrDefault(x => x.CoreComUserInfo.ClientInstallId == request.ClientInstallId);
-
+            //First process messages so it's added to cure 
             await ParseClientToServerMessage(request);
+            //get cue
+            var client = Clients.FirstOrDefault(x => x.CoreComUserInfo.ClientId == request.ClientId);
+            //we have null ifall server restarted while client connected
+            if (client == null)
+                client = AddClient(request.ClientId);
 
             if (client.ClientIsSending)
             {
                 //Exit
             }
+            client.ClientIsSending = true;
 
 
-            while (!context.CancellationToken.IsCancellationRequested && client.ServerToClientMessages.Count > 0)
+            //send old messages 
+            while (context.Deadline > DateTime.Now && client.ServerToClientMessages.Count > 0)
             {
-                client.ClientIsSending = true;
-
-                //Send message
-                //await client.SendCue();
-
-                //send old messages 
-                while (client.ServerToClientMessages.Count > 0)
-                {
-                    try
-                    {   //send
-                        await responseStream.WriteAsync(client.ServerToClientMessages[0]);
-                        //logging
-                        await WriteOutgoingMessagesLog(client.ServerToClientMessages[0]);
-                        //Remove messages
-                        client.ServerToClientMessages.RemoveAt(0);
-                    }
-                    catch
-                    {
-                        //TODO:Add timer to send
-                        //Reconnect
-                        //if (!_isConnecting)
-                        //{
-                        //    IsOnline = false;
-                        //    _timer.Enabled = true;
-                        //}
-                        //return false;
-                    }
+                try
+                {   //send
+                    await responseStream.WriteAsync(client.ServerToClientMessages[0]);
+                    //logging
+                    await WriteOutgoingMessagesLog(client.ServerToClientMessages[0]);
+                    //Remove messages
+                    client.ServerToClientMessages.RemoveAt(0);
                 }
-
-
+                catch
+                {
+                    //TODO:Add timer to send
+                    //Reconnect
+                    //if (!_isConnecting)
+                    //{
+                    //    IsOnline = false;
+                    //    _timer.Enabled = true;
+                    //}
+                    //return false;
+                }
             }
 
+            client.ClientIsSending = false;
         }
+
+       
 
         //Authenticated functions
         [Authorize]
         public override async Task SubscribeServerToClientAuth(CoreComMessage request, IServerStreamWriter<CoreComMessage> responseStream, ServerCallContext context)
         {
-            AddClient(request);
-            var client = Clients.FirstOrDefault(x => x.CoreComUserInfo.ClientInstallId == request.ClientInstallId);
-
+            
+            //First process messages so it's added to cure 
             await ParseClientToServerMessageAuth(request);
+            //get cue
+            var client = Clients.FirstOrDefault(x => x.CoreComUserInfo.ClientId == request.ClientId);
+            //we have null ifall server restarted while client connected
+            if (client == null)
+                client= AddClient(request.ClientId);
 
             if (client.ClientIsSending)
             {
                 //Exit
             }
+            //Test deadline
+            //await Task.Delay(25000);
+            client.ClientIsSending = true;
 
-            
-            while (!context.CancellationToken.IsCancellationRequested && client.ServerToClientMessages.Count > 0)
+            //send old messages 
+            while (context.Deadline > DateTime.Now && client.ServerToClientMessages.Count > 0)
             {
-                client.ClientIsSending = true;
-
-                //Send message
-                //await client.SendCue();
-
-                //send old messages 
-                while (client.ServerToClientMessages.Count > 0)
-                {
-                    try
-                    {   //send
-                        await responseStream.WriteAsync(client.ServerToClientMessages[0]);
-                        //logging
-                        await WriteOutgoingMessagesLog(client.ServerToClientMessages[0]);
-                        //Remove messages
-                        client.ServerToClientMessages.RemoveAt(0);
-                    }
-                    catch
-                    {
-                        //TODO:Add timer to send
-                        //Reconnect
-                        //if (!_isConnecting)
-                        //{
-                        //    IsOnline = false;
-                        //    _timer.Enabled = true;
-                        //}
-                        //return false;
-                    }
+                try
+                {   //send
+                    await responseStream.WriteAsync(client.ServerToClientMessages[0]);
+                    //logging
+                    await WriteOutgoingMessagesLog(client.ServerToClientMessages[0]);
+                    //Remove messages
+                    client.ServerToClientMessages.RemoveAt(0);
                 }
-
-
+                catch
+                {
+                    
+                }
             }
 
+
+            client.ClientIsSending = false;
         }
 
         //public override async Task<CoreComMessage> ClientToServerCoreComMessage(CoreComMessage request, ServerCallContext context)
@@ -206,26 +197,26 @@ namespace WallTec.CoreCom.Server
         //    return new CoreComMessageResponse();
         //}
         #region "private functions"
-       
-        // private Func<CoreComMessage, Task> _actionLogOutgoingMessage;
 
-        
-        internal bool AddClient(CoreComMessage coreComMessage) //, IAsyncStreamWriter<CoreComMessage> stream
+       
+
+        internal Client AddClient(string clientId) 
         {
-            if (!Clients.Any(c => c.CoreComUserInfo.ClientInstallId == coreComMessage.ClientInstallId))
+            Client client;
+            if (!Clients.Any(c => c.CoreComUserInfo.ClientId == clientId))
             {
-                Console.WriteLine("Client connected for duplex messages" + coreComMessage.ClientInstallId);
-                Clients.Add(new Client { CoreComUserInfo = new CoreComUserInfo { ClientInstallId = coreComMessage.ClientInstallId } }); //, Stream = stream
+                Console.WriteLine("Client connected" + clientId);
+                    client = new Client { CoreComUserInfo = new CoreComUserInfo { ClientId = clientId } };
+                Clients.Add(client); //, Stream = stream
             }
             else
             {   //reconnect
-                Console.WriteLine("Client reconnected for duplex messages" + coreComMessage.ClientInstallId);
-                var client = Clients.FirstOrDefault(c => c.CoreComUserInfo.ClientInstallId == coreComMessage.ClientInstallId);
-                // client.Stream = stream;
-
+                Console.WriteLine("Client reconnected" + clientId);
+                client = Clients.FirstOrDefault(c => c.CoreComUserInfo.ClientId == clientId);
             }
-            return true;
+             return client;
         }
+
         private async Task ParseClientToServerMessage(CoreComMessage request)
         {
             //this only hapend after first messages bin sent
@@ -238,7 +229,7 @@ namespace WallTec.CoreCom.Server
             await WriteIncommingMessagesLog(request);
 
 
-            CoreComUserInfo coreComUserInfo = new CoreComUserInfo { ClientInstallId = request.ClientInstallId, ClientId = "" };
+            CoreComUserInfo coreComUserInfo = new CoreComUserInfo { ClientId = request.ClientId };
             if (string.IsNullOrEmpty(request.JsonObject))
             {
                 var funcToRun = _receiveDelegatesOneParm.FirstOrDefault(x => x.Item2 == request.MessageSignature);
@@ -277,7 +268,7 @@ namespace WallTec.CoreCom.Server
             await WriteIncommingMessagesLog(request);
 
 
-            CoreComUserInfo coreComUserInfo = new CoreComUserInfo { ClientInstallId = request.ClientInstallId, ClientId = "" };
+            CoreComUserInfo coreComUserInfo = new CoreComUserInfo { ClientId = request.ClientId };
             if (string.IsNullOrEmpty(request.JsonObject))
             {
                 var funcToRun = _receiveDelegatesOneParmAuth.FirstOrDefault(x => x.Item2 == request.MessageSignature);
@@ -310,7 +301,7 @@ namespace WallTec.CoreCom.Server
         }
 
         private async Task WriteIncommingMessagesLog(CoreComMessage request)
-            {
+        {
             if (_coreComOptions.LogSettings.logSource != logSource.TextFile)
                 return;
 
@@ -320,7 +311,7 @@ namespace WallTec.CoreCom.Server
             // Write the specified text asynchronously to a new file named "WriteTextAsync.txt".
             using (StreamWriter outputFile = new StreamWriter(Path.Combine(docPath, "IncommingMessages.log"), true))
             {
-                await outputFile.WriteLineAsync(DateTime.UtcNow.ToString() + "\t" + request.TransactionId + "\t" + request.ClientInstallId + "\t" + request.ClientId + "\t" + request.MessageSignature);
+                await outputFile.WriteLineAsync(DateTime.UtcNow.ToString() + "\t" + request.TransactionId + "\t" + request.ClientId + "\t" + request.ClientId + "\t" + request.MessageSignature);
             }
 
 
@@ -336,7 +327,7 @@ namespace WallTec.CoreCom.Server
             // Write the specified text asynchronously to a new file named "WriteTextAsync.txt".
             using (StreamWriter outputFile = new StreamWriter(Path.Combine(docPath, "OutgoningMessages.log"), true))
             {
-                await outputFile.WriteLineAsync(DateTime.UtcNow.ToString() + "\t" + request.TransactionId + "\t" + request.ClientInstallId + "\t" + request.ClientId + "\t" + request.MessageSignature);
+                await outputFile.WriteLineAsync(DateTime.UtcNow.ToString() + "\t" + request.TransactionId + "\t" + request.ClientId + "\t" + request.ClientId + "\t" + request.MessageSignature);
             }
 
 
@@ -360,13 +351,13 @@ namespace WallTec.CoreCom.Server
                 coreComMessage = new CoreComMessage
                 {
                     TransactionId = Guid.NewGuid().ToString(),
-                    ClientInstallId = coreComUserInfo.ClientInstallId,
+                    ClientId = coreComUserInfo.ClientId,
                     MessageSignature = messageSignature,
                     JsonObjectType = jsonObjectType,
                     JsonObject = jsonObject
                 };
 
-                client = Clients.First(x => x.CoreComUserInfo.ClientInstallId == coreComUserInfo.ClientInstallId);
+                client = Clients.First(x => x.CoreComUserInfo.ClientId == coreComUserInfo.ClientId);
                 client.ServerToClientMessages.Add(coreComMessage);
 
             }
@@ -374,7 +365,7 @@ namespace WallTec.CoreCom.Server
             {
                 return false;
             }
-            
+
 
             return true;
 
