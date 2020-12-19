@@ -6,9 +6,16 @@ namespace WallTec.CoreCom.Client.Models
 {
     public class CoreComOptions
     {
-        //public int PortNumber { get; set; }
+        public CoreComOptions()
+        {
+            ConnectToServerDeadLineSec = 5;
+            MessageDeadLineSec = 30;
+        }
+        public int ConnectToServerDeadLineSec { get; set; }
+        public int MessageDeadLineSec { get; set; }
         public string ServerAddress { get; set; }
-        public bool ClientIsMobile { get; set; }
-        public string ClientToken { get; set; }
+        public string ClientToken { get;  set; }
+        public string ClientId { get; set; }
+        
     }
 }

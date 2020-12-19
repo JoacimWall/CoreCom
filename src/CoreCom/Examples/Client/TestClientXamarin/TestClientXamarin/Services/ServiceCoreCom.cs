@@ -11,6 +11,7 @@ using WallTec.CoreCom.Client.Models;
 using WallTec.CoreCom.Example.Shared;
 using WallTec.CoreCom.Example.Shared.Entitys;
 using WallTec.CoreCom.Sheard;
+using Xamarin.Essentials;
 using Xamarin.Forms;
 
 namespace TestClientXamarin.Services
@@ -79,8 +80,15 @@ namespace TestClientXamarin.Services
                 return false;
 
             coreComOptions.ClientToken = token;
+            //Cross-Platform Identifier for the app stay the same as long the app is installed 
+            var id = Preferences.Get("my_id", string.Empty);
+            if (string.IsNullOrWhiteSpace(id))
+            {
+                id = System.Guid.NewGuid().ToString();
+                Preferences.Set("my_id", id);
+            }
+            coreComOptions.ClientId = id;
 
-            
             _coreComClient.Connect(coreComOptions);
             //if (!response)
             //{
