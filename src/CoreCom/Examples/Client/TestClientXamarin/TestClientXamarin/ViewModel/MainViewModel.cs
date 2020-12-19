@@ -23,6 +23,8 @@ namespace TestClientXamarin.ViewModel
             });
             MessagingCenter.Subscribe<Project>(this, MessageConstants.AddedProjectsListUpdate, (sender) =>
             {
+                if (_projects == null)
+                    Projects = new ObservableCollection<Project>();
                 Projects.Add(sender);
             });
 
@@ -32,10 +34,10 @@ namespace TestClientXamarin.ViewModel
 
        
 
-        public ICommand GetProjectsCommand => new Command(async () => await GetProjectsCAsync());
-        public ICommand AddProjectsCommand => new Command(async () => await AddProjectsCAsync());
+        public ICommand GetProjectsCommand => new Command(async () => await GetProjectsAsync());
+        public ICommand AddProjectsCommand => new Command(async () => await AddProjectsAsync());
         
-        private async Task AddProjectsCAsync()
+        private async Task AddProjectsAsync()
         {
             App.ServiceCoreCom.SendAuthAsync(new Project { Name = AddProjectName, Description = "project added from client" }, CoreComSignatures.AddProject);
             
@@ -44,7 +46,7 @@ namespace TestClientXamarin.ViewModel
         {
             App.ServiceCoreCom.CoreComClient.CheckServerCue();
         }
-        private async Task GetProjectsCAsync()
+        private async Task GetProjectsAsync()
         {
             App.ServiceCoreCom.SendAsync(CoreComSignatures.RequestAllProjects);
         }
