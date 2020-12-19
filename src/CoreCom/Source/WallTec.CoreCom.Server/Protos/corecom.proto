@@ -17,7 +17,7 @@ service CoreCom {
 	//rpc ClientToServerCoreComMessage(CoreComMessage) returns (CoreComMessageResponse);
 }
 message ConnectToServerRequest {
-	string clientInstallId = 1;
+	string clientId = 1;
 	
 }
 message ConnectToServerResponse {
@@ -25,33 +25,14 @@ message ConnectToServerResponse {
 	google.protobuf.Timestamp ServerDateTime = 2;
 	
 }
-//message SubscribeServerToClientRequest {
-//	string clientInstallId = 1;
-	
-//}
-
-//message CoreComMessageSubscribeResponse {
-//	string clientInstallId = 1;
-//	string clientId = 2;
-//	string messageSignature = 3;
-//	string transactionId =4;
-//	string jsonObjectType =5;
-//	string jsonObject =6;
-	
-//}
 
 message CoreComMessage {
-	string clientInstallId = 1;
-	string clientId = 2;
-	string messageSignature = 3;
-	string transactionId =4;
-	string jsonObjectType =5;
-	string jsonObject =6;
+	string clientId = 1;
+	string messageSignature = 2;
+	string transactionId =3;
+	string jsonObjectType =4;
+	string jsonObject =5;
 	
 }
 
 
-
-//message CoreComMessageResponse {
-//	string status = 1;
-//}

@@ -30,7 +30,7 @@ namespace WallTec.CoreCom.TestServerAppService.Service
             //send the new projet to all client that are connected 
             foreach (var item in _coreComService.Clients)
             {
-                await _coreComService.SendAsync(value as Project, CoreComSignatures.AddProject, new CoreComUserInfo { ClientInstallId = item.CoreComUserInfo.ClientInstallId });
+                await _coreComService.SendAsync(value as Project, CoreComSignatures.AddProject, new CoreComUserInfo { ClientId = item.CoreComUserInfo.ClientId });
             }
             return true;
         }
