@@ -17,7 +17,13 @@ using WallTec.CoreCom.Proto;
 
 namespace WallTec.CoreCom.Client
 {
-    
+    public enum ConnectionStatus 
+    {
+        Disconnected=0,
+        Connecting = 1,
+        Connected =2
+
+    }
     public class CoreComClient : INotifyPropertyChanged
     {
         #region Private Propertys
@@ -30,56 +36,88 @@ namespace WallTec.CoreCom.Client
         private readonly List<MessageCureRecord> _messagesOutgoing = new List<MessageCureRecord>();
         
         //Offline Propertys
-        bool _isConnecting;
         private System.Timers.Timer _timer;
-
+        private System.Timers.Timer _checkCueTimer;
 
         #endregion
         #region Public Propertys
         public event PropertyChangedEventHandler PropertyChanged;
-        private bool _isOnline;
-        public bool IsOnline
+        private ConnectionStatus _connectionStatus;
+        public ConnectionStatus ConnectionStatus
         {
             get
             {
-                return _isOnline;
+                return _connectionStatus;
             }
 
             set
             {
-                if (value != _isOnline)
+                if (value != _connectionStatus)
                 {
-                    _isOnline = value;
+                    _connectionStatus = value;
                     NotifyPropertyChanged();
                 }
             }
         }
+        private RpcException _latestRpcException;
+        public RpcException LatestRpcException
+        {
+            get
+            {
+                return _latestRpcException;
+            }
 
+            set
+            {
+                if (value != _latestRpcException)
+                {
+                    _latestRpcException = value;
+                    NotifyPropertyChanged();
+                }
+            }
+        }
+        
         #endregion
         #region Public Functions
         public CoreComClient()
         {
             // Create a timer with a ten second interval.
-            _timer = new System.Timers.Timer(2000);
+            _timer = new System.Timers.Timer(1000);
             _timer.Elapsed += OnConnectTimedEvent;
+
+
+            _checkCueTimer = new System.Timers.Timer(30000);
+            _checkCueTimer.Elapsed += _checkCueTimer_Elapsed;
+
+            // Register for connectivity changes, be sure to unsubscribe when finished
+            //Xamarin.Essentials.Connectivity.ConnectivityChanged += Connectivity_ConnectivityChanged;
         }
+
+        //void Connectivity_ConnectivityChanged(object sender, ConnectivityChangedEventArgs e)
+        //{
+        //    var access = e.NetworkAccess;
+        //    var profiles = e.ConnectionProfiles;
+        //}
+
 
         public bool Connect(CoreComOptions coreComOptions)
         {
             _coreComOptions = coreComOptions;
-             
+
+            if (coreComOptions.ProcessQueueIntervalSec >= 0)
+                _checkCueTimer.Interval = coreComOptions.ProcessQueueIntervalSec * 1000;
+
+            //start timmer for connect to server
+            _timer.Enabled = true;
             
 
-            _timer.Interval = 2000;
-            _timer.Enabled = true;
-
             return true;
         }
-        public async Task<bool> ShutdownAsync()
-        {
-            await _channel.ShutdownAsync();
-            return true;
-        }
+        //public async Task<bool> ShutdownAsync()
+        //{
+        //    await _channel.ShutdownAsync();
+        //    return true;
+        //}
         public void Register(Func<CoreComUserInfo, Task> callback, string messageSignature)
         {
             _receiveDelegatesOneParm.Add(Tuple.Create(callback, messageSignature));
@@ -123,34 +161,40 @@ namespace WallTec.CoreCom.Client
         private async void OnConnectTimedEvent(object sender, ElapsedEventArgs e)
         {
             _timer.Enabled = false;
-            //First time 2 sec
-            if (_timer.Interval != Convert.ToDouble(2000))
-            {   //after connection error wait 20 sec to try
-                _timer.Interval = 20000;
+            //First time 1 sec
+            if (_timer.Interval == Convert.ToDouble(1000))
+            {   //after connection error wait 10 sec to try
+                _timer.Interval = 10000;
             }
             await OpenChannel();
 
         }
-        private CallOptions GetCallOptions(bool isConnectToServer=false)
+        private async void _checkCueTimer_Elapsed(object sender, ElapsedEventArgs e)
+        {
+            _checkCueTimer.Enabled = false;
+            await SendAsync(CoreComInternalSignatures.CoreComInternal_PullCue);
+        }
+
+        private CallOptions GetCallOptions(bool isConnectToServer=false,bool addAuth = false )
         {
 
             int deadlineSec;
             if (isConnectToServer)
-                deadlineSec = _coreComOptions.ConnectToServerDeadLineSec;
+                deadlineSec = _coreComOptions.ConnectToServerDeadlineSec;
             else
-                deadlineSec = _coreComOptions.MessageDeadLineSec;
+                deadlineSec = _coreComOptions.MessageDeadlineSec;
 
             CallOptions calloptions;
-            if (!string.IsNullOrEmpty(_coreComOptions.ClientToken))
+            if (addAuth && !string.IsNullOrEmpty(_coreComOptions.ClientToken))
             {
                 var headers = new Metadata();
                 headers.Add("Authorization", $"Bearer {_coreComOptions.ClientToken}");
-                calloptions = new CallOptions(headers).WithWaitForReady(true);
+                calloptions = new CallOptions(headers);//.WithWaitForReady(true)
                 calloptions = calloptions.WithDeadline(DateTime.UtcNow.AddSeconds(deadlineSec));
             }
             else
             {
-                calloptions = new CallOptions().WithWaitForReady(true);
+                calloptions = new CallOptions();//.WithWaitForReady(true)
                 calloptions = calloptions.WithDeadline(DateTime.UtcNow.AddSeconds(deadlineSec));
             }
             return calloptions;
@@ -159,12 +203,11 @@ namespace WallTec.CoreCom.Client
         {
             try
             {
-                if (_isConnecting)
+                if (_connectionStatus == ConnectionStatus.Connecting)
                     return false;
 
-                _isConnecting = true;
-                IsOnline = false;
-
+                ConnectionStatus = ConnectionStatus.Connecting;
+                
                 _httpHandler = new GrpcWebHandler(GrpcWebMode.GrpcWebText,new HttpClientHandler());
                 //if (_coreComOptions.ClientIsMobile)
                 //{  
@@ -172,22 +215,32 @@ namespace WallTec.CoreCom.Client
                 //    //AppContext.SetSwitch("System.Net.Http.SocketsHttpHandler.Http2UnencryptedSupport", true);
                 //    _httpHandler.ServerCertificateCustomValidationCallback = HttpClientHandler.DangerousAcceptAnyServerCertificateValidator;
                 //}
+                //Check if the channel is open den shutdown before create new
+                if (_channel != null)
+                    await _channel.ShutdownAsync();
 
                 _channel = GrpcChannel.ForAddress($"{_coreComOptions.ServerAddress}", new GrpcChannelOptions
                 {
                     HttpHandler =  _httpHandler
-                }); 
+                });
 
-                
+                if (_coreComClient == null)
+                    _coreComClient = null;
+
                 _coreComClient = new Proto.CoreCom.CoreComClient(_channel);
                
                 //Wait for channel to open for 5 sec default
                 var response = await _coreComClient.ClientConnectToServerAsync(new ConnectToServerRequest
-                                    { ClientId = _coreComOptions.ClientId }, GetCallOptions(true));
+                                    { ClientId = _coreComOptions.ClientId }, GetCallOptions(true).WithWaitForReady(true));
 
                 Console.WriteLine("Connected to Server " + _coreComOptions.ServerAddress);
-                _isConnecting = false;
-                IsOnline = true;
+
+                ConnectionStatus = ConnectionStatus.Connected;
+                //Start timmer for check cue server and client
+                if (_coreComOptions.ProcessQueueIntervalSec > 0)
+                    _checkCueTimer.Enabled = true;
+
+                LatestRpcException = null;
                 //send current cue
                // var result = await SendCue();
 
@@ -195,10 +248,13 @@ namespace WallTec.CoreCom.Client
             }
             catch (RpcException ex)
             {
-                if (ex.StatusCode == StatusCode.DeadlineExceeded)
+                LatestRpcException = ex;
+                if (ex.StatusCode == StatusCode.DeadlineExceeded ||
+                    ex.StatusCode == StatusCode.PermissionDenied ||
+                    ex.StatusCode == StatusCode.Unavailable)
                 {
-                    IsOnline = false;
-                    _isConnecting = false;
+
+                    ConnectionStatus = ConnectionStatus.Disconnected;
                     _timer.Enabled = true;
 
                 }
@@ -208,13 +264,13 @@ namespace WallTec.CoreCom.Client
             }
             catch (Exception ex)
             {
-                IsOnline = false;
+                ConnectionStatus = ConnectionStatus.Disconnected;
                 _timer.Enabled = true;
                 return false;
             }
             finally
             {
-                _isConnecting = false;
+                
 
             }
 
@@ -225,10 +281,12 @@ namespace WallTec.CoreCom.Client
             string jsonObjectType = string.Empty;
             string jsonObject= string.Empty;
             CoreComMessage coreComMessage;
-            //Build  message
+            
             try
             {
-                //error reort to client
+                //Turn of timmer for message cue as we get the cue from this call
+                _checkCueTimer.Enabled = false;
+                //error report to client
                 if (outgoingObject != null)
                 {
                     jsonObjectType = outgoingObject.GetType().ToString();
@@ -247,37 +305,62 @@ namespace WallTec.CoreCom.Client
 
            
                  _messagesOutgoing.Add(new MessageCureRecord { CoreComMessage = coreComMessage, SendAuth =sendAuth } );
-                
-                
-                while (_messagesOutgoing.Count > 0 && !_isConnecting)
+
+                bool exit = false; 
+                while (_messagesOutgoing.Count > 0 && ConnectionStatus == ConnectionStatus.Connected && !exit)
                 {
                     AsyncServerStreamingCall<CoreComMessage> streamingCall;
                     if (_messagesOutgoing[0].SendAuth)
                     {
-                        streamingCall = _coreComClient.SubscribeServerToClientAuth(_messagesOutgoing[0].CoreComMessage, GetCallOptions());
+                        streamingCall = _coreComClient.SubscribeServerToClientAuth(_messagesOutgoing[0].CoreComMessage, GetCallOptions(false,sendAuth));
                     }
                     else
                     {
-                        streamingCall = _coreComClient.SubscribeServerToClient(_messagesOutgoing[0].CoreComMessage, GetCallOptions());
+                        streamingCall = _coreComClient.SubscribeServerToClient(_messagesOutgoing[0].CoreComMessage, GetCallOptions(false, sendAuth));
                     }
                     //using var streamingCall = _coreComClient.SubscribeServerToClient(_messagesOutgoing[0].CoreComMessage, GetCallOptions());
-                    _messagesOutgoing.RemoveAt(0);
+                    
                     try
                     {
                         await foreach (var returnMessage in streamingCall.ResponseStream.ReadAllAsync())
                         {
                            await ParseServerToClientMessage(returnMessage);
                         }
+                        _messagesOutgoing.RemoveAt(0);
                     }
-                    catch (RpcException ex) when (ex.StatusCode == StatusCode.Cancelled)
+                    catch (RpcException ex) 
                     {
-                        Console.WriteLine("Stream cancelled.");
+                        ConnectionStatus = ConnectionStatus.Disconnected; 
+                        LatestRpcException = ex;
+                        exit = true;
+                        switch (ex.StatusCode)
+                        {
+                            case StatusCode.Cancelled:
+                                Console.WriteLine("Stream cancelled.");
+                                break;
+                            case StatusCode.PermissionDenied:
+                            case StatusCode.Unavailable:
+                                Console.WriteLine("PermissionDenied/Unavailable");
+                                if (!_timer.Enabled)
+                                    _timer.Enabled = true;
+                                break;
+                            case StatusCode.Unauthenticated:
+                                Console.WriteLine("Unauthenticated.");
+                                break; 
+                            default:
+                                break;
+                        }
+                        
                     }
                 }
+                //Start timmer for check cue server and client
+                if (_coreComOptions.ProcessQueueIntervalSec > 0)
+                    _checkCueTimer.Enabled = true;
             }
             catch (Exception ex)
             {
-                return false;
+                throw ex;
+                
             }
            
 

@@ -31,8 +31,12 @@ namespace TestClientXamarin.ViewModel
         }
 
         public ICommand CheckCueCommand => new Command(async () => await CheckCueCommandAsync());
+        public ICommand ConnectToServerCommand => new Command(async () => await ConnectCommandAsync());
 
-       
+        private async Task ConnectCommandAsync()
+        {
+            await App.ServiceCoreCom.ConnectCoreComServer();
+        }
 
         public ICommand GetProjectsCommand => new Command(async () => await GetProjectsAsync());
         public ICommand AddProjectsCommand => new Command(async () => await AddProjectsAsync());

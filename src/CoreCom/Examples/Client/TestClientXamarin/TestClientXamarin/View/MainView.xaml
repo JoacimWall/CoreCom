@@ -5,6 +5,7 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:ios="clr-namespace:Xamarin.Forms.PlatformConfiguration.iOSSpecific;assembly=Xamarin.Forms.Core"
              xmlns:viewmodel="clr-namespace:TestClientXamarin.ViewModel"
+             xmlns:converters="clr-namespace:TestClientXamarin.Converters"
              ios:Page.UseSafeArea="true"
              mc:Ignorable="d"
              BackgroundColor="Gray"
@@ -12,22 +13,33 @@
     <ContentPage.BindingContext>
         <viewmodel:MainViewModel  />
     </ContentPage.BindingContext>
+    <ContentPage.Resources>
+        <ResourceDictionary>
+             <converters:ConnectionStatusConverter x:Key="ConnectionStatusConverter" />
+        </ResourceDictionary>
+    </ContentPage.Resources>
+    
     <Grid Margin="{OnPlatform Android='5,5,5,5', iOS='5,5,5,5'}"
-          RowDefinitions="Auto, Auto, Auto, *" ColumnDefinitions="*, *">
+          RowDefinitions="Auto, Auto,Auto, Auto, *" ColumnDefinitions="*, *">
         <StackLayout Grid.ColumnSpan="2" Orientation="Horizontal" HorizontalOptions="Center">
-            <Label Text="Client is online:"/>
-            <Label Text="{Binding ServiceCoreCom.CoreComClient.IsOnline}"/>
+            <Label Text="Connection Status:"/>
+            <Label Text="{Binding ServiceCoreCom.CoreComClient.ConnectionStatus, Converter={StaticResource ConnectionStatusConverter}}" HorizontalOptions="Fill" HorizontalTextAlignment="Center"/>
+            
         </StackLayout>
-        <StackLayout Grid.ColumnSpan="2" Grid.Row="1" Orientation="Horizontal">
+        <Label Grid.Row="1" Grid.ColumnSpan="2" Text="{Binding ServiceCoreCom.CoreComClient.LatestRpcException.Status.Detail}" HorizontalOptions="Fill" HorizontalTextAlignment="Center"/>
+
+        <StackLayout Grid.ColumnSpan="2" Grid.Row="2" Orientation="Horizontal">
             <Button x:Name="CheckCueProject" Padding="5" Margin="5" Text="Check Cue"  BackgroundColor="LightGray" Command="{Binding  CheckCueCommand}" />
             <Button x:Name="GetProjects" Padding="5" Margin="5" Text="Get Projects" BackgroundColor="LightGray" Command="{Binding  GetProjectsCommand}" />
+            <Button x:Name="ConnectToServer" Padding="5" Margin="5" Text="Reauthorize" BackgroundColor="LightGray" Command="{Binding  ConnectToServerCommand}" />
+    
         </StackLayout>
-        <StackLayout Grid.Row="2" Grid.ColumnSpan="2" Orientation="Horizontal">
+        <StackLayout Grid.Row="3" Grid.ColumnSpan="2" Orientation="Horizontal">
            
             <Button x:Name="AddProject" Padding="5" Margin="5" Text="Add Project" Command="{Binding  AddProjectsCommand}" BackgroundColor="LightGray" />
             <Entry Placeholder="Project Name" Margin="5" Text="{Binding AddProjectName}" HorizontalOptions="FillAndExpand" />
         </StackLayout>
-        <ListView Grid.Row="3" Grid.ColumnSpan="2" SeparatorVisibility="None" HasUnevenRows="True" ItemsSource="{Binding Projects}" BackgroundColor="White" >
+        <ListView Grid.Row="4" Grid.ColumnSpan="2" SeparatorVisibility="None" HasUnevenRows="True" ItemsSource="{Binding Projects}" BackgroundColor="White" >
             <ListView.ItemTemplate>
                 <DataTemplate>
                     <ViewCell>

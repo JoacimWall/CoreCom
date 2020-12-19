@@ -36,5 +36,8 @@
     <None Include="View\MainView.xaml" />
     <None Include="App.xaml" />
   </ItemGroup>
+  <ItemGroup>
+    <Folder Include="Converters\" />
+  </ItemGroup>
   <Import Project="..\..\..\Shared\WallTec.CoreCom.Example.Shared\WallTec.CoreCom.Example.Shared.projitems" Label="Shared" />
 </Project>

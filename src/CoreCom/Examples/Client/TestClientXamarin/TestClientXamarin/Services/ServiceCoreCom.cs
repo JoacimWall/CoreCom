@@ -19,9 +19,10 @@ namespace TestClientXamarin.Services
 
     public class ServiceCoreCom : MvvmHelpers.ObservableObject
     {
-        private  CoreComClient _coreComClient = new CoreComClient();
+        private CoreComClient _coreComClient = new CoreComClient();
+        private CoreComOptions  _coreComOptions = new CoreComOptions();
         private static InMemoryData _inMemoryData = new InMemoryData();
-        
+
         public CoreComClient CoreComClient
         {
             get { return _coreComClient; }
@@ -29,35 +30,39 @@ namespace TestClientXamarin.Services
         }
         public ServiceCoreCom()
         {
-        
+
         }
-        private async Task<string> Authenticate(CoreComOptions coreComOptions, string username,string password)
+        private async Task<bool> Authenticate(string username, string password)
         {
             try
             {
-  
-            Console.WriteLine($"Authenticating as {username}...");
-            var httpClient = new HttpClient();
-            var request = new HttpRequestMessage
-            {
-                RequestUri = new Uri($"{coreComOptions.ServerAddress}/generateJwtToken?username={HttpUtility.UrlEncode(username)}&password={HttpUtility.UrlEncode(password)}"),
-                Method = HttpMethod.Get,
-                Version = new Version(2, 0)
-            };
-            var tokenResponse = await httpClient.SendAsync(request);
-            tokenResponse.EnsureSuccessStatusCode();
 
-            var token = await tokenResponse.Content.ReadAsStringAsync();
-            Console.WriteLine("Successfully authenticated.");
+                Console.WriteLine($"Authenticating as {username}...");
+                var httpClient = new HttpClient();
+                var request = new HttpRequestMessage
+                {
+                    RequestUri = new Uri($"{_coreComOptions.ServerAddress}/generateJwtToken?username={HttpUtility.UrlEncode(username)}&password={HttpUtility.UrlEncode(password)}"),
+                    Method = HttpMethod.Get,
+                    Version = new Version(2, 0)
+                };
+                var tokenResponse = await httpClient.SendAsync(request);
+                tokenResponse.EnsureSuccessStatusCode();
 
-            return token;
+                var token = await tokenResponse.Content.ReadAsStringAsync();
+                Console.WriteLine("Successfully authenticated.");
+                string[] values = token.Split("|");
+
+                _coreComOptions.ClientToken = values[0];
+                _coreComOptions.ClientId = values[1];
+
+                return true;
             }
             catch (Exception ex)
             {
-                return string.Empty;
+                return false;
             }
         }
-        
+
 
 
         public async Task<bool> SetupCoreComServer()
@@ -67,37 +72,41 @@ namespace TestClientXamarin.Services
             _coreComClient.Register(GetAllProjects, CoreComSignatures.ResponseAllProjects, new List<Project>().GetType());
             _coreComClient.Register(GetAddedProject, CoreComSignatures.AddProject, new Project().GetType());
 
-            CoreComOptions coreComOptions = new CoreComOptions();
             //local debug
             //coreComOptions.ServerAddress =  (Device.RuntimePlatform == Device.Android ? "https://10.0.2.2:5001" : "https://192.168.2.121:5001");
             //azure debug
-            coreComOptions.ServerAddress =  "https://wallteccorecomtestserver.azurewebsites.net";
-           
-
-            //Get Token
-            var token = await Authenticate(coreComOptions, "demo","1234");
-            if (string.IsNullOrEmpty(token))
-                return false;
-
-            coreComOptions.ClientToken = token;
-            //Cross-Platform Identifier for the app stay the same as long the app is installed 
-            var id = Preferences.Get("my_id", string.Empty);
-            if (string.IsNullOrWhiteSpace(id))
-            {
-                id = System.Guid.NewGuid().ToString();
-                Preferences.Set("my_id", id);
-            }
-            coreComOptions.ClientId = id;
-
-            _coreComClient.Connect(coreComOptions);
-            //if (!response)
-            //{
-            //    return false;
-            //}
-           
+            _coreComOptions.ServerAddress = "https://wallteccorecomtestserver.azurewebsites.net";
+            _coreComOptions.ProcessQueueIntervalSec = 10;
+            
             return true;
         }
+        public async Task<bool> ConnectCoreComServer()
+        {
 
+            #region "Authentication with backen token and clientId from database"
+            //coreComOptions.ClientId and coreComOptions.ClientToken is set inside the Authenticate method
+            string username = (Device.RuntimePlatform == Device.Android ? "demoDroid" : "demoIos"); //simulate diffrent user
+            var token = await Authenticate(username, "1234");
+            if (!token)
+                return false;
+            #endregion
+
+            #region "No Authentication"
+            //Cross-Platform Identifier for the app stay the same as long the app is installed
+            //in this senario all backend API is public and the server use guid below to seperate diffrent users requests
+            //var id = Preferences.Get("my_id", string.Empty);
+            //if (string.IsNullOrWhiteSpace(id))
+            //{
+            //    id = System.Guid.NewGuid().ToString();
+            //    Preferences.Set("my_id", id);
+            //}
+            //coreComOptions.ClientId = id;
+            #endregion
+
+            _coreComClient.Connect(_coreComOptions);
+
+            return true;
+        }
         public async void SendAsync(object outgoingObject, string messageSignature)
         {
             await _coreComClient.SendAsync(outgoingObject, messageSignature);

@@ -8,11 +8,13 @@ namespace WallTec.CoreCom.Client.Models
     {
         public CoreComOptions()
         {
-            ConnectToServerDeadLineSec = 5;
-            MessageDeadLineSec = 30;
+            ConnectToServerDeadlineSec = 5;
+            MessageDeadlineSec = 30;
+            ProcessQueueIntervalSec = 30;
         }
-        public int ConnectToServerDeadLineSec { get; set; }
-        public int MessageDeadLineSec { get; set; }
+        public int ConnectToServerDeadlineSec { get; set; }
+        public int MessageDeadlineSec { get; set; }
+        public int ProcessQueueIntervalSec { get; set; }
         public string ServerAddress { get; set; }
         public string ClientToken { get;  set; }
         public string ClientId { get; set; }
