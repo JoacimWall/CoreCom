@@ -23,7 +23,7 @@ namespace TestClientXamarin
         protected async override void OnStart()
         {
            await ServiceCoreCom.SetupCoreComServer();
-
+           await ServiceCoreCom.ConnectCoreComServer();
         }
         
         protected override void OnSleep()

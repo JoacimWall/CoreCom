@@ -20,7 +20,7 @@
     </PackageReference>
     <PackageReference Include="Refractored.MvvmHelpers" Version="1.6.2" />
     <PackageReference Include="Xamarin.Forms" Version="4.8.0.1821" />
-    <PackageReference Include="Xamarin.Essentials" Version="1.5.3.2" />
+    <PackageReference Include="Xamarin.Essentials" Version="1.6.0-rc1" />
   </ItemGroup>
 
   <ItemGroup>
@@ -35,6 +35,9 @@
   <ItemGroup>
     <None Include="View\MainView.xaml" />
     <None Include="App.xaml" />
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="Converters\" />
   </ItemGroup>
   <Import Project="..\..\..\Shared\WallTec.CoreCom.Example.Shared\WallTec.CoreCom.Example.Shared.projitems" Label="Shared" />
 </Project>
