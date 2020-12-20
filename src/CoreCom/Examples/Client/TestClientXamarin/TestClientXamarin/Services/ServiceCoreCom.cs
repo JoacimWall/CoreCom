@@ -4,6 +4,7 @@ using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
 using System.Web;
+using Grpc.Core;
 using TestClientXamarin.Messages;
 using TestClientXamarin.Repository;
 using WallTec.CoreCom.Client;
@@ -30,7 +31,58 @@ namespace TestClientXamarin.Services
         }
         public ServiceCoreCom()
         {
+            _coreComClient.OnConnectionStatusChange += _coreComClient_OnConnectionStatusChange;
+            _coreComClient.OnLatestRpcExceptionChange += _coreComClient_OnLatestRpcExceptionChange;
+        }
 
+        private void _coreComClient_OnLatestRpcExceptionChange(object sender, RpcException e)
+        {
+            if (e != null)
+            {
+                LatestRpcException = e.Status.Detail;
+            }
+            else
+            {
+                LatestRpcException = string.Empty;
+            }
+        }
+
+        private void _coreComClient_OnConnectionStatusChange(object sender, ConnectionStatus e)
+        {
+            ConnectionStatus = e;
+        }
+        private ConnectionStatus _connectionStatus;
+        public ConnectionStatus ConnectionStatus
+        {
+            get
+            {
+                return _connectionStatus;
+            }
+
+            set
+            {
+                if (value != _connectionStatus)
+                {
+                   SetProperty(ref _connectionStatus , value);
+                   // NotifyPropertyChanged();
+                }
+            }
+        }
+        private string _latestRpcException;
+        public string LatestRpcException
+        {
+            get
+            {
+                return _latestRpcException;
+            }
+
+            set
+            {
+                if (value != _latestRpcException)
+                {
+                    SetProperty(ref _latestRpcException, value);
+                }
+            }
         }
         private async Task<bool> Authenticate(string username, string password)
         {
@@ -59,6 +111,7 @@ namespace TestClientXamarin.Services
             }
             catch (Exception ex)
             {
+               await App.Current.MainPage.DisplayAlert("CoreCom", ex.Message + " Press Reauthorize try again", "Ok");
                 return false;
             }
         }
