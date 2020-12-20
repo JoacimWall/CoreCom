@@ -158,44 +158,7 @@ namespace WallTec.CoreCom.Server
             client.ClientIsSending = false;
         }
 
-        //public override async Task<CoreComMessage> ClientToServerCoreComMessage(CoreComMessage request, ServerCallContext context)
-        //{
-        //    try
-        //    {
-        //        if (!string.IsNullOrEmpty(request.MessageSignature))
-        //        {
-        //            await ParseClientToServerMessage(request);
-
-
-
-        //        }
-
-        //    }
-        //    catch (IOException ex)
-        //    {
-        //        return new CoreComMessage();
-        //    }
-        //    return new CoreComMessage();
-        //}
-        //public override async Task<CoreComMessageResponse> ClientToServerCoreComMessage(CoreComMessage request, ServerCallContext context)
-        //{
-        //    try
-        //    {
-        //        if (!string.IsNullOrEmpty(request.MessageSignature))
-        //        {
-        //            await ParseClientToServerMessage(request);
-
-
-
-        //        }
-
-        //    }
-        //    catch (IOException ex)
-        //    {
-        //        return new CoreComMessageResponse();
-        //    }
-        //    return new CoreComMessageResponse();
-        //}
+      
         #region "private functions"
 
        
