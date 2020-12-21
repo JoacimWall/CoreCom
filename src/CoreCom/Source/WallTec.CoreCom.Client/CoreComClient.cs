@@ -203,7 +203,7 @@ namespace WallTec.CoreCom.Client
                 _channel = GrpcChannel.ForAddress($"{_coreComOptions.ServerAddress}", new GrpcChannelOptions
                 {
                     HttpHandler = _httpHandler,
-                     MaxReceiveMessageSize = null, // 5 * 1024 * 1024, // 5 MB
+                    MaxReceiveMessageSize = null, // 5 * 1024 * 1024, // 5 MB
                     MaxSendMessageSize = null //2 * 1024 * 1024 // 2 MB
                 });
 
@@ -254,65 +254,71 @@ namespace WallTec.CoreCom.Client
         private bool _workingOnCue = false;
         private async Task<bool> ProcessCue()
         {
+            bool exit = false;
             if (_workingOnCue)
                 return true;
-
-            bool exit = false;
-            while (_messagesOutgoing.Count > 0 && _connectionStatus == ConnectionStatus.Connected && !exit)
+            try
             {
-                _workingOnCue = true;
-                AsyncServerStreamingCall<CoreComMessage> streamingCall;
-                if (_messagesOutgoing[0].SendAuth)
+                //get all messages that are in process or new
+                var cue = _messagesOutgoing.Where(x => x.CoreComMessage.Status == (int)TransferStatus.InProcess || x.CoreComMessage.Status == (int)TransferStatus.InProcess).ToList();
+                while (cue.Count > 0 && _connectionStatus == ConnectionStatus.Connected && !exit)
                 {
-                    streamingCall = _coreComClient.SubscribeServerToClientAuth(_messagesOutgoing[0].CoreComMessage, GetCallOptions(false, _messagesOutgoing[0].SendAuth));
-                }
-                else
-                {
-                    streamingCall = _coreComClient.SubscribeServerToClient(_messagesOutgoing[0].CoreComMessage, GetCallOptions(false, _messagesOutgoing[0].SendAuth));
-                }
-                //using var streamingCall = _coreComClient.SubscribeServerToClient(_messagesOutgoing[0].CoreComMessage, GetCallOptions());
-                _messagesOutgoing[0].CoreComMessage.Status =(int)TransferStatus.InProcess;
-                try
-                {
+                    _workingOnCue = true;
+                    AsyncServerStreamingCall<CoreComMessage> streamingCall;
+                    if (cue[0].SendAuth)
+                    {
+                        streamingCall = _coreComClient.SubscribeServerToClientAuth(cue[0].CoreComMessage, GetCallOptions(false, cue[0].SendAuth));
+                    }
+                    else
+                    {
+                        streamingCall = _coreComClient.SubscribeServerToClient(cue[0].CoreComMessage, GetCallOptions(false, cue[0].SendAuth));
+                    }
+                    //using var streamingCall = _coreComClient.SubscribeServerToClient(_messagesOutgoing[0].CoreComMessage, GetCallOptions());
+                    cue[0].CoreComMessage.Status = (int)TransferStatus.InProcess;
+                    //_messagesOutgoing.RemoveAt(0);
+
                     await foreach (var returnMessage in streamingCall.ResponseStream.ReadAllAsync())
                     {
                         if (returnMessage.MessageSignature == CoreComInternalSignatures.CoreComInternal_StatusUpdate)
                         {
-                            await ParseServerToClientMessage(returnMessage);
-                            _messagesOutgoing.RemoveAt(0);
+                            //Update status
+                            _messagesOutgoing.FirstOrDefault(x => x.CoreComMessage.TransactionId == returnMessage.TransactionId)
+                                .CoreComMessage.Status = returnMessage.Status;
+
                         }
                         else
-                        {
+                        {   //parse message
                             await ParseServerToClientMessage(returnMessage);
                         }
                     }
-                    
-                }
-                catch (RpcException ex)
-                {
-                    _workingOnCue = false;
-                    ConnectionStatusChange(ConnectionStatus.Disconnected);
-                    LatestRpcExceptionChange(ex);
-                    exit = true;
-                    switch (ex.StatusCode)
-                    {
-                        case StatusCode.Cancelled:
-                            Console.WriteLine("Stream cancelled.");
-                            break;
-                        case StatusCode.PermissionDenied:
-                        case StatusCode.Unavailable:
-                            Console.WriteLine("PermissionDenied/Unavailable");
-                            if (!_timer.Enabled)
-                                _timer.Enabled = true;
-                            break;
-                        case StatusCode.Unauthenticated:
-                            Console.WriteLine("Unauthenticated.");
-                            break;
-                        default:
-                            break;
-                    }
+
 
                 }
+            }
+            catch (RpcException ex)
+            {
+                _workingOnCue = false;
+                ConnectionStatusChange(ConnectionStatus.Disconnected);
+                LatestRpcExceptionChange(ex);
+                exit = true;
+                switch (ex.StatusCode)
+                {
+                    case StatusCode.Cancelled:
+                        Console.WriteLine("Stream cancelled.");
+                        break;
+                    case StatusCode.PermissionDenied:
+                    case StatusCode.Unavailable:
+                        Console.WriteLine("PermissionDenied/Unavailable");
+                        if (!_timer.Enabled)
+                            _timer.Enabled = true;
+                        break;
+                    case StatusCode.Unauthenticated:
+                        Console.WriteLine("Unauthenticated.");
+                        break;
+                    default:
+                        break;
+                }
+
             }
             _workingOnCue = false;
             //Start timmer for check cue server and client
@@ -352,7 +358,7 @@ namespace WallTec.CoreCom.Client
 
                 _messagesOutgoing.Add(new MessageCureRecord { CoreComMessage = coreComMessage, SendAuth = sendAuth });
 
-               await ProcessCue();
+                await ProcessCue();
             }
             catch (Exception ex)
             {
