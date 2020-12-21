@@ -11,27 +11,28 @@ service CoreCom {
 	
 	rpc ClientConnectToServer(ConnectToServerRequest) returns (ConnectToServerResponse);
 	//Public functions needs no token
+
 	rpc SubscribeServerToClient(CoreComMessage) returns (stream CoreComMessage);
 	//Authenticated functions
+
 	rpc SubscribeServerToClientAuth(CoreComMessage) returns (stream CoreComMessage);
 	//rpc ClientToServerCoreComMessage(CoreComMessage) returns (CoreComMessageResponse);
 }
 message ConnectToServerRequest {
-	string clientId = 1;
+	string ClientId = 1;
 	
 }
 message ConnectToServerResponse {
-	string response = 1;
+	string Response = 1;
 	google.protobuf.Timestamp ServerDateTime = 2;
 	
 }
 
 message CoreComMessage {
-	string clientId = 1;
-	string messageSignature = 2;
-	string transactionId =3;
-	string jsonObjectType =4;
-	string jsonObject =5;
-	int32 status=6;	
-	
+	string  CoreComMessageId=1;
+	string ClientId = 2;
+	string MessageSignature = 3;
+	string JsonObjectType =4;
+	string JsonObject =5;
+	int32 TransferStatus=6;	
 }

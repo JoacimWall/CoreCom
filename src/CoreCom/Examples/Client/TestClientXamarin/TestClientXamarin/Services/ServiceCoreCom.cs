@@ -128,10 +128,11 @@ namespace TestClientXamarin.Services
             //local debug
             //coreComOptions.ServerAddress =  (Device.RuntimePlatform == Device.Android ? "https://10.0.2.2:5001" : "https://192.168.2.121:5001");
             //azure debug
-            _coreComOptions.ServerAddress = "https://wallteccorecomtestserver.azurewebsites.net";
-            _coreComOptions.ProcessQueueIntervalSec = 10;
+            //_coreComOptions.ServerAddress = "https://wallteccorecomtestserver.azurewebsites.net";
+            _coreComOptions.ServerAddress = "https://192.168.2.148:5001";
+            _coreComOptions.ProcessQueueIntervalSec = 60;
             _coreComOptions.ConnectToServerDeadlineSec = 5;
-            _coreComOptions.MessageDeadlineSec = 10;
+            _coreComOptions.MessageDeadlineSec = 60;
             return true;
         }
         public async Task<bool> ConnectCoreComServer()

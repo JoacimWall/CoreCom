@@ -260,30 +260,33 @@ namespace WallTec.CoreCom.Client
             try
             {
                 //get all messages that are in process or new
-                var cue = _messagesOutgoing.Where(x => x.CoreComMessage.Status == (int)TransferStatus.InProcess || x.CoreComMessage.Status == (int)TransferStatus.InProcess).ToList();
-                while (cue.Count > 0 && _connectionStatus == ConnectionStatus.Connected && !exit)
+                //var cue = _messagesOutgoing.Where(x => x.CoreComMessage.TransferStatus == (int)TransferStatus.New || x.CoreComMessage.TransferStatus == (int)TransferStatus.InProcess)
+                //    .OrderByDescending(s => s.CoreComMessage.TransferStatus).ToList();
+
+                while (_messagesOutgoing.Count > 0 && _connectionStatus == ConnectionStatus.Connected && !exit)
                 {
                     _workingOnCue = true;
                     AsyncServerStreamingCall<CoreComMessage> streamingCall;
-                    if (cue[0].SendAuth)
+                    if (_messagesOutgoing[0].SendAuth)
                     {
-                        streamingCall = _coreComClient.SubscribeServerToClientAuth(cue[0].CoreComMessage, GetCallOptions(false, cue[0].SendAuth));
+                        streamingCall = _coreComClient.SubscribeServerToClientAuth(_messagesOutgoing[0].CoreComMessage, GetCallOptions(false, _messagesOutgoing[0].SendAuth));
                     }
                     else
                     {
-                        streamingCall = _coreComClient.SubscribeServerToClient(cue[0].CoreComMessage, GetCallOptions(false, cue[0].SendAuth));
+                        streamingCall = _coreComClient.SubscribeServerToClient(_messagesOutgoing[0].CoreComMessage, GetCallOptions(false, _messagesOutgoing[0].SendAuth));
                     }
-                    //using var streamingCall = _coreComClient.SubscribeServerToClient(_messagesOutgoing[0].CoreComMessage, GetCallOptions());
-                    cue[0].CoreComMessage.Status = (int)TransferStatus.InProcess;
-                    //_messagesOutgoing.RemoveAt(0);
+
+                    _messagesOutgoing[0].CoreComMessage.TransferStatus = (int)TransferStatus.InProcess;
+
+                    _messagesOutgoing.RemoveAt(0);
 
                     await foreach (var returnMessage in streamingCall.ResponseStream.ReadAllAsync())
                     {
                         if (returnMessage.MessageSignature == CoreComInternalSignatures.CoreComInternal_StatusUpdate)
                         {
                             //Update status
-                            _messagesOutgoing.FirstOrDefault(x => x.CoreComMessage.TransactionId == returnMessage.TransactionId)
-                                .CoreComMessage.Status = returnMessage.Status;
+                            _messagesOutgoing.FirstOrDefault(x => x.CoreComMessage.CoreComMessageId == returnMessage.CoreComMessageId)
+                                .CoreComMessage.TransferStatus = returnMessage.TransferStatus;
 
                         }
                         else
@@ -320,6 +323,11 @@ namespace WallTec.CoreCom.Client
                 }
 
             }
+            catch (Exception ex)
+            {
+                _workingOnCue = false;
+
+            }
             _workingOnCue = false;
             //Start timmer for check cue server and client
             if (_coreComOptions.ProcessQueueIntervalSec > 0)
@@ -347,7 +355,7 @@ namespace WallTec.CoreCom.Client
 
                 coreComMessage = new CoreComMessage
                 {
-                    TransactionId = Guid.NewGuid().ToString(),
+                    CoreComMessageId = Guid.NewGuid().ToString(),
                     ClientId = _coreComOptions.ClientId.ToString(),
                     MessageSignature = messageSignature,
                     JsonObjectType = jsonObjectType,
