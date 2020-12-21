@@ -27,7 +27,13 @@ namespace WallTec.CoreCom.TestServerAppService
         // For more information on how to configure your application, visit https://go.microsoft.com/fwlink/?LinkID=398940
         public void ConfigureServices(IServiceCollection services)
         {
-            services.AddGrpc();
+            services.AddGrpc(options => 
+            {
+                options.EnableDetailedErrors = true;
+                options.MaxReceiveMessageSize = null; //When set to null, the message size is unlimited. or 2 * 1024 * 1024; // 2 MB
+                options.MaxSendMessageSize = null; //When set to null, the message size is unlimited.
+
+            });
             services.AddSingleton<CoreComService>();
             services.AddSingleton<IMyService,MyService>();
            
