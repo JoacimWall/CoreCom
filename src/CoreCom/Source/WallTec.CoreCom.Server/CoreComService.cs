@@ -120,7 +120,8 @@ namespace WallTec.CoreCom.Server
         [Authorize]
         public override async Task SubscribeServerToClientAuth(CoreComMessage request, IServerStreamWriter<CoreComMessage> responseStream, ServerCallContext context)
         {
-            
+           
+
             //First process messages so it's added to cure 
             await ParseClientToServerMessageAuth(request);
             //get cue
@@ -133,9 +134,32 @@ namespace WallTec.CoreCom.Server
             {
                 //Exit
             }
+
+            //Change status to Transferred
+            client.ServerToClientMessages.Add(new CoreComMessage { ClientId = request.ClientId, MessageSignature = request.MessageSignature, 
+                                            TransactionId = request.TransactionId,Status = (int)TransferStatus.Transferred  });
             //Test deadline
             //await Task.Delay(25000);
             client.ClientIsSending = true;
+
+            //send Status update messages
+            var statusUpdate = client.ServerToClientMessages.Where(x => x.Status == (int)TransferStatus.Transferred).ToList();
+            while (context.Deadline > DateTime.Now && statusUpdate.Count > 0)
+            {
+                try
+                {   //send status update
+                    await responseStream.WriteAsync(statusUpdate[0]);
+                    //logging
+                    //await WriteOutgoingMessagesLog(client.ServerToClientMessages[0]);
+                    //Remove messages
+                    statusUpdate.RemoveAt(0);
+                }
+                catch
+                {
+
+                }
+            }
+
 
             //send old messages 
             while (context.Deadline > DateTime.Now && client.ServerToClientMessages.Count > 0)
