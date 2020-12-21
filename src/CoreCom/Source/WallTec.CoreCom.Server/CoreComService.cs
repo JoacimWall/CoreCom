@@ -72,13 +72,13 @@ namespace WallTec.CoreCom.Server
         }
         public override async Task SubscribeServerToClient(CoreComMessage request, IServerStreamWriter<CoreComMessage> responseStream, ServerCallContext context)
         {
+            Client client= null;
             //First process messages so it's added to cure 
             await ParseClientToServerMessage(request);
-            //get cue
-            var client = Clients.FirstOrDefault(x => x.CoreComUserInfo.ClientId == request.ClientId);
             //we have null ifall server restarted while client connected
-            if (client == null)
-                client = AddClient(request.ClientId);
+            //we have null ifall server restarted while client was connected
+            if (!Clients.Any(x => x.CoreComUserInfo.ClientId == request.ClientId))
+                client= AddClient(request.ClientId);
 
             if (client.ClientIsSending)
             {
@@ -120,24 +120,47 @@ namespace WallTec.CoreCom.Server
         [Authorize]
         public override async Task SubscribeServerToClientAuth(CoreComMessage request, IServerStreamWriter<CoreComMessage> responseStream, ServerCallContext context)
         {
-           
+            Client client=null;
+            //we have null ifall server restarted while client was connected
+            if (!Clients.Any(x => x.CoreComUserInfo.ClientId == request.ClientId))
+               client= AddClient(request.ClientId);
 
-            //First process messages so it's added to cure 
-            await ParseClientToServerMessageAuth(request);
+           
+            
+            //Check if the message has a status update in ServerToClientMessages then
+            //we allready have reviced this before but the status update from server to client has not worked
+            var statusResponseExist = Clients.FirstOrDefault(x => x.CoreComUserInfo.ClientId == request.ClientId)?.ServerToClientMessages.Any(x => x.TransactionId == request.TransactionId);
+            if (statusResponseExist != null && statusResponseExist.Value)
+            {
+
+            }
+            else
+            {
+                //First process messages so it's added to cure 
+                await ParseClientToServerMessageAuth(request);
+            }
             //get cue
-            var client = Clients.FirstOrDefault(x => x.CoreComUserInfo.ClientId == request.ClientId);
-            //we have null ifall server restarted while client connected
-            if (client == null)
-                client= AddClient(request.ClientId);
+            
+            
 
             if (client.ClientIsSending)
             {
                 //Exit
             }
 
-            //Change status to Transferred
-            client.ServerToClientMessages.Add(new CoreComMessage { ClientId = request.ClientId, MessageSignature = request.MessageSignature, 
-                                            TransactionId = request.TransactionId,Status = (int)TransferStatus.Transferred  });
+            //Change status to Transferred if  it's not done before
+            if (statusResponseExist != null && !statusResponseExist.Value)
+            {
+                client.ServerToClientMessages.Add(new CoreComMessage
+                {
+                    ClientId = request.ClientId,
+                    MessageSignature = CoreComInternalSignatures.CoreComInternal_StatusUpdate,
+                    TransactionId = request.TransactionId,
+                    Status = (int)TransferStatus.Transferred
+                });
+
+            }
+            
             //Test deadline
             //await Task.Delay(25000);
             client.ClientIsSending = true;
@@ -149,10 +172,11 @@ namespace WallTec.CoreCom.Server
                 try
                 {   //send status update
                     await responseStream.WriteAsync(statusUpdate[0]);
+                    statusUpdate[0].Status = TransferStatus.Done;
                     //logging
                     //await WriteOutgoingMessagesLog(client.ServerToClientMessages[0]);
                     //Remove messages
-                    statusUpdate.RemoveAt(0);
+                    //statusUpdate.RemoveAt(0);
                 }
                 catch
                 {
