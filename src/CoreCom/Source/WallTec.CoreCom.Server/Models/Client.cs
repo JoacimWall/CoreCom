@@ -12,17 +12,17 @@ namespace WallTec.CoreCom.Server.Models
     public class Client
     {
 
-        internal List<CoreComMessage> ServerToClientMessages = new List<CoreComMessage>();
+        //internal List<CoreComMessage> ServerToClientMessages = new List<CoreComMessage>();
 
         public CoreComUserInfo CoreComUserInfo  { get; set; }
 
         public bool ClientIsSending { get; set; }
 
-        public Client()
-        {
+        //public Client()
+        //{
          
 
-        }
+        //}
        
 
     }

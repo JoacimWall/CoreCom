@@ -1,7 +1,9 @@
 ﻿using Google.Protobuf.WellKnownTypes;
 using Grpc.Core;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -28,16 +30,32 @@ namespace WallTec.CoreCom.Server
 
         private CoreComOptions _coreComOptions;
         private IConfiguration _config;
+        private DbContextOptions _dbContextOptions;
         public CoreComService(IConfiguration config)
         {
             _coreComOptions = new CoreComOptions();
 
+            _dbContextOptions = new DbContextOptionsBuilder<CoreComContext>()
+                    .UseInMemoryDatabase(databaseName: "CoreComDb").Options;
 
             _config = config;
             _coreComOptions.LogSettings.logSource = (logSource)Convert.ToInt32(_config["CoreCome:CoreComOptions:LogSettings_logSource"]);
 
+            //  services.AddDbContext<CoreComContext>(options => options.UseInMemoryDatabase(databaseName: "CoreComDb"));
+            
+            //using (var context = new CoreComContext(_dbContextOptions))
+            //{
+            //  //  context.Database.EnsureCreated();
+
+            //    var result = context.TransferStatus.ToList();
+                
+
+            //}
+           
         }
 
+    
+        
         public async Task<bool> SendAsync(object outgoingObject, string messageSignature, CoreComUserInfo coreComUserInfo)
         {
             return await SendInternalAsync(outgoingObject, messageSignature, coreComUserInfo);
@@ -66,52 +84,56 @@ namespace WallTec.CoreCom.Server
         public override async Task<ConnectToServerResponse> ClientConnectToServer(ConnectToServerRequest request, ServerCallContext context)
         {
             //Add Client
-            AddClient(request.ClientId);
+            //AddClient(request.ClientId);
 
             return new ConnectToServerResponse { Response = "Client are connected", ServerDateTime = Timestamp.FromDateTime(DateTime.UtcNow) };
         }
         public override async Task SubscribeServerToClient(CoreComMessage request, IServerStreamWriter<CoreComMessage> responseStream, ServerCallContext context)
         {
-            Client client= null;
+            //Client client= null;
             //First process messages so it's added to cure 
             await ParseClientToServerMessage(request);
-            //we have null ifall server restarted while client connected
-            //we have null ifall server restarted while client was connected
-            if (!Clients.Any(x => x.CoreComUserInfo.ClientId == request.ClientId))
-                client= AddClient(request.ClientId);
 
-            if (client.ClientIsSending)
-            {
-                //Exit
-            }
-            client.ClientIsSending = true;
+            await ProcessCue(request, responseStream, context);
+            ////we have null ifall server restarted while client was connected
+            //if (!Clients.Any(x => x.CoreComUserInfo.ClientId == request.ClientId))
+            //    client= AddClient(request.ClientId);
 
+            //if (client.ClientIsSending)
+            //{
+            //    //Exit
+            //}
+            //client.ClientIsSending = true;
 
-            //send old messages 
-            while (context.Deadline > DateTime.Now && client.ServerToClientMessages.Count > 0)
-            {
-                try
-                {   //send
-                    await responseStream.WriteAsync(client.ServerToClientMessages[0]);
-                    //logging
-                    await WriteOutgoingMessagesLog(client.ServerToClientMessages[0]);
-                    //Remove messages
-                    client.ServerToClientMessages.RemoveAt(0);
-                }
-                catch
-                {
-                    //TODO:Add timer to send
-                    //Reconnect
-                    //if (!_isConnecting)
-                    //{
-                    //    IsOnline = false;
-                    //    _timer.Enabled = true;
-                    //}
-                    //return false;
-                }
-            }
-
-            client.ClientIsSending = false;
+            //using (var DbContext = new CoreComContext(_dbContextOptions))
+            //{
+            //    var outgoingMess = DbContext.OutgoingMessages.ToList();
+            ////send old messages 
+            //while (context.Deadline > DateTime.Now && outgoingMess.Count > 0)
+            //{
+            //    try
+            //    {   //send
+            //        await responseStream.WriteAsync(outgoingMess[0]);
+            //        //logging
+            //        await WriteOutgoingMessagesLog(outgoingMess[0]);
+            //        //Remove messages
+            //        //TODO:Update status in db
+            //        //client.ServerToClientMessages.RemoveAt(0);
+            //    }
+            //    catch
+            //    {
+            //        //TODO:Add timer to send
+            //        //Reconnect
+            //        //if (!_isConnecting)
+            //        //{
+            //        //    IsOnline = false;
+            //        //    _timer.Enabled = true;
+            //        //}
+            //        //return false;
+            //    }
+            //}
+            //}
+            //client.ClientIsSending = false;
         }
 
        
@@ -120,96 +142,137 @@ namespace WallTec.CoreCom.Server
         [Authorize]
         public override async Task SubscribeServerToClientAuth(CoreComMessage request, IServerStreamWriter<CoreComMessage> responseStream, ServerCallContext context)
         {
-            Client client=null;
-            //we have null ifall server restarted while client was connected
-            if (!Clients.Any(x => x.CoreComUserInfo.ClientId == request.ClientId))
-               client= AddClient(request.ClientId);
-
-           
             
             //Check if the message has a status update in ServerToClientMessages then
             //we allready have reviced this before but the status update from server to client has not worked
-            var statusResponseExist = Clients.FirstOrDefault(x => x.CoreComUserInfo.ClientId == request.ClientId)?.ServerToClientMessages.Any(x => x.TransactionId == request.TransactionId);
-            if (statusResponseExist != null && statusResponseExist.Value)
-            {
+            //var statusResponseExist = Clients.FirstOrDefault(x => x.CoreComUserInfo.ClientId == request.ClientId)?.ServerToClientMessages.Any(x => x.TransactionId == request.TransactionId);
+            //if (statusResponseExist != null && statusResponseExist.Value)
+            //{
 
-            }
-            else
-            {
+            //}
+            //else
+            //{
                 //First process messages so it's added to cure 
                 await ParseClientToServerMessageAuth(request);
-            }
+            // }
             //get cue
-            
-            
 
-            if (client.ClientIsSending)
-            {
-                //Exit
-            }
+            await ProcessCue(request, responseStream, context);
+
+            //if (client.ClientIsSending)
+            //{
+            //    //Exit
+            //}
 
             //Change status to Transferred if  it's not done before
-            if (statusResponseExist != null && !statusResponseExist.Value)
-            {
-                client.ServerToClientMessages.Add(new CoreComMessage
-                {
-                    ClientId = request.ClientId,
-                    MessageSignature = CoreComInternalSignatures.CoreComInternal_StatusUpdate,
-                    TransactionId = request.TransactionId,
-                    Status = (int)TransferStatus.Transferred
-                });
+            //if (statusResponseExist != null && !statusResponseExist.Value)
+            //{
+            //    client.ServerToClientMessages.Add(new CoreComMessage
+            //    {
+            //        ClientId = request.ClientId,
+            //        MessageSignature = CoreComInternalSignatures.CoreComInternal_StatusUpdate,
+            //        TransactionId = request.TransactionId,
+            //        Status = (int)TransferStatusEnum.Transferred
+            //    });
 
-            }
+            //}
             
             //Test deadline
             //await Task.Delay(25000);
-            client.ClientIsSending = true;
+            //client.ClientIsSending = true;
 
             //send Status update messages
-            var statusUpdate = client.ServerToClientMessages.Where(x => x.Status == (int)TransferStatus.Transferred).ToList();
-            while (context.Deadline > DateTime.Now && statusUpdate.Count > 0)
-            {
-                try
-                {   //send status update
-                    await responseStream.WriteAsync(statusUpdate[0]);
-                    statusUpdate[0].Status = TransferStatus.Done;
-                    //logging
-                    //await WriteOutgoingMessagesLog(client.ServerToClientMessages[0]);
-                    //Remove messages
-                    //statusUpdate.RemoveAt(0);
-                }
-                catch
-                {
+            //var statusUpdate = client.ServerToClientMessages.Where(x => x.Status == (int)TransferStatusEnum.Transferred).ToList();
+            //while (context.Deadline > DateTime.Now && statusUpdate.Count > 0)
+            //{
+            //    try
+            //    {   //send status update
+            //        await responseStream.WriteAsync(statusUpdate[0]);
+            //        //statusUpdate[0].Status = TransferStatus.Done;
+            //        //logging
+            //        //await WriteOutgoingMessagesLog(client.ServerToClientMessages[0]);
+            //        //Remove messages
+            //        //statusUpdate.RemoveAt(0);
+            //    }
+            //    catch
+            //    {
 
-                }
-            }
+            //    }
+            //}
 
 
             //send old messages 
-            while (context.Deadline > DateTime.Now && client.ServerToClientMessages.Count > 0)
-            {
-                try
-                {   //send
-                    await responseStream.WriteAsync(client.ServerToClientMessages[0]);
-                    //logging
-                    await WriteOutgoingMessagesLog(client.ServerToClientMessages[0]);
-                    //Remove messages
-                    client.ServerToClientMessages.RemoveAt(0);
-                }
-                catch
-                {
+            //while (context.Deadline > DateTime.Now && client.ServerToClientMessages.Count > 0)
+            //{
+
+
+            //    try
+            //    {   //send
+            //        await responseStream.WriteAsync(client.ServerToClientMessages[0]);
+            //        //logging
+            //        await WriteOutgoingMessagesLog(client.ServerToClientMessages[0]);
+            //        //Remove messages
+            //        client.ServerToClientMessages.RemoveAt(0);
+            //    }
+            //    catch
+            //    {
                     
-                }
-            }
+            //    }
+            //}
 
 
-            client.ClientIsSending = false;
+            //client.ClientIsSending = false;
         }
 
-      
-        #region "private functions"
 
-       
+        #region "private functions"
+        private async Task<bool> ProcessCue(CoreComMessage request, IServerStreamWriter<CoreComMessage> responseStream, ServerCallContext context)
+        {
+            //we have null ifall server restarted while client was connected
+            if (!Clients.Any(x => x.CoreComUserInfo.ClientId == request.ClientId))
+                 AddClient(request.ClientId);
+
+            //if we are sending allready
+            if (Clients.FirstOrDefault(x => x.CoreComUserInfo.ClientId == request.ClientId).ClientIsSending)
+                return true;
+
+
+            Clients.FirstOrDefault(x => x.CoreComUserInfo.ClientId == request.ClientId).ClientIsSending = true;
+            try
+            {
+
+            
+            using (var DbContext = new CoreComContext(_dbContextOptions))
+            {
+                var outgoingMess = DbContext.OutgoingMessages.ToList();
+                while (context.Deadline > DateTime.Now && outgoingMess.Count > 0)
+                {
+                    try
+                    {   //send
+                        await responseStream.WriteAsync(outgoingMess[0]);
+                        //logging
+                        await WriteOutgoingMessagesLog(outgoingMess[0]);
+                            //Remove messages
+                            outgoingMess.RemoveAt(0);
+                    }
+                    catch
+                    {
+
+                    }
+                }
+            }
+            }
+            catch (Exception ex)
+            {
+
+                throw;
+            }
+            Clients.FirstOrDefault(x => x.CoreComUserInfo.ClientId == request.ClientId).ClientIsSending = false;
+           
+
+            return true;
+        }
+
 
         internal Client AddClient(string clientId) 
         {
@@ -322,7 +385,7 @@ namespace WallTec.CoreCom.Server
             // Write the specified text asynchronously to a new file named "WriteTextAsync.txt".
             using (StreamWriter outputFile = new StreamWriter(Path.Combine(docPath, "IncommingMessages.log"), true))
             {
-                await outputFile.WriteLineAsync(DateTime.UtcNow.ToString() + "\t" + request.TransactionId + "\t" + request.ClientId + "\t" + request.ClientId + "\t" + request.MessageSignature);
+                await outputFile.WriteLineAsync(DateTime.UtcNow.ToString() + "\t" + request.CoreComMessageId + "\t" + request.ClientId + "\t" + request.ClientId + "\t" + request.MessageSignature);
             }
 
 
@@ -338,7 +401,7 @@ namespace WallTec.CoreCom.Server
             // Write the specified text asynchronously to a new file named "WriteTextAsync.txt".
             using (StreamWriter outputFile = new StreamWriter(Path.Combine(docPath, "OutgoningMessages.log"), true))
             {
-                await outputFile.WriteLineAsync(DateTime.UtcNow.ToString() + "\t" + request.TransactionId + "\t" + request.ClientId + "\t" + request.ClientId + "\t" + request.MessageSignature);
+                await outputFile.WriteLineAsync(DateTime.UtcNow.ToString() + "\t" + request.CoreComMessageId + "\t" + request.ClientId + "\t" + request.ClientId + "\t" + request.MessageSignature);
             }
 
 
@@ -361,15 +424,21 @@ namespace WallTec.CoreCom.Server
 
                 coreComMessage = new CoreComMessage
                 {
-                    TransactionId = Guid.NewGuid().ToString(),
+                    CoreComMessageId = Guid.NewGuid().ToString(),
                     ClientId = coreComUserInfo.ClientId,
                     MessageSignature = messageSignature,
                     JsonObjectType = jsonObjectType,
                     JsonObject = jsonObject
                 };
+                using (var dbContext = new CoreComContext(_dbContextOptions))
+                {
+                    dbContext.OutgoingMessages.Add(coreComMessage);
+                    await dbContext.SaveChangesAsync();
 
-                client = Clients.First(x => x.CoreComUserInfo.ClientId == coreComUserInfo.ClientId);
-                client.ServerToClientMessages.Add(coreComMessage);
+                }
+
+                //    client = Clients.First(x => x.CoreComUserInfo.ClientId == coreComUserInfo.ClientId);
+                //client.ServerToClientMessages.Add(coreComMessage);
 
             }
             catch (Exception ex)

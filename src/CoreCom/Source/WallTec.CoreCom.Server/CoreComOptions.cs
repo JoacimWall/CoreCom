@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace WallTec.CoreCom.Server.Models
+namespace WallTec.CoreCom.Server
 {
     public class CoreComOptions
     {
