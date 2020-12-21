@@ -130,7 +130,8 @@ namespace TestClientXamarin.Services
             //azure debug
             _coreComOptions.ServerAddress = "https://wallteccorecomtestserver.azurewebsites.net";
             _coreComOptions.ProcessQueueIntervalSec = 10;
-            
+            _coreComOptions.ConnectToServerDeadlineSec = 5;
+            _coreComOptions.MessageDeadlineSec = 10;
             return true;
         }
         public async Task<bool> ConnectCoreComServer()

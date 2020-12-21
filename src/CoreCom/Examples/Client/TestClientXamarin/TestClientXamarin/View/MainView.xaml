@@ -16,6 +16,7 @@
     <ContentPage.Resources>
         <ResourceDictionary>
              <converters:ConnectionStatusConverter x:Key="ConnectionStatusConverter" />
+            <converters:Base64StringToImageSourceConverter x:Key="Base64StringToImageSourceConverter" />
         </ResourceDictionary>
     </ContentPage.Resources>
     
@@ -28,24 +29,26 @@
         </StackLayout>
         <Label Grid.Row="1" Grid.ColumnSpan="4" Text="{Binding ServiceCoreCom.LatestRpcException}" HorizontalOptions="Fill" HorizontalTextAlignment="Center" TextColor="White"/>
 
-        <Button Grid.Row="2" Grid.Column="0" Padding="5" Text="Check Cue"  BackgroundColor="LightGray" Command="{Binding  CheckCueCommand}" />
-        <Button Grid.Row="2" Grid.Column="1" Padding="5"  Text="Get Projects" BackgroundColor="LightGray" Command="{Binding  GetProjectsCommand}" />
-        <Button Grid.Row="2" Grid.Column="2" Padding="5"  Text="Reauthorize" BackgroundColor="LightGray" Command="{Binding  ConnectToServerCommand}" />
-        <Button Grid.Row="2" Grid.Column="3" Padding="5"  Text="Image" Command="{Binding  PickImageCommand}" BackgroundColor="LightGray" />
+        <Button Grid.Row="2" Grid.Column="0" Padding="5" Text="Check Cue"  BackgroundColor="LightGray" Command="{Binding  CheckCueCommand}" FontSize="13" />
+        <Button Grid.Row="2" Grid.Column="1" Padding="5"  Text="Get Projects" BackgroundColor="LightGray" Command="{Binding  GetProjectsCommand}" FontSize="13"/>
+        <Button Grid.Row="2" Grid.Column="2" Padding="5"  Text="Reauthorize" BackgroundColor="LightGray" Command="{Binding  ConnectToServerCommand}" FontSize="13" />
+        <Button Grid.Row="2" Grid.Column="3" Padding="5"  Text="Image" Command="{Binding  PickImageCommand}" BackgroundColor="LightGray" FontSize="13"/>
         
-        <Button Grid.Row="3" Grid.Column="0" Padding="5" Margin="5" Text="Add" Command="{Binding  AddProjectsCommand}" BackgroundColor="LightGray" />
+        <Button Grid.Row="3" Grid.Column="0" Padding="5" Margin="5" Text="Add" Command="{Binding  AddProjectsCommand}" BackgroundColor="LightGray" FontSize="13"/>
         <Entry  Grid.Row="3" Grid.Column="1" Grid.ColumnSpan="2" Placeholder="Project Name" Margin="0,5,0,5" Text="{Binding AddProjectName}" HorizontalOptions="FillAndExpand" />
         <Image  Grid.Row="3" Grid.Column="3" Source="{Binding ProjectImageSource}" HeightRequest="50" />
         
         <Label Grid.Row="4" Grid.ColumnSpan="2" Text="Projects:" TextColor="White"/>
-        <ListView Grid.Row="5" Grid.ColumnSpan="4" SeparatorVisibility="None" HasUnevenRows="True" ItemsSource="{Binding Projects}" BackgroundColor="White" >
+        <ListView Grid.Row="5" Grid.ColumnSpan="4" SeparatorVisibility="None" HasUnevenRows="True"
+                  ItemsSource="{Binding Projects}" BackgroundColor="White" >
             <ListView.ItemTemplate>
                 <DataTemplate>
                     <ViewCell>
                          <Frame Margin="4,10,4,0"  CornerRadius="4" IsClippedToBounds="True" HasShadow="False" BorderColor="Black" BackgroundColor="LightGray" >
-                            <Grid Margin="0" RowDefinitions="Auto, Auto" ColumnDefinitions="*" >
-                                <Label  Grid.Row="0" Text="{Binding Name}" FontAttributes="Bold"/>
-                                <Label  Grid.Row="1" Text="{Binding Description}"/>
+                            <Grid Margin="0" RowDefinitions="Auto, *" ColumnDefinitions="Auto,*" >
+                                <Image Margin="0" Grid.RowSpan="2" WidthRequest="70" Source="{Binding Base64Image,Converter={StaticResource Base64StringToImageSourceConverter}}"  />
+                                <Label Margin="0" Grid.Row="0" Grid.Column="1" Text="{Binding Name}" FontAttributes="Bold"/>
+                                <Label Margin="0" Grid.Row="1" Grid.Column="1" Text="{Binding Description}"/>
                             </Grid>
                         </Frame>
                     </ViewCell>
