@@ -14,8 +14,10 @@ namespace WallTec.CoreCom.Sheard
     public enum TransferStatus : int
     {
         New = 0,
-        InProcess=1,
-        Transferred=2    
+        InProcess = 1,
+        Recived = 2,
+        Transferred = 3,
+        Done = 4
 
     }
 }
