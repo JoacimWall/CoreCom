@@ -32,6 +32,6 @@ message CoreComMessage {
 	string transactionId =3;
 	string jsonObjectType =4;
 	string jsonObject =5;
-	byte status=6;	
+	int status=6;	
 	
 }
