@@ -271,14 +271,22 @@ namespace WallTec.CoreCom.Client
                     streamingCall = _coreComClient.SubscribeServerToClient(_messagesOutgoing[0].CoreComMessage, GetCallOptions(false, _messagesOutgoing[0].SendAuth));
                 }
                 //using var streamingCall = _coreComClient.SubscribeServerToClient(_messagesOutgoing[0].CoreComMessage, GetCallOptions());
-
+                _messagesOutgoing[0].CoreComMessage.Status =(int)TransferStatus.InProcess;
                 try
                 {
                     await foreach (var returnMessage in streamingCall.ResponseStream.ReadAllAsync())
                     {
-                        await ParseServerToClientMessage(returnMessage);
+                        if (returnMessage.MessageSignature == CoreComInternalSignatures.CoreComInternal_StatusUpdate)
+                        {
+                            await ParseServerToClientMessage(returnMessage);
+                            _messagesOutgoing.RemoveAt(0);
+                        }
+                        else
+                        {
+                            await ParseServerToClientMessage(returnMessage);
+                        }
                     }
-                    _messagesOutgoing.RemoveAt(0);
+                    
                 }
                 catch (RpcException ex)
                 {

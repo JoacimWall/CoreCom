@@ -9,6 +9,7 @@ namespace WallTec.CoreCom.Sheard
         public const string CoreComInternal = "CoreComInternal";
         public const string CoreComInternal_ConnectInstallId = "CoreComInternal_ConnectInstallId";
         public const string CoreComInternal_PullCue = "CoreComInternal_PullCue";
+        public const string CoreComInternal_StatusUpdate = "CoreComInternal_StatusUpdate";
     }
     public enum TransferStatus : int
     {
