@@ -64,9 +64,6 @@ namespace WallTec.CoreCom.Client
         #endregion
         #region Public Propertys
 
-
-
-
         #endregion
         #region Public Functions
         public CoreComClient()
@@ -160,7 +157,7 @@ namespace WallTec.CoreCom.Client
                 deadlineSec = _coreComOptions.ConnectToServerDeadlineSec;
             else
                 deadlineSec = _coreComOptions.MessageDeadlineSec;
-
+           
             CallOptions calloptions;
             if (addAuth && !string.IsNullOrEmpty(_coreComOptions.ClientToken))
             {
@@ -188,14 +185,15 @@ namespace WallTec.CoreCom.Client
                     return false;
 
                 ConnectionStatusChange(ConnectionStatus.Connecting);
-
-                _httpHandler = new GrpcWebHandler(GrpcWebMode.GrpcWebText, new HttpClientHandler());
-                //if (_coreComOptions.ClientIsMobile)
-                //{  
-                //    //case Device.Android:
-                //    //AppContext.SetSwitch("System.Net.Http.SocketsHttpHandler.Http2UnencryptedSupport", true);
-                //    _httpHandler.ServerCertificateCustomValidationCallback = HttpClientHandler.DangerousAcceptAnyServerCertificateValidator;
-                //}
+                //this is so you can debug on mac and emulator the server has "EndpointDefaults": { "Protocols": "Http1"
+                // Return `true` to allow certificates that are untrusted/invalid
+                if (_coreComOptions.DangerousAcceptAnyServerCertificateValidator)
+                     _httpHandler = new GrpcWebHandler(GrpcWebMode.GrpcWebText,  new HttpClientHandler { ServerCertificateCustomValidationCallback = HttpClientHandler.DangerousAcceptAnyServerCertificateValidator });
+                else
+                {
+                    _httpHandler = new GrpcWebHandler(GrpcWebMode.GrpcWebText, new HttpClientHandler());
+                }
+               
                 //Check if the channel is open den shutdown before create new
                 if (_channel != null)
                     await _channel.ShutdownAsync();
@@ -254,7 +252,6 @@ namespace WallTec.CoreCom.Client
         private bool _workingOnCue = false;
         private async Task<bool> ProcessCue()
         {
-            bool exit = false;
             if (_workingOnCue)
                 return true;
             try
@@ -263,54 +260,60 @@ namespace WallTec.CoreCom.Client
                 //var cue = _messagesOutgoing.Where(x => x.CoreComMessage.TransferStatus == (int)TransferStatus.New || x.CoreComMessage.TransferStatus == (int)TransferStatus.InProcess)
                 //    .OrderByDescending(s => s.CoreComMessage.TransferStatus).ToList();
 
-                while (_messagesOutgoing.Count > 0 && _connectionStatus == ConnectionStatus.Connected && !exit)
+                while (_messagesOutgoing.Any(x => x.CoreComMessage.TransferStatus < (int)TransferStatusEnum.Recived) && _connectionStatus == ConnectionStatus.Connected)
                 {
                     _workingOnCue = true;
-                    AsyncServerStreamingCall<CoreComMessage> streamingCall;
-                    if (_messagesOutgoing[0].SendAuth)
+                    var message = _messagesOutgoing.FirstOrDefault(x => x.CoreComMessage.TransferStatus < (int)TransferStatusEnum.Recived);
+                    message.CoreComMessage.TransferStatus = (int)TransferStatusEnum.InProcess;
+
+                   // AsyncServerStreamingCall<CoreComMessageResponse> streamingCall;
+                    if (message.SendAuth)
                     {
-                        streamingCall = _coreComClient.SubscribeServerToClientAuth(_messagesOutgoing[0].CoreComMessage, GetCallOptions(false, _messagesOutgoing[0].SendAuth));
+                        using var streamingCall = _coreComClient.SubscribeServerToClientAuth(message.CoreComMessage, GetCallOptions(false, message.SendAuth));
+
+                        message.CoreComMessage.TransferStatus = (int)TransferStatusEnum.InProcess;
+
+                        await foreach (var returnMessage in streamingCall.ResponseStream.ReadAllAsync())
+                           if (returnMessage.MessageSignature == CoreComInternalSignatures.CoreComInternal_StatusUpdate)
+                                //Update status
+                                _messagesOutgoing.FirstOrDefault(x => x.CoreComMessage.TransactionIdentifier == returnMessage.TransactionIdentifier).CoreComMessage.TransferStatus = returnMessage.TransferStatus;
+                            else  //parse message
+                                await ParseServerToClientMessage(returnMessage);
+
+                        streamingCall.Dispose();
                     }
                     else
                     {
-                        streamingCall = _coreComClient.SubscribeServerToClient(_messagesOutgoing[0].CoreComMessage, GetCallOptions(false, _messagesOutgoing[0].SendAuth));
+                        using var streamingCall = _coreComClient.SubscribeServerToClient(message.CoreComMessage, GetCallOptions(false, message.SendAuth));
+
+                        message.CoreComMessage.TransferStatus = (int)TransferStatusEnum.InProcess;
+
+                        await foreach (var returnMessage in streamingCall.ResponseStream.ReadAllAsync())
+                            if (returnMessage.MessageSignature == CoreComInternalSignatures.CoreComInternal_StatusUpdate)
+                                //Update status
+                                _messagesOutgoing.FirstOrDefault(x => x.CoreComMessage.TransactionIdentifier == returnMessage.TransactionIdentifier).CoreComMessage.TransferStatus = returnMessage.TransferStatus;
+                            else  //parse message
+                                await ParseServerToClientMessage(returnMessage);
+
+                        streamingCall.Dispose();
                     }
-
-                    _messagesOutgoing[0].CoreComMessage.TransferStatus = (int)TransferStatus.InProcess;
-
-                    _messagesOutgoing.RemoveAt(0);
-
-                    await foreach (var returnMessage in streamingCall.ResponseStream.ReadAllAsync())
-                    {
-                        if (returnMessage.MessageSignature == CoreComInternalSignatures.CoreComInternal_StatusUpdate)
-                        {
-                            //Update status
-                            _messagesOutgoing.FirstOrDefault(x => x.CoreComMessage.CoreComMessageId == returnMessage.CoreComMessageId)
-                                .CoreComMessage.TransferStatus = returnMessage.TransferStatus;
-
-                        }
-                        else
-                        {   //parse message
-                            await ParseServerToClientMessage(returnMessage);
-                        }
-                    }
-
-
                 }
             }
             catch (RpcException ex)
             {
                 _workingOnCue = false;
-                ConnectionStatusChange(ConnectionStatus.Disconnected);
+               
                 LatestRpcExceptionChange(ex);
-                exit = true;
                 switch (ex.StatusCode)
                 {
+                    case StatusCode.DeadlineExceeded:
+                        break;
                     case StatusCode.Cancelled:
                         Console.WriteLine("Stream cancelled.");
                         break;
                     case StatusCode.PermissionDenied:
                     case StatusCode.Unavailable:
+                        ConnectionStatusChange(ConnectionStatus.Disconnected);
                         Console.WriteLine("PermissionDenied/Unavailable");
                         if (!_timer.Enabled)
                             _timer.Enabled = true;
@@ -357,6 +360,7 @@ namespace WallTec.CoreCom.Client
                 {
                     CoreComMessageId = Guid.NewGuid().ToString(),
                     ClientId = _coreComOptions.ClientId.ToString(),
+                    TransactionIdentifier =  Guid.NewGuid().ToString(),
                     MessageSignature = messageSignature,
                     JsonObjectType = jsonObjectType,
                     JsonObject = jsonObject
@@ -378,7 +382,7 @@ namespace WallTec.CoreCom.Client
             return true;
         }
 
-        private async Task ParseServerToClientMessage(CoreComMessage request)
+        private async Task ParseServerToClientMessage(CoreComMessageResponse request)
         {
             if (request.MessageSignature.StartsWith("CoreComInternal"))
             {
@@ -414,7 +418,7 @@ namespace WallTec.CoreCom.Client
                 }
             }
         }
-        private async Task ParseCoreComFrameworkFromServerMessage(CoreComMessage request)
+        private async Task ParseCoreComFrameworkFromServerMessage(CoreComMessageResponse request)
         {
 
         }

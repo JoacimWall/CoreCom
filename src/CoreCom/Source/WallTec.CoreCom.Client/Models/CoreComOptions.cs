@@ -18,6 +18,6 @@ namespace WallTec.CoreCom.Client.Models
         public string ServerAddress { get; set; }
         public string ClientToken { get;  set; }
         public string ClientId { get; set; }
-        
+        public bool DangerousAcceptAnyServerCertificateValidator { get; set; }
     }
 }

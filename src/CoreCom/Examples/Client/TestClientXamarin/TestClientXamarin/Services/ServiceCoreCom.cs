@@ -90,12 +90,21 @@ namespace TestClientXamarin.Services
             {
 
                 Console.WriteLine($"Authenticating as {username}...");
-                var httpClient = new HttpClient();
+                
+                var httpClientHandler = new HttpClientHandler();
+                //this is so you can debug on mac and emulator the server has "EndpointDefaults": { "Protocols": "Http1"
+                // Return `true` to allow certificates that are untrusted/invalid
+                if (_coreComOptions.DangerousAcceptAnyServerCertificateValidator)
+                    httpClientHandler.ServerCertificateCustomValidationCallback =  HttpClientHandler.DangerousAcceptAnyServerCertificateValidator;
+                
+                var httpClient = new HttpClient(httpClientHandler);
+
                 var request = new HttpRequestMessage
                 {
                     RequestUri = new Uri($"{_coreComOptions.ServerAddress}/generateJwtToken?username={HttpUtility.UrlEncode(username)}&password={HttpUtility.UrlEncode(password)}"),
                     Method = HttpMethod.Get,
-                    Version = new Version(2, 0)
+                    Version = new Version(2, 0),
+                    
                 };
                 var tokenResponse = await httpClient.SendAsync(request);
                 tokenResponse.EnsureSuccessStatusCode();
@@ -126,27 +135,31 @@ namespace TestClientXamarin.Services
             _coreComClient.Register(GetAddedProject, CoreComSignatures.AddProject, new Project().GetType());
 
             //local debug
-            //coreComOptions.ServerAddress =  (Device.RuntimePlatform == Device.Android ? "https://10.0.2.2:5001" : "https://192.168.2.121:5001");
+            _coreComOptions.ServerAddress =  (Device.RuntimePlatform == Device.Android ? "https://10.0.2.2:5001" : "https://localhost:5001");
             //azure debug
             //_coreComOptions.ServerAddress = "https://wallteccorecomtestserver.azurewebsites.net";
-            _coreComOptions.ServerAddress = "https://192.168.2.148:5001";
-            _coreComOptions.ProcessQueueIntervalSec = 60;
+
+            _coreComOptions.ProcessQueueIntervalSec = 30;
             _coreComOptions.ConnectToServerDeadlineSec = 5;
-            _coreComOptions.MessageDeadlineSec = 60;
+            _coreComOptions.MessageDeadlineSec = 30;
+            //Debug local on mac where the server is running in "Kestrel": { "EndpointDefaults": { "Protocols": "Http1"  }  }
+            #if DEBUG
+                _coreComOptions.DangerousAcceptAnyServerCertificateValidator = true;
+            #endif
             return true;
         }
         public async Task<bool> ConnectCoreComServer()
         {
 
-            #region "Authentication with backen token and clientId from database"
+#region "Authentication with backen token and clientId from database"
             //coreComOptions.ClientId and coreComOptions.ClientToken is set inside the Authenticate method
             string username = (Device.RuntimePlatform == Device.Android ? "demoDroid" : "demoIos"); //simulate diffrent user
             var token = await Authenticate(username, "1234");
             if (!token)
                 return false;
-            #endregion
+#endregion
 
-            #region "No Authentication"
+#region "No Authentication"
             //Cross-Platform Identifier for the app stay the same as long the app is installed
             //in this senario all backend API is public and the server use guid below to seperate diffrent users requests
             //var id = Preferences.Get("my_id", string.Empty);
@@ -156,7 +169,7 @@ namespace TestClientXamarin.Services
             //    Preferences.Set("my_id", id);
             //}
             //coreComOptions.ClientId = id;
-            #endregion
+#endregion
 
             _coreComClient.Connect(_coreComOptions);
 

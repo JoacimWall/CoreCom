@@ -11,9 +11,11 @@ service CoreCom {
 	
 	rpc ClientConnectToServer(ConnectToServerRequest) returns (ConnectToServerResponse);
 	//Public functions needs no token
-	rpc SubscribeServerToClient(CoreComMessage) returns (stream CoreComMessage);
+
+	rpc SubscribeServerToClient(CoreComMessage) returns (stream CoreComMessageResponse);
 	//Authenticated functions
-	rpc SubscribeServerToClientAuth(CoreComMessage) returns (stream CoreComMessage);
+
+	rpc SubscribeServerToClientAuth(CoreComMessage) returns (stream CoreComMessageResponse);
 	//rpc ClientToServerCoreComMessage(CoreComMessage) returns (CoreComMessageResponse);
 }
 message ConnectToServerRequest {
@@ -27,12 +29,23 @@ message ConnectToServerResponse {
 }
 
 message CoreComMessage {
-	string  CoreComMessageId=1;
+	string CoreComMessageId=1;
 	string ClientId = 2;
-	string MessageSignature = 3;
-	string JsonObjectType =4;
-	string JsonObject =5;
-	int32 TransferStatus=6;	
+	string TransactionIdentifier = 3;
+	string MessageSignature = 4;
+	string JsonObjectType =5;
+	string JsonObject =6;
+	int32 TransferStatus=7;	
+}
+
+message CoreComMessageResponse {
+	string CoreComMessageResponseId=1;
+	string ClientId = 2;
+	string TransactionIdentifier = 3;
+	string MessageSignature = 4;
+	string JsonObjectType =5;
+	string JsonObject =6;
+	int32 TransferStatus=7;	
 }
 
 

@@ -40,6 +40,6 @@ namespace WallTec.CoreCom.Server
 
         public DbSet<TransferStatus> TransferStatus { get; set; }
         public DbSet<CoreComMessage> IncomingMessages { get; set; }
-        public DbSet<CoreComMessage> OutgoingMessages { get; set; }
+        public DbSet<CoreComMessageResponse> OutgoingMessages { get; set; }
     }
 }
