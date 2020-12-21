@@ -15,7 +15,7 @@ using WallTec.CoreCom.Proto;
 
 namespace WallTec.CoreCom.Client
 {
-    public enum ConnectionStatus
+    public enum ConnectionStatus : byte
     {
         Disconnected = 0,
         Connecting = 1,
@@ -202,7 +202,9 @@ namespace WallTec.CoreCom.Client
 
                 _channel = GrpcChannel.ForAddress($"{_coreComOptions.ServerAddress}", new GrpcChannelOptions
                 {
-                    HttpHandler = _httpHandler
+                    HttpHandler = _httpHandler,
+                     MaxReceiveMessageSize = null, // 5 * 1024 * 1024, // 5 MB
+                    MaxSendMessageSize = null //2 * 1024 * 1024 // 2 MB
                 });
 
                 if (_coreComClient == null)
@@ -280,6 +282,7 @@ namespace WallTec.CoreCom.Client
                 }
                 catch (RpcException ex)
                 {
+                    _workingOnCue = false;
                     ConnectionStatusChange(ConnectionStatus.Disconnected);
                     LatestRpcExceptionChange(ex);
                     exit = true;
