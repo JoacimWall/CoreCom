@@ -111,26 +111,66 @@
     <ImageAsset Include="Assets.xcassets\AppIcon.appiconset\Icon20.png">
       <Visible>false</Visible>
     </ImageAsset>
-    <ImageAsset Include="Assets.xcassets\AppIcon.appiconset\appicon-ios-marketing-appstore.png" />
-    <ImageAsset Include="Assets.xcassets\AppIcon.appiconset\appicon-iphone-notifications%402x.png" />
-    <ImageAsset Include="Assets.xcassets\AppIcon.appiconset\appicon-iphone-notifications%403x.png" />
-    <ImageAsset Include="Assets.xcassets\AppIcon.appiconset\appicon-iphone-settings%402x.png" />
-    <ImageAsset Include="Assets.xcassets\AppIcon.appiconset\appicon-iphone-settings%403x.png" />
-    <ImageAsset Include="Assets.xcassets\AppIcon.appiconset\appicon-iphone-spotlight%402x.png" />
-    <ImageAsset Include="Assets.xcassets\AppIcon.appiconset\appicon-iphone-spotlight%403x.png" />
-    <ImageAsset Include="Assets.xcassets\AppIcon.appiconset\appicon-iphone-app%402x.png" />
-    <ImageAsset Include="Assets.xcassets\AppIcon.appiconset\appicon-iphone-app%403x.png" />
-    <ImageAsset Include="Assets.xcassets\AppIcon.appiconset\appicon-ipad-notifications.png" />
-    <ImageAsset Include="Assets.xcassets\AppIcon.appiconset\appicon-ipad-notifications%402x.png" />
-    <ImageAsset Include="Assets.xcassets\AppIcon.appiconset\appicon-ipad-settings.png" />
-    <ImageAsset Include="Assets.xcassets\AppIcon.appiconset\appicon-ipad-settings%402x.png" />
-    <ImageAsset Include="Assets.xcassets\AppIcon.appiconset\appicon-ipad-spotlight.png" />
-    <ImageAsset Include="Assets.xcassets\AppIcon.appiconset\appicon-ipad-spotlight%402x.png" />
-    <ImageAsset Include="Assets.xcassets\AppIcon.appiconset\appicon-ipad-app.png" />
-    <ImageAsset Include="Assets.xcassets\AppIcon.appiconset\appicon-ipad-app%402x.png" />
-    <ImageAsset Include="Assets.xcassets\AppIcon.appiconset\appicon-ipad-pro-app%402x.png" />
-    <ImageAsset Include="Assets.xcassets\AppIcon.appiconset\appicon-carplay%402x.png" />
-    <ImageAsset Include="Assets.xcassets\AppIcon.appiconset\appicon-carplay%403x.png" />
+    <ImageAsset Include="Assets.xcassets\AppIcon.appiconset\appicon-ios-marketing-appstore.png">
+      <Visible>false</Visible>
+    </ImageAsset>
+    <ImageAsset Include="Assets.xcassets\AppIcon.appiconset\appicon-iphone-notifications%402x.png">
+      <Visible>false</Visible>
+    </ImageAsset>
+    <ImageAsset Include="Assets.xcassets\AppIcon.appiconset\appicon-iphone-notifications%403x.png">
+      <Visible>false</Visible>
+    </ImageAsset>
+    <ImageAsset Include="Assets.xcassets\AppIcon.appiconset\appicon-iphone-settings%402x.png">
+      <Visible>false</Visible>
+    </ImageAsset>
+    <ImageAsset Include="Assets.xcassets\AppIcon.appiconset\appicon-iphone-settings%403x.png">
+      <Visible>false</Visible>
+    </ImageAsset>
+    <ImageAsset Include="Assets.xcassets\AppIcon.appiconset\appicon-iphone-spotlight%402x.png">
+      <Visible>false</Visible>
+    </ImageAsset>
+    <ImageAsset Include="Assets.xcassets\AppIcon.appiconset\appicon-iphone-spotlight%403x.png">
+      <Visible>false</Visible>
+    </ImageAsset>
+    <ImageAsset Include="Assets.xcassets\AppIcon.appiconset\appicon-iphone-app%402x.png">
+      <Visible>false</Visible>
+    </ImageAsset>
+    <ImageAsset Include="Assets.xcassets\AppIcon.appiconset\appicon-iphone-app%403x.png">
+      <Visible>false</Visible>
+    </ImageAsset>
+    <ImageAsset Include="Assets.xcassets\AppIcon.appiconset\appicon-ipad-notifications.png">
+      <Visible>false</Visible>
+    </ImageAsset>
+    <ImageAsset Include="Assets.xcassets\AppIcon.appiconset\appicon-ipad-notifications%402x.png">
+      <Visible>false</Visible>
+    </ImageAsset>
+    <ImageAsset Include="Assets.xcassets\AppIcon.appiconset\appicon-ipad-settings.png">
+      <Visible>false</Visible>
+    </ImageAsset>
+    <ImageAsset Include="Assets.xcassets\AppIcon.appiconset\appicon-ipad-settings%402x.png">
+      <Visible>false</Visible>
+    </ImageAsset>
+    <ImageAsset Include="Assets.xcassets\AppIcon.appiconset\appicon-ipad-spotlight.png">
+      <Visible>false</Visible>
+    </ImageAsset>
+    <ImageAsset Include="Assets.xcassets\AppIcon.appiconset\appicon-ipad-spotlight%402x.png">
+      <Visible>false</Visible>
+    </ImageAsset>
+    <ImageAsset Include="Assets.xcassets\AppIcon.appiconset\appicon-ipad-app.png">
+      <Visible>false</Visible>
+    </ImageAsset>
+    <ImageAsset Include="Assets.xcassets\AppIcon.appiconset\appicon-ipad-app%402x.png">
+      <Visible>false</Visible>
+    </ImageAsset>
+    <ImageAsset Include="Assets.xcassets\AppIcon.appiconset\appicon-ipad-pro-app%402x.png">
+      <Visible>false</Visible>
+    </ImageAsset>
+    <ImageAsset Include="Assets.xcassets\AppIcon.appiconset\appicon-carplay%402x.png">
+      <Visible>false</Visible>
+    </ImageAsset>
+    <ImageAsset Include="Assets.xcassets\AppIcon.appiconset\appicon-carplay%403x.png">
+      <Visible>false</Visible>
+    </ImageAsset>
     <ImageAsset Include="Assets.xcassets\AppIcon.appiconset\Contents.json">
       <Visible>False</Visible>
     </ImageAsset>
@@ -144,7 +184,7 @@
     <Reference Include="System.Numerics.Vectors" />
   </ItemGroup>
   <ItemGroup>
-   <PackageReference Include="Google.Protobuf" Version="3.14.0" />
+    <PackageReference Include="Google.Protobuf" Version="3.14.0" />
     <PackageReference Include="Grpc.Net.Client" Version="2.34.0" />
     <PackageReference Include="Grpc.Net.Client.Web" Version="2.34.0" />
     <PackageReference Include="Grpc.Tools" Version="2.34.0" />

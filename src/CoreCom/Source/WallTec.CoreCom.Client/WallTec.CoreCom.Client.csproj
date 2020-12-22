@@ -2,6 +2,13 @@
 
   <PropertyGroup>
     <TargetFramework>netstandard2.1</TargetFramework>
+    <Authors>Joacim Wall</Authors>
+    <Company>WallTec</Company>
+    <Description>Framework for simplifying communication between client and server with gRPC. Main features: offline support, message queue</Description>
+    <PackageTags>gRPC, Xamarin</PackageTags>
+    <NeutralLanguage>en</NeutralLanguage>
+    <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
+    <Product>CoreCom</Product>
   </PropertyGroup>
 
   <ItemGroup>

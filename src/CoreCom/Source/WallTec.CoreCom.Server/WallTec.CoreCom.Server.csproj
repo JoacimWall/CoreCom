@@ -2,6 +2,11 @@
 
   <PropertyGroup>
     <TargetFramework>netcoreapp3.1</TargetFramework>
+    <Authors>Joacim Wall</Authors>
+    <Company>WallTec</Company>
+    <Description>Framework for simplifying communication between client and server with gRPC. Main features: offline support, message queue</Description>
+    <Product>CoreCom</Product>
+    <NeutralLanguage>en</NeutralLanguage>
   </PropertyGroup>
 
   <ItemGroup>
