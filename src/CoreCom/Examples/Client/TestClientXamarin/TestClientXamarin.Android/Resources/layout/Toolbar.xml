@@ -1,9 +1,14 @@
-<android.support.v7.widget.Toolbar
-    xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.appcompat.widget.Toolbar xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@+id/toolbar"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:background="?attr/colorPrimary"
+    android:background="?android:attr/colorAccent"
     android:theme="@style/ThemeOverlay.AppCompat.Dark.ActionBar"
-    android:popupTheme="@style/ThemeOverlay.AppCompat.Light" />
-
+    
+    android:contentInsetLeft="0dp"
+    android:contentInsetStart="0dp"   
+    android:contentInsetRight="0dp"
+    android:contentInsetEnd="0dp"
+    
+    android:popupTheme="@style/MainTheme.Base">
+</androidx.appcompat.widget.Toolbar>

@@ -39,7 +39,7 @@ namespace WallTec.CoreCom.Server
                     .UseInMemoryDatabase(databaseName: "CoreComDb").Options;
 
             _config = config;
-            _coreComOptions.LogSettings.logSource = (logSource)Convert.ToInt32(_config["CoreCome:CoreComOptions:LogSettings_logSource"]);
+            _coreComOptions.LogSettings.logSource = (logSource)Convert.ToInt32(_config["CoreCom:CoreComOptions:LogSettings_logSource"]);
 
             //  services.AddDbContext<CoreComContext>(options => options.UseInMemoryDatabase(databaseName: "CoreComDb"));
 
