@@ -1,8 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using WallTec.CoreCom.Proto;
 using WallTec.CoreCom.Sheard.Models;
-
-namespace WallTec.CoreCom.Server
+namespace WallTec.CoreCom.Client
 {
     public class CoreComContext : DbContext
     {
@@ -28,7 +27,7 @@ namespace WallTec.CoreCom.Server
 
 
             //Seed data
-            modelBuilder.Entity<TransferStatus>().HasData(new TransferStatus { TransferStatusId = 0, Name = "New"});
+            modelBuilder.Entity<TransferStatus>().HasData(new TransferStatus { TransferStatusId = 0, Name = "New" });
             modelBuilder.Entity<TransferStatus>().HasData(new TransferStatus { TransferStatusId = 1, Name = "InProcess" });
             modelBuilder.Entity<TransferStatus>().HasData(new TransferStatus { TransferStatusId = 2, Name = "Recived" });
             modelBuilder.Entity<TransferStatus>().HasData(new TransferStatus { TransferStatusId = 3, Name = "Transferred" });
@@ -36,7 +35,7 @@ namespace WallTec.CoreCom.Server
         }
 
         public DbSet<TransferStatus> TransferStatus { get; set; }
-        public DbSet<CoreComMessage> IncomingMessages { get; set; }
-        public DbSet<CoreComMessageResponse> OutgoingMessages { get; set; }
+        public DbSet<CoreComMessageResponse> IncomingMessages { get; set; }
+        public DbSet<CoreComMessage> OutgoingMessages { get; set; }
     }
 }

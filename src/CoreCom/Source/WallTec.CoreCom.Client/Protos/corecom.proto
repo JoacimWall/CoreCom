@@ -35,7 +35,8 @@ message CoreComMessage {
 	string MessageSignature = 4;
 	string JsonObjectType =5;
 	string JsonObject =6;
-	int32 TransferStatus=7;	
+	int32 TransferStatus=7;
+	bool SendAuth=8;	
 }
 
 message CoreComMessageResponse {

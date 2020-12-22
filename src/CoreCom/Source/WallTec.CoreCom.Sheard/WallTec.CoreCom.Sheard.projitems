@@ -11,5 +11,9 @@
   <ItemGroup>
     <Compile Include="$(MSBuildThisFileDirectory)CoreComInternalSignatures.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)CoreComUserInfo.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Models\TransferStatus.cs" Condition=" '$(EnableDefaultCompileItems)' == 'true' " />
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="$(MSBuildThisFileDirectory)Models\" />
   </ItemGroup>
 </Project>

@@ -22,7 +22,7 @@ namespace TestClientXamarin
 
         protected async override void OnStart()
         {
-           await ServiceCoreCom.SetupCoreComServer();
+           ServiceCoreCom.SetupCoreComServer();
            await ServiceCoreCom.ConnectCoreComServer();
         }
         

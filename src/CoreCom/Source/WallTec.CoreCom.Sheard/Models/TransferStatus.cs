@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Text;
 
-namespace WallTec.CoreCom.Server.Models
+namespace WallTec.CoreCom.Sheard.Models
 {
    public class TransferStatus
     {

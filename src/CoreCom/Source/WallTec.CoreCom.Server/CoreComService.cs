@@ -107,42 +107,56 @@ namespace WallTec.CoreCom.Server
         {
             using (var dbContext = new CoreComContext(_dbContextOptions))
             {
-                //Check if we allready got this meessage
-                var exist = await dbContext.OutgoingMessages.FirstOrDefaultAsync(x => x.TransactionIdentifier == request.TransactionIdentifier);
-                if (exist == null)
-                {
-
-                    //First process messages so it's added to cure
-                    if (isAuth)
-                        await ParseClientToServerMessageAuth(request);
-                    else
-                        await ParseClientToServerMessage(request);
-
-                    //Add loging
-                    request.TransferStatus = (int)TransferStatusEnum.Recived;
-                    dbContext.IncomingMessages.Add(request);
-                    //Add response to client
-                    dbContext.OutgoingMessages.Add(new CoreComMessageResponse
-                    {
-                        ClientId = request.ClientId,
-                        CoreComMessageResponseId = Guid.NewGuid().ToString(),
-                        TransactionIdentifier = request.TransactionIdentifier,
-                        MessageSignature = CoreComInternalSignatures.CoreComInternal_StatusUpdate,
-                        TransferStatus = request.TransferStatus
-                    });
-
-                    await dbContext.SaveChangesAsync();
-                }
+                //First process messages so it's added to cure
+                if (isAuth)
+                    await ParseClientToServerMessageAuth(request);
                 else
-                { //message exist allready then the client need to get status update that we have recived it
-                    //Change back from Transferd to Recived
-                    exist.TransferStatus = (int)TransferStatusEnum.Recived;
-                    await dbContext.SaveChangesAsync();
-                }
-            }
+                    await ParseClientToServerMessage(request);
 
+                //Add loging
+                request.TransferStatus = (int)TransferStatusEnum.Recived;
+                dbContext.IncomingMessages.Add(request);
+                
+                await dbContext.SaveChangesAsync();
+            }
             //process cue
             await ProcessCue(request, responseStream, context);
+
+            //Check if we allready got this meessage
+            //var exist = await dbContext.OutgoingMessages.FirstOrDefaultAsync(x => x.TransactionIdentifier == request.TransactionIdentifier);
+            //if (exist == null)
+            //{
+
+            //    //First process messages so it's added to cure
+            //    if (isAuth)
+            //        await ParseClientToServerMessageAuth(request);
+            //    else
+            //        await ParseClientToServerMessage(request);
+
+            //    //Add loging
+            //    request.TransferStatus = (int)TransferStatusEnum.Recived;
+            //    dbContext.IncomingMessages.Add(request);
+            //    //Add response to client
+            //    dbContext.OutgoingMessages.Add(new CoreComMessageResponse
+            //    {
+            //        ClientId = request.ClientId,
+            //        CoreComMessageResponseId = Guid.NewGuid().ToString(),
+            //        TransactionIdentifier = request.TransactionIdentifier,
+            //        MessageSignature = CoreComInternalSignatures.CoreComInternal_StatusUpdate,
+            //        TransferStatus = request.TransferStatus
+            //    });
+
+            //    await dbContext.SaveChangesAsync();
+            //}
+            //else
+            //{ //message exist allready then the client need to get status update that we have recived it
+            //    //Change back from Transferd to Recived
+            //    exist.TransferStatus = (int)TransferStatusEnum.Recived;
+            //    await dbContext.SaveChangesAsync();
+            //}
+
+
+
 
         }
         private async Task<bool> ProcessCue(CoreComMessage request, IServerStreamWriter<CoreComMessageResponse> responseStream, ServerCallContext context)

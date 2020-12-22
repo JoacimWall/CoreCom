@@ -12,6 +12,7 @@ using Grpc.Core;
 using Grpc.Net.Client.Web;
 using System.Net.Http;
 using WallTec.CoreCom.Proto;
+using Microsoft.EntityFrameworkCore;
 
 namespace WallTec.CoreCom.Client
 {
@@ -31,13 +32,13 @@ namespace WallTec.CoreCom.Client
         private Proto.CoreCom.CoreComClient _coreComClient;
         private readonly List<Tuple<Func<CoreComUserInfo, Task>, string>> _receiveDelegatesOneParm = new List<Tuple<Func<CoreComUserInfo, Task>, string>>();
         private readonly List<Tuple<Func<object, CoreComUserInfo, Task>, string, Type>> _receiveDelegatesTwoParm = new List<Tuple<Func<object, CoreComUserInfo, Task>, string, Type>>();
-        private readonly List<MessageCureRecord> _messagesOutgoing = new List<MessageCureRecord>();
-
+        
         //Offline Propertys
         private System.Timers.Timer _timer;
         private System.Timers.Timer _checkCueTimer;
         private ConnectionStatus _connectionStatus;
         private RpcException _latestRpcException;
+        private DbContextOptions _dbContextOptions;
         //Events
         public event EventHandler<ConnectionStatus> OnConnectionStatusChange;
         protected virtual void ConnectionStatusChange(ConnectionStatus e)
@@ -75,15 +76,10 @@ namespace WallTec.CoreCom.Client
             _checkCueTimer = new System.Timers.Timer(30000);
             _checkCueTimer.Elapsed += _checkCueTimer_Elapsed;
 
-            // Register for connectivity changes, be sure to unsubscribe when finished
-            //Xamarin.Essentials.Connectivity.ConnectivityChanged += Connectivity_ConnectivityChanged;
+            _dbContextOptions = new DbContextOptionsBuilder<CoreComContext>()
+                    .UseInMemoryDatabase(databaseName: "CoreComDb").Options;
+    
         }
-
-        //void Connectivity_ConnectivityChanged(object sender, ConnectivityChangedEventArgs e)
-        //{
-        //    var access = e.NetworkAccess;
-        //    var profiles = e.ConnectionProfiles;
-        //}
 
 
         public bool Connect(CoreComOptions coreComOptions)
@@ -111,23 +107,23 @@ namespace WallTec.CoreCom.Client
 
         public async void CheckServerCue()
         {
-            await SendAsync(CoreComInternalSignatures.CoreComInternal_PullCue);
+            await SendAsync(CoreComInternalSignatures.CoreComInternal_PullCue).ConfigureAwait(false);
         }
         public async Task<bool> SendAsync(object outgoingObject, string messageSignature)
         {
-            return await SendInternalAsync(outgoingObject, messageSignature, false);
+            return await SendInternalAsync(outgoingObject, messageSignature, false).ConfigureAwait(false);
         }
         public async Task<bool> SendAsync(string messageSignature)
         {
-            return await SendInternalAsync(null, messageSignature, false);
+            return await SendInternalAsync(null, messageSignature, false).ConfigureAwait(false);
         }
         public async Task<bool> SendAuthAsync(object outgoingObject, string messageSignature)
         {
-            return await SendInternalAsync(outgoingObject, messageSignature, true);
+            return await SendInternalAsync(outgoingObject, messageSignature, true).ConfigureAwait(false);
         }
         public async Task<bool> SendAuthAsync(string messageSignature)
         {
-            return await SendInternalAsync(null, messageSignature, true);
+            return await SendInternalAsync(null, messageSignature, true).ConfigureAwait(false);
         }
         #endregion
 
@@ -141,13 +137,13 @@ namespace WallTec.CoreCom.Client
             {   //after connection error wait 10 sec to try
                 _timer.Interval = 10000;
             }
-            await OpenChannel();
+            await OpenChannel().ConfigureAwait(false);
 
         }
         private async void _checkCueTimer_Elapsed(object sender, ElapsedEventArgs e)
         {
             _checkCueTimer.Enabled = false;
-            await SendAsync(CoreComInternalSignatures.CoreComInternal_PullCue);
+            await SendAsync(CoreComInternalSignatures.CoreComInternal_PullCue).ConfigureAwait(false);
         }
 
         private CallOptions GetCallOptions(bool isConnectToServer = false, bool addAuth = false)
@@ -252,52 +248,62 @@ namespace WallTec.CoreCom.Client
         private bool _workingOnCue = false;
         private async Task<bool> ProcessCue()
         {
-            if (_workingOnCue)
+            if (_workingOnCue ||  _connectionStatus != ConnectionStatus.Connected)
                 return true;
+
             try
             {
-                //get all messages that are in process or new
-                //var cue = _messagesOutgoing.Where(x => x.CoreComMessage.TransferStatus == (int)TransferStatus.New || x.CoreComMessage.TransferStatus == (int)TransferStatus.InProcess)
-                //    .OrderByDescending(s => s.CoreComMessage.TransferStatus).ToList();
-
-                while (_messagesOutgoing.Any(x => x.CoreComMessage.TransferStatus < (int)TransferStatusEnum.Recived) && _connectionStatus == ConnectionStatus.Connected)
+                _workingOnCue = true;
+                using (var DbContext = new CoreComContext(_dbContextOptions))
                 {
-                    _workingOnCue = true;
-                    var message = _messagesOutgoing.FirstOrDefault(x => x.CoreComMessage.TransferStatus < (int)TransferStatusEnum.Recived);
-                    message.CoreComMessage.TransferStatus = (int)TransferStatusEnum.InProcess;
+                    var outgoingMess = DbContext.OutgoingMessages.
+                        Where(x => x.TransferStatus < (int)TransferStatusEnum.Transferred).ToList();
 
-                   // AsyncServerStreamingCall<CoreComMessageResponse> streamingCall;
-                    if (message.SendAuth)
+                    foreach (var item in outgoingMess)
                     {
-                        using var streamingCall = _coreComClient.SubscribeServerToClientAuth(message.CoreComMessage, GetCallOptions(false, message.SendAuth));
+                        if (item.SendAuth)
+                        {
+                            using var streamingCall = _coreComClient.SubscribeServerToClientAuth(item, GetCallOptions(false, item.SendAuth));
 
-                        message.CoreComMessage.TransferStatus = (int)TransferStatusEnum.InProcess;
+                            item.TransferStatus = (int)TransferStatusEnum.Transferred;
+                            await DbContext.SaveChangesAsync().ConfigureAwait(false);
 
-                        await foreach (var returnMessage in streamingCall.ResponseStream.ReadAllAsync())
-                           if (returnMessage.MessageSignature == CoreComInternalSignatures.CoreComInternal_StatusUpdate)
-                                //Update status
-                                _messagesOutgoing.FirstOrDefault(x => x.CoreComMessage.TransactionIdentifier == returnMessage.TransactionIdentifier).CoreComMessage.TransferStatus = returnMessage.TransferStatus;
-                            else  //parse message
+                            await foreach (var returnMessage in streamingCall.ResponseStream.ReadAllAsync().ConfigureAwait(false))
                                 await ParseServerToClientMessage(returnMessage);
+                            //if (returnMessage.MessageSignature == CoreComInternalSignatures.CoreComInternal_StatusUpdate)
+                            //    //Update status
+                            //    _messagesOutgoing.FirstOrDefault(x => x.CoreComMessage.TransactionIdentifier == returnMessage.TransactionIdentifier).CoreComMessage.TransferStatus = returnMessage.TransferStatus;
+                            //else  //parse message
 
-                        streamingCall.Dispose();
-                    }
-                    else
-                    {
-                        using var streamingCall = _coreComClient.SubscribeServerToClient(message.CoreComMessage, GetCallOptions(false, message.SendAuth));
 
-                        message.CoreComMessage.TransferStatus = (int)TransferStatusEnum.InProcess;
+                            streamingCall.Dispose();
+                        }
+                        else
+                        {
+                            using var streamingCall = _coreComClient.SubscribeServerToClient(item, GetCallOptions(false, item.SendAuth));
 
-                        await foreach (var returnMessage in streamingCall.ResponseStream.ReadAllAsync())
-                            if (returnMessage.MessageSignature == CoreComInternalSignatures.CoreComInternal_StatusUpdate)
-                                //Update status
-                                _messagesOutgoing.FirstOrDefault(x => x.CoreComMessage.TransactionIdentifier == returnMessage.TransactionIdentifier).CoreComMessage.TransferStatus = returnMessage.TransferStatus;
-                            else  //parse message
+                            item.TransferStatus = (int)TransferStatusEnum.Transferred;
+                            await DbContext.SaveChangesAsync();
+
+                            await foreach (var returnMessage in streamingCall.ResponseStream.ReadAllAsync().ConfigureAwait(false))
                                 await ParseServerToClientMessage(returnMessage);
+                            //if (returnMessage.MessageSignature == CoreComInternalSignatures.CoreComInternal_StatusUpdate)
+                            //    //Update status
+                            //    _messagesOutgoing.FirstOrDefault(x => x.CoreComMessage.TransactionIdentifier == returnMessage.TransactionIdentifier).CoreComMessage.TransferStatus = returnMessage.TransferStatus;
+                            //else  //parse message
 
-                        streamingCall.Dispose();
+
+                            streamingCall.Dispose();
+                        }
+                        //Remove messages
+                        item.TransferStatus = (int)TransferStatusEnum.Transferred;
+                            await DbContext.SaveChangesAsync().ConfigureAwait(false);
+                        }
+
                     }
-                }
+               
+
+                
             }
             catch (RpcException ex)
             {
@@ -363,14 +369,19 @@ namespace WallTec.CoreCom.Client
                     TransactionIdentifier =  Guid.NewGuid().ToString(),
                     MessageSignature = messageSignature,
                     JsonObjectType = jsonObjectType,
-                    JsonObject = jsonObject
+                    JsonObject = jsonObject,
+                    SendAuth = sendAuth
                 };
 
+                using (var dbContext = new CoreComContext(_dbContextOptions))
+                {
 
+                    dbContext.OutgoingMessages.Add(coreComMessage);
+                    await dbContext.SaveChangesAsync().ConfigureAwait(false);
+                }
+                    
 
-                _messagesOutgoing.Add(new MessageCureRecord { CoreComMessage = coreComMessage, SendAuth = sendAuth });
-
-                await ProcessCue();
+                await ProcessCue().ConfigureAwait(false);
             }
             catch (Exception ex)
             {
@@ -386,7 +397,7 @@ namespace WallTec.CoreCom.Client
         {
             if (request.MessageSignature.StartsWith("CoreComInternal"))
             {
-                await ParseCoreComFrameworkFromServerMessage(request);
+                await ParseCoreComFrameworkFromServerMessage(request).ConfigureAwait(false);
                 return;
             }
 
@@ -397,7 +408,7 @@ namespace WallTec.CoreCom.Client
                 var funcToRun = _receiveDelegatesOneParm.FirstOrDefault(x => x.Item2 == request.MessageSignature);
                 if (funcToRun != null)
                 {
-                    await funcToRun.Item1.Invoke(coreComUserInfo);
+                    await funcToRun.Item1.Invoke(coreComUserInfo).ConfigureAwait(false);
                 }
                 else
                 {
@@ -410,7 +421,7 @@ namespace WallTec.CoreCom.Client
                 if (funcToRun != null)
                 {
                     var objectDeser = JsonSerializer.Deserialize(request.JsonObject, funcToRun.Item3);
-                    await funcToRun.Item1.Invoke(objectDeser, coreComUserInfo);
+                    await funcToRun.Item1.Invoke(objectDeser, coreComUserInfo).ConfigureAwait(false);
                 }
                 else
                 {

@@ -127,7 +127,7 @@ namespace TestClientXamarin.Services
 
 
 
-        public async Task<bool> SetupCoreComServer()
+        public bool SetupCoreComServer()
         {
 
             //Setup events
@@ -154,7 +154,7 @@ namespace TestClientXamarin.Services
 #region "Authentication with backen token and clientId from database"
             //coreComOptions.ClientId and coreComOptions.ClientToken is set inside the Authenticate method
             string username = (Device.RuntimePlatform == Device.Android ? "demoDroid" : "demoIos"); //simulate diffrent user
-            var token = await Authenticate(username, "1234");
+            var token = await Authenticate(username, "1234").ConfigureAwait(false);
             if (!token)
                 return false;
 #endregion
