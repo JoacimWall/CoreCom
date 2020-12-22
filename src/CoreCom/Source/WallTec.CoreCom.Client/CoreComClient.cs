@@ -85,13 +85,11 @@ namespace WallTec.CoreCom.Client
             try
             {
 
-
-
                 //start timmer for connect to server
                 _timer.Enabled = false;
                 if (_connectionStatus == ConnectionStatus.Connected)
                 {
-                    var response = await _coreComClient.ClientDisconnectFromServerAsync(new DisconnectFromServerRequest
+                    var response =  _coreComClient.ClientDisconnectFromServer(new DisconnectFromServerRequest
                     { ClientId = _coreComOptions.ClientId }, GetCallOptions(false));
                     //TODO: log disconnected
                 }
