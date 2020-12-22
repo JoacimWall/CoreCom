@@ -93,7 +93,7 @@ namespace TestClientXamarin.ViewModel
         }
         private async Task CheckCueCommandAsync()
         {
-            App.ServiceCoreCom.CoreComClient.CheckServerCue();
+            App.ServiceCoreCom.CheckServerCue();
         }
         private async Task GetProjectsAsync()
         {

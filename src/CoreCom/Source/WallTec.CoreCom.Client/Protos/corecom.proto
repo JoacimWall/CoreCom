@@ -10,6 +10,8 @@ import "google/protobuf/timestamp.proto";
 service CoreCom {
 	
 	rpc ClientConnectToServer(ConnectToServerRequest) returns (ConnectToServerResponse);
+
+	rpc ClientDisconnectFromServer(DisconnectFromServerRequest) returns (DisconnectFromServerResponse);
 	//Public functions needs no token
 
 	rpc SubscribeServerToClient(CoreComMessage) returns (stream CoreComMessageResponse);
@@ -23,6 +25,17 @@ message ConnectToServerRequest {
 	
 }
 message ConnectToServerResponse {
+	string Response = 1;
+	google.protobuf.Timestamp ServerDateTime = 2;
+	
+}
+
+message DisconnectFromServerRequest {
+	string ClientId = 1;
+	
+}
+
+message DisconnectFromServerResponse {
 	string Response = 1;
 	google.protobuf.Timestamp ServerDateTime = 2;
 	
@@ -46,5 +59,7 @@ message CoreComMessageResponse {
 	string MessageSignature = 4;
 	string JsonObjectType =5;
 	string JsonObject =6;
-	int32 TransferStatus=7;		
+	int32 TransferStatus=7;	
 }
+
+

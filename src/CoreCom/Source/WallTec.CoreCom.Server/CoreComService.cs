@@ -88,6 +88,12 @@ namespace WallTec.CoreCom.Server
 
             return new ConnectToServerResponse { Response = "Client are connected", ServerDateTime = Timestamp.FromDateTime(DateTime.UtcNow) };
         }
+        public override async Task<DisconnectFromServerResponse> ClientDisconnectFromServer(DisconnectFromServerRequest request, ServerCallContext context)
+        {
+            RemoveClient(request.ClientId);
+            return new DisconnectFromServerResponse { Response = "Client are disconnected", ServerDateTime = Timestamp.FromDateTime(DateTime.UtcNow) } ;
+        }
+
         public override async Task SubscribeServerToClient(CoreComMessage request, IServerStreamWriter<CoreComMessageResponse> responseStream, ServerCallContext context)
         {
             
@@ -230,7 +236,13 @@ namespace WallTec.CoreCom.Server
 
 
         }
-
+        internal bool RemoveClient(string clientId)
+        {
+            
+            Clients.Remove(Clients.FirstOrDefault(c => c.CoreComUserInfo.ClientId == clientId));
+            //Todo: remove memory cue 
+            return true;
+        }
 
         internal Client AddClient(string clientId)
         {

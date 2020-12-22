@@ -1,10 +1,4 @@
-﻿using Grpc.Core;
-using System;
-using System.Collections.Generic;
-using System.Text;
-using System.Threading.Tasks;
-using WallTec.CoreCom.Proto;
-using WallTec.CoreCom.Sheard;
+﻿using WallTec.CoreCom.Sheard;
 
 
 namespace WallTec.CoreCom.Server.Models

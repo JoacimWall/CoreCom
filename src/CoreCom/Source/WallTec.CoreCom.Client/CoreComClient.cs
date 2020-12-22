@@ -69,7 +69,6 @@ namespace WallTec.CoreCom.Client
         #region Public Functions
         public CoreComClient()
         {
-            // Create a timer with a ten second interval.
             _timer = new System.Timers.Timer(1000);
             _timer.Elapsed += OnConnectTimedEvent;
 
@@ -81,17 +80,46 @@ namespace WallTec.CoreCom.Client
     
         }
 
+        public async Task<bool>  Disconnect()
+        {
+            try
+            {
 
+
+
+                //start timmer for connect to server
+                _timer.Enabled = false;
+                if (_connectionStatus == ConnectionStatus.Connected)
+                {
+                    var response = await _coreComClient.ClientDisconnectFromServerAsync(new DisconnectFromServerRequest
+                    { ClientId = _coreComOptions.ClientId }, GetCallOptions(false));
+                    //TODO: log disconnected
+                }
+
+                _coreComClient = null;
+                await _channel.ShutdownAsync();
+
+            }
+            catch (Exception ex)
+            {
+
+            }
+            finally
+            {
+                ConnectionStatusChange(ConnectionStatus.Disconnected);
+            }
+            
+            return true;
+        }
         public bool Connect(CoreComOptions coreComOptions)
         {
             _coreComOptions = coreComOptions;
 
-            if (coreComOptions.ProcessQueueIntervalSec >= 0)
-                _checkCueTimer.Interval = coreComOptions.ProcessQueueIntervalSec * 1000;
-
             //start timmer for connect to server
+            _timer.Interval = Convert.ToDouble(1000);
             _timer.Enabled = true;
 
+            _checkCueTimer.Interval = Convert.ToDouble(coreComOptions.RequestServerQueueIntervalSec * 1000);
 
             return true;
         }
@@ -201,7 +229,7 @@ namespace WallTec.CoreCom.Client
                     MaxSendMessageSize = null //2 * 1024 * 1024 // 2 MB
                 });
 
-                if (_coreComClient == null)
+                if (_coreComClient != null)
                     _coreComClient = null;
 
                 _coreComClient = new Proto.CoreCom.CoreComClient(_channel);
@@ -214,7 +242,7 @@ namespace WallTec.CoreCom.Client
 
                 ConnectionStatusChange(ConnectionStatus.Connected);
                 //Start timmer for check cue server and client
-                if (_coreComOptions.ProcessQueueIntervalSec > 0)
+                if (_coreComOptions.RequestServerQueueIntervalSec > 0)
                     _checkCueTimer.Enabled = true;
 
                 LatestRpcExceptionChange(null);
@@ -339,7 +367,7 @@ namespace WallTec.CoreCom.Client
             }
             _workingOnCue = false;
             //Start timmer for check cue server and client
-            if (_coreComOptions.ProcessQueueIntervalSec > 0)
+            if (_coreComOptions.RequestServerQueueIntervalSec > 0)
                 _checkCueTimer.Enabled = true;
 
             return true;

@@ -9,9 +9,13 @@
     <PackageReference Include="Grpc.AspNetCore" Version="2.34.0" />
     <PackageReference Include="Grpc.AspNetCore.Web" Version="2.34.0" />
     <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="3.1.4" />
-    <PackageReference Include="WallTec.CoreCom.Server" Version="1.0.0" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\Source\WallTec.CoreCom.Server\WallTec.CoreCom.Server.csproj">
+      <GlobalPropertiesToRemove></GlobalPropertiesToRemove>
+    </ProjectReference>
+  </ItemGroup>
   <Import Project="..\..\Shared\WallTec.CoreCom.Example.Shared\WallTec.CoreCom.Example.Shared.projitems" Label="Shared" />
 
 </Project>

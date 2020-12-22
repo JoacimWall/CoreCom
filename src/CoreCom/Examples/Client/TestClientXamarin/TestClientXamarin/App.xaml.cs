@@ -28,10 +28,12 @@ namespace TestClientXamarin
         
         protected override void OnSleep()
         {
+            ServiceCoreCom.DisconnectCoreComServer();
         }
 
-        protected override void OnResume()
+        protected async override void OnResume()
         {
+            await ServiceCoreCom.ConnectCoreComServer();
         }
     }
 }

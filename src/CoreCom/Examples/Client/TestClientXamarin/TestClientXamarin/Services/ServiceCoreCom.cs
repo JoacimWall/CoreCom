@@ -21,18 +21,17 @@ namespace TestClientXamarin.Services
     public class ServiceCoreCom : MvvmHelpers.ObservableObject
     {
         private CoreComClient _coreComClient = new CoreComClient();
-        private CoreComOptions  _coreComOptions = new CoreComOptions();
+        private CoreComOptions _coreComOptions;
         private static InMemoryData _inMemoryData = new InMemoryData();
 
-        public CoreComClient CoreComClient
-        {
-            get { return _coreComClient; }
+        //public CoreComClient CoreComClient
+        //{
+        //    get { return _coreComClient; }
 
-        }
+        //}
         public ServiceCoreCom()
         {
-            _coreComClient.OnConnectionStatusChange += _coreComClient_OnConnectionStatusChange;
-            _coreComClient.OnLatestRpcExceptionChange += _coreComClient_OnLatestRpcExceptionChange;
+
         }
 
         private void _coreComClient_OnLatestRpcExceptionChange(object sender, RpcException e)
@@ -63,8 +62,8 @@ namespace TestClientXamarin.Services
             {
                 if (value != _connectionStatus)
                 {
-                   SetProperty(ref _connectionStatus , value);
-                   // NotifyPropertyChanged();
+                    SetProperty(ref _connectionStatus, value);
+                    // NotifyPropertyChanged();
                 }
             }
         }
@@ -90,13 +89,13 @@ namespace TestClientXamarin.Services
             {
 
                 Console.WriteLine($"Authenticating as {username}...");
-                
+
                 var httpClientHandler = new HttpClientHandler();
                 //this is so you can debug on mac and emulator the server has "EndpointDefaults": { "Protocols": "Http1"
                 // Return `true` to allow certificates that are untrusted/invalid
                 if (_coreComOptions.DangerousAcceptAnyServerCertificateValidator)
-                    httpClientHandler.ServerCertificateCustomValidationCallback =  HttpClientHandler.DangerousAcceptAnyServerCertificateValidator;
-                
+                    httpClientHandler.ServerCertificateCustomValidationCallback = HttpClientHandler.DangerousAcceptAnyServerCertificateValidator;
+
                 var httpClient = new HttpClient(httpClientHandler);
 
                 var request = new HttpRequestMessage
@@ -104,7 +103,7 @@ namespace TestClientXamarin.Services
                     RequestUri = new Uri($"{_coreComOptions.ServerAddress}/generateJwtToken?username={HttpUtility.UrlEncode(username)}&password={HttpUtility.UrlEncode(password)}"),
                     Method = HttpMethod.Get,
                     Version = new Version(2, 0),
-                    
+
                 };
                 var tokenResponse = await httpClient.SendAsync(request);
                 tokenResponse.EnsureSuccessStatusCode();
@@ -120,7 +119,7 @@ namespace TestClientXamarin.Services
             }
             catch (Exception ex)
             {
-               await App.Current.MainPage.DisplayAlert("CoreCom", ex.Message + " Press Reauthorize try again", "Ok");
+                await App.Current.MainPage.DisplayAlert("CoreCom", ex.Message + " Press Reauthorize try again", "Ok");
                 return false;
             }
         }
@@ -135,31 +134,34 @@ namespace TestClientXamarin.Services
             _coreComClient.Register(GetAddedProject, CoreComSignatures.AddProject, new Project().GetType());
 
             //local debug
-            _coreComOptions.ServerAddress =  (Device.RuntimePlatform == Device.Android ? "https://10.0.2.2:5001" : "https://localhost:5001");
-            //azure debug
-            //_coreComOptions.ServerAddress = "https://wallteccorecomtestserver.azurewebsites.net";
+            _coreComOptions = new CoreComOptions
+            {
+                ServerAddress = (Device.RuntimePlatform == Device.Android ? "https://10.0.2.2:5001" : "https://localhost:5001"),
+                //azure debug
+                //_coreComOptions.ServerAddress = "https://wallteccorecomtestserver.azurewebsites.net";
+                RequestServerQueueIntervalSec = 30,
+                ConnectToServerDeadlineSec = 5,
+                MessageDeadlineSec = 30
 
-            _coreComOptions.ProcessQueueIntervalSec = 30;
-            _coreComOptions.ConnectToServerDeadlineSec = 5;
-            _coreComOptions.MessageDeadlineSec = 30;
+            };
             //Debug local on mac where the server is running in "Kestrel": { "EndpointDefaults": { "Protocols": "Http1"  }  }
-            #if DEBUG
-                _coreComOptions.DangerousAcceptAnyServerCertificateValidator = true;
-            #endif
+#if DEBUG
+            _coreComOptions.DangerousAcceptAnyServerCertificateValidator = true;
+#endif
             return true;
         }
         public async Task<bool> ConnectCoreComServer()
         {
 
-#region "Authentication with backen token and clientId from database"
+            #region "Authentication with backen token and clientId from database"
             //coreComOptions.ClientId and coreComOptions.ClientToken is set inside the Authenticate method
             string username = (Device.RuntimePlatform == Device.Android ? "demoDroid" : "demoIos"); //simulate diffrent user
             var token = await Authenticate(username, "1234").ConfigureAwait(false);
             if (!token)
                 return false;
-#endregion
+            #endregion
 
-#region "No Authentication"
+            #region "No Authentication"
             //Cross-Platform Identifier for the app stay the same as long the app is installed
             //in this senario all backend API is public and the server use guid below to seperate diffrent users requests
             //var id = Preferences.Get("my_id", string.Empty);
@@ -169,11 +171,25 @@ namespace TestClientXamarin.Services
             //    Preferences.Set("my_id", id);
             //}
             //coreComOptions.ClientId = id;
-#endregion
-
+            #endregion
+            _coreComClient.OnConnectionStatusChange += _coreComClient_OnConnectionStatusChange;
+            _coreComClient.OnLatestRpcExceptionChange += _coreComClient_OnLatestRpcExceptionChange;
             _coreComClient.Connect(_coreComOptions);
 
             return true;
+        }
+        public bool DisconnectCoreComServer()
+        {
+            _coreComClient.Disconnect();
+
+            _coreComClient.OnConnectionStatusChange -= _coreComClient_OnConnectionStatusChange;
+            _coreComClient.OnLatestRpcExceptionChange -= _coreComClient_OnLatestRpcExceptionChange;
+            
+            return true;
+        }
+        public void CheckServerCue()
+        {
+            _coreComClient.CheckServerCue();
         }
         public async void SendAsync(object outgoingObject, string messageSignature)
         {

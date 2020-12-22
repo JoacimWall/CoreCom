@@ -19,7 +19,6 @@
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
     <PackageReference Include="Refractored.MvvmHelpers" Version="1.6.2" />
-    <PackageReference Include="WallTec.CoreCom.Client" Version="1.0.0" />
     <PackageReference Include="Xamarin.Forms" Version="4.8.0.1821" />
     <PackageReference Include="Xamarin.Essentials" Version="1.6.0-rc1" />
   </ItemGroup>
@@ -35,6 +34,9 @@
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Converters\" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\..\Source\WallTec.CoreCom.Client\WallTec.CoreCom.Client.csproj" />
   </ItemGroup>
   <Import Project="..\..\..\Shared\WallTec.CoreCom.Example.Shared\WallTec.CoreCom.Example.Shared.projitems" Label="Shared" />
 </Project>

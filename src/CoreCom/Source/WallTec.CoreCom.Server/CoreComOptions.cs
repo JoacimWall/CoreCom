@@ -26,6 +26,12 @@ namespace WallTec.CoreCom.Server
         }
 
     }
+    public enum DatabaseMode
+    {
+        ImMemory=0,
+        OnDisk=1
+
+    }
     public enum logSource
     { 
          NoLoging=0,
