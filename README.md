@@ -25,6 +25,7 @@ The server log all messages to IncommingMessages.log and utgoningMessages.log th
 ### No Logging 
 We do no logging.
 
+## automatically increase deadline time on timeout messages (in development)
 
 # Server
 Server side use gRPC-Web as framework to handle communication between server and clients. The server can run in different modes depending on the need for logging and offline support. 
@@ -52,5 +53,5 @@ The server log all messages to IncommingMessages.log and utgoningMessages.log
 We do no logging.
 
 
-## automatically increase deadline time on timeout messages (in development)
+
 
