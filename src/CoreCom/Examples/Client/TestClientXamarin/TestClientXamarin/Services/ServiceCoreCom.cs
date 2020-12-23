@@ -222,6 +222,7 @@ namespace TestClientXamarin.Services
         public void CheckServerCue()
         {
             _coreComClient.CheckServerCue();
+           
         }
         public async void SendAsync(object outgoingObject, string messageSignature)
         {

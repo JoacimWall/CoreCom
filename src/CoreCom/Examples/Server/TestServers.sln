@@ -5,7 +5,7 @@ VisualStudioVersion = 16.0.29926.136
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Core", "Core", "{4244CE8A-AAA6-4ACB-9A5D-9BF3C7F0DF72}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "WallTec.CoreCom.Server", "..\..\Source\WallTec.CoreCom.Server\WallTec.CoreCom.Server.csproj", "{1829E6B9-4245-4B9B-8003-1252E5D9B60B}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WallTec.CoreCom.Server", "..\..\Source\WallTec.CoreCom.Server\WallTec.CoreCom.Server.csproj", "{1829E6B9-4245-4B9B-8003-1252E5D9B60B}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "WallTec.CoreCom.TestServerAppService", "WallTec.CoreCom.TestServerAppService\WallTec.CoreCom.TestServerAppService.csproj", "{63246566-BCA7-435A-B76F-302D4CB73CEB}"
 EndProject

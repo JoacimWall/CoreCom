@@ -3,7 +3,7 @@ using WallTec.CoreCom.Proto;
 using WallTec.CoreCom.Sheard.Models;
 namespace WallTec.CoreCom.Client
 {
-    public class CoreComContext : DbContext
+    internal class CoreComContext : DbContext
     {
         public CoreComContext(DbContextOptions options) : base(options)
         {
