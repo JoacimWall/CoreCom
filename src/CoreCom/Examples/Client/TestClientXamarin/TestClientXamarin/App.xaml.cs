@@ -17,7 +17,7 @@ namespace TestClientXamarin
         {
             InitializeComponent();
             
-            MainPage = new MainView();
+            MainPage = new MainTabbedView();
         }
 
         protected async override void OnStart()

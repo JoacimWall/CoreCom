@@ -1,0 +1,16 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TabbedPage xmlns="http://xamarin.com/schemas/2014/forms"
+            xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+            xmlns:a="clr-namespace:Xamarin.Forms.PlatformConfiguration.AndroidSpecific;assembly=Xamarin.Forms.Core"
+            xmlns:view="clr-namespace:TestClientXamarin.View"
+            x:Class="TestClientXamarin.View.MainTabbedView"
+            NavigationPage.HasNavigationBar="False"  
+            BarBackgroundColor="Gray"
+            SelectedTabColor="White"
+            UnselectedTabColor="LightGray"
+            a:TabbedPage.ToolbarPlacement="Bottom"
+            a:TabbedPage.IsSwipePagingEnabled="False">
+    <!--Pages can be added as references or inline-->
+   <view:MainView  Title="Projects" />
+   <view:LogView  Title="Log" />
+</TabbedPage>

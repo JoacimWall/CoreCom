@@ -32,7 +32,7 @@ namespace WallTec.CoreCom.Client
         private Proto.CoreCom.CoreComClient _coreComClient;
         private readonly List<Tuple<Func<CoreComUserInfo, Task>, string>> _receiveDelegatesOneParm = new List<Tuple<Func<CoreComUserInfo, Task>, string>>();
         private readonly List<Tuple<Func<object, CoreComUserInfo, Task>, string, Type>> _receiveDelegatesTwoParm = new List<Tuple<Func<object, CoreComUserInfo, Task>, string, Type>>();
-        
+
         //Offline Propertys
         private System.Timers.Timer _timer;
         private System.Timers.Timer _checkCueTimer;
@@ -61,7 +61,17 @@ namespace WallTec.CoreCom.Client
                 handler(this, e);
             }
         }
+        public event EventHandler<LogEvent> OnLogEventOccurred;
+        protected virtual void LogEventOccurred(LogEvent e)
+        {
 
+            //_latestRpcException = e;
+            EventHandler<LogEvent> handler = OnLogEventOccurred;
+            if (handler != null)
+            {
+                handler(this, e);
+            }
+        }
         #endregion
         #region Public Propertys
 
@@ -77,10 +87,10 @@ namespace WallTec.CoreCom.Client
 
             _dbContextOptions = new DbContextOptionsBuilder<CoreComContext>()
                     .UseInMemoryDatabase(databaseName: "CoreComDb").Options;
-    
+
         }
 
-        public async Task<bool>  Disconnect()
+        public async Task<bool> Disconnect()
         {
             try
             {
@@ -89,7 +99,7 @@ namespace WallTec.CoreCom.Client
                 _timer.Enabled = false;
                 if (_connectionStatus == ConnectionStatus.Connected)
                 {
-                    var response =  _coreComClient.ClientDisconnectFromServer(new DisconnectFromServerRequest
+                    var response = _coreComClient.ClientDisconnectFromServer(new DisconnectFromServerRequest
                     { ClientId = _coreComOptions.ClientId }, GetCallOptions(false));
                     //TODO: log disconnected
                 }
@@ -106,7 +116,7 @@ namespace WallTec.CoreCom.Client
             {
                 ConnectionStatusChange(ConnectionStatus.Disconnected);
             }
-            
+
             return true;
         }
         public bool Connect(CoreComOptions coreComOptions)
@@ -128,6 +138,8 @@ namespace WallTec.CoreCom.Client
         }
         public void Register(Func<object, CoreComUserInfo, Task> callback, string messageSignature, Type type)
         {
+            //var parameter= callback.Method.GetParameters().First();
+
             _receiveDelegatesTwoParm.Add(Tuple.Create(callback, messageSignature, type));
         }
 
@@ -179,7 +191,7 @@ namespace WallTec.CoreCom.Client
                 deadlineSec = _coreComOptions.ConnectToServerDeadlineSec;
             else
                 deadlineSec = _coreComOptions.MessageDeadlineSec;
-           
+
             CallOptions calloptions;
             if (addAuth && !string.IsNullOrEmpty(_coreComOptions.ClientToken))
             {
@@ -210,12 +222,12 @@ namespace WallTec.CoreCom.Client
                 //this is so you can debug on mac and emulator the server has "EndpointDefaults": { "Protocols": "Http1"
                 // Return `true` to allow certificates that are untrusted/invalid
                 if (_coreComOptions.DangerousAcceptAnyServerCertificateValidator)
-                     _httpHandler = new GrpcWebHandler(GrpcWebMode.GrpcWebText,  new HttpClientHandler { ServerCertificateCustomValidationCallback = HttpClientHandler.DangerousAcceptAnyServerCertificateValidator });
+                    _httpHandler = new GrpcWebHandler(GrpcWebMode.GrpcWebText, new HttpClientHandler { ServerCertificateCustomValidationCallback = HttpClientHandler.DangerousAcceptAnyServerCertificateValidator });
                 else
                 {
                     _httpHandler = new GrpcWebHandler(GrpcWebMode.GrpcWebText, new HttpClientHandler());
                 }
-               
+
                 //Check if the channel is open den shutdown before create new
                 if (_channel != null)
                     await _channel.ShutdownAsync();
@@ -274,7 +286,7 @@ namespace WallTec.CoreCom.Client
         private bool _workingOnCue = false;
         private async Task<bool> ProcessCue()
         {
-            if (_workingOnCue ||  _connectionStatus != ConnectionStatus.Connected)
+            if (_workingOnCue || _connectionStatus != ConnectionStatus.Connected)
                 return true;
 
             try
@@ -293,14 +305,9 @@ namespace WallTec.CoreCom.Client
 
                             item.TransferStatus = (int)TransferStatusEnum.Transferred;
                             await DbContext.SaveChangesAsync().ConfigureAwait(false);
-
+                            LogEventOccurred(new LogEvent(item));
                             await foreach (var returnMessage in streamingCall.ResponseStream.ReadAllAsync().ConfigureAwait(false))
                                 await ParseServerToClientMessage(returnMessage);
-                            //if (returnMessage.MessageSignature == CoreComInternalSignatures.CoreComInternal_StatusUpdate)
-                            //    //Update status
-                            //    _messagesOutgoing.FirstOrDefault(x => x.CoreComMessage.TransactionIdentifier == returnMessage.TransactionIdentifier).CoreComMessage.TransferStatus = returnMessage.TransferStatus;
-                            //else  //parse message
-
 
                             streamingCall.Dispose();
                         }
@@ -310,31 +317,26 @@ namespace WallTec.CoreCom.Client
 
                             item.TransferStatus = (int)TransferStatusEnum.Transferred;
                             await DbContext.SaveChangesAsync();
-
+                            LogEventOccurred(new LogEvent(item));
                             await foreach (var returnMessage in streamingCall.ResponseStream.ReadAllAsync().ConfigureAwait(false))
                                 await ParseServerToClientMessage(returnMessage);
-                            //if (returnMessage.MessageSignature == CoreComInternalSignatures.CoreComInternal_StatusUpdate)
-                            //    //Update status
-                            //    _messagesOutgoing.FirstOrDefault(x => x.CoreComMessage.TransactionIdentifier == returnMessage.TransactionIdentifier).CoreComMessage.TransferStatus = returnMessage.TransferStatus;
-                            //else  //parse message
-
 
                             streamingCall.Dispose();
                         }
                         //Remove messages
                         item.TransferStatus = (int)TransferStatusEnum.Transferred;
-                            await DbContext.SaveChangesAsync().ConfigureAwait(false);
-                        }
-
+                        await DbContext.SaveChangesAsync().ConfigureAwait(false);
                     }
-               
 
-                
+                }
+
+
+
             }
             catch (RpcException ex)
             {
                 _workingOnCue = false;
-               
+
                 LatestRpcExceptionChange(ex);
                 switch (ex.StatusCode)
                 {
@@ -392,7 +394,7 @@ namespace WallTec.CoreCom.Client
                 {
                     CoreComMessageId = Guid.NewGuid().ToString(),
                     ClientId = _coreComOptions.ClientId.ToString(),
-                    TransactionIdentifier =  Guid.NewGuid().ToString(),
+                    TransactionIdentifier = Guid.NewGuid().ToString(),
                     MessageSignature = messageSignature,
                     JsonObjectType = jsonObjectType,
                     JsonObject = jsonObject,
@@ -405,7 +407,7 @@ namespace WallTec.CoreCom.Client
                     dbContext.OutgoingMessages.Add(coreComMessage);
                     await dbContext.SaveChangesAsync().ConfigureAwait(false);
                 }
-                    
+
 
                 await ProcessCue().ConfigureAwait(false);
             }
@@ -426,32 +428,37 @@ namespace WallTec.CoreCom.Client
                 await ParseCoreComFrameworkFromServerMessage(request).ConfigureAwait(false);
                 return;
             }
-
-
-            CoreComUserInfo coreComUserInfo = new CoreComUserInfo { ClientId = request.ClientId };
-            if (string.IsNullOrEmpty(request.JsonObject))
+            using (var dbContext = new CoreComContext(_dbContextOptions))
             {
-                var funcToRun = _receiveDelegatesOneParm.FirstOrDefault(x => x.Item2 == request.MessageSignature);
-                if (funcToRun != null)
+                dbContext.IncomingMessages.Add(request);
+                await dbContext.SaveChangesAsync().ConfigureAwait(false);
+                LogEventOccurred(new LogEvent(request));
+
+                CoreComUserInfo coreComUserInfo = new CoreComUserInfo { ClientId = request.ClientId };
+                if (string.IsNullOrEmpty(request.JsonObject))
                 {
-                    await funcToRun.Item1.Invoke(coreComUserInfo).ConfigureAwait(false);
+                    var funcToRun = _receiveDelegatesOneParm.FirstOrDefault(x => x.Item2 == request.MessageSignature);
+                    if (funcToRun != null)
+                    {
+                        await funcToRun.Item1.Invoke(coreComUserInfo).ConfigureAwait(false);
+                    }
+                    else
+                    {
+                        //TODO:Report error
+                    }
                 }
                 else
                 {
-                    //TODO:Report error
-                }
-            }
-            else
-            {
-                var funcToRun = _receiveDelegatesTwoParm.FirstOrDefault(x => x.Item2 == request.MessageSignature);
-                if (funcToRun != null)
-                {
-                    var objectDeser = JsonSerializer.Deserialize(request.JsonObject, funcToRun.Item3);
-                    await funcToRun.Item1.Invoke(objectDeser, coreComUserInfo).ConfigureAwait(false);
-                }
-                else
-                {
-                    //TODO:Report error
+                    var funcToRun = _receiveDelegatesTwoParm.FirstOrDefault(x => x.Item2 == request.MessageSignature);
+                    if (funcToRun != null)
+                    {
+                        var objectDeser = JsonSerializer.Deserialize(request.JsonObject, funcToRun.Item3);
+                        await funcToRun.Item1.Invoke(objectDeser, coreComUserInfo).ConfigureAwait(false);
+                    }
+                    else
+                    {
+                        //TODO:Report error
+                    }
                 }
             }
         }

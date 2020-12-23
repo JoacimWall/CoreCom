@@ -21,7 +21,7 @@
     </ContentPage.Resources>
     
     <Grid Margin="{OnPlatform Android='5,5,5,5', iOS='5,5,5,5'}"
-          RowDefinitions="Auto, Auto,Auto, Auto,Auto, *" ColumnDefinitions="*, *,*,*">
+          RowDefinitions="Auto, Auto,35, 45,Auto, *,Auto,15" ColumnDefinitions="*, *,*,*">
        
         <StackLayout Grid.ColumnSpan="4" Orientation="Horizontal" HorizontalOptions="Center">
             <Label Text="Connection Status:" TextColor="White"/>
@@ -29,7 +29,7 @@
         </StackLayout>
         <Label Grid.Row="1" Grid.ColumnSpan="4" Text="{Binding ServiceCoreCom.LatestRpcException}" HorizontalOptions="Fill" HorizontalTextAlignment="Center" TextColor="White"/>
 
-        <Button Grid.Row="2" Grid.Column="0" Padding="5" Text="Check Cue"  BackgroundColor="LightGray" Command="{Binding  CheckCueCommand}" FontSize="13" />
+        <Button Grid.Row="2" Grid.Column="0" Padding="5" Text="Check Cue" BackgroundColor="LightGray" Command="{Binding  CheckCueCommand}" FontSize="13" />
         <Button Grid.Row="2" Grid.Column="1" Padding="5"  Text="Get Projects" BackgroundColor="LightGray" Command="{Binding  GetProjectsCommand}" FontSize="13"/>
         <Button Grid.Row="2" Grid.Column="2" Padding="5"  Text="Reauthorize" BackgroundColor="LightGray" Command="{Binding  ConnectToServerCommand}" FontSize="13" />
         <Button Grid.Row="2" Grid.Column="3" Padding="5"  Text="Image" Command="{Binding  PickImageCommand}" BackgroundColor="LightGray" FontSize="13"/>
@@ -54,7 +54,12 @@
                     </ViewCell>
                 </DataTemplate>
             </ListView.ItemTemplate>
+            
         </ListView>
+                   <Label Grid.Row="6" Grid.ColumnSpan="4" Text="Latest log event:" HorizontalOptions="Fill" TextColor="White"/>
+                   <Label Grid.Row="7" Grid.ColumnSpan="4" Text="{Binding ServiceCoreCom.LatestLogEvent.MessagesSignature}" TextColor="White"/>
+                    
+        
     </Grid>
 
 </ContentPage>

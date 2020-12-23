@@ -20,7 +20,7 @@ namespace TestClientXamarin.Services
 
     public class ServiceCoreCom : MvvmHelpers.ObservableObject
     {
-        private CoreComClient _coreComClient = new CoreComClient();
+        public CoreComClient _coreComClient = new CoreComClient();
         private CoreComOptions _coreComOptions;
         private static InMemoryData _inMemoryData = new InMemoryData();
 
@@ -49,6 +49,16 @@ namespace TestClientXamarin.Services
         private void _coreComClient_OnConnectionStatusChange(object sender, ConnectionStatus e)
         {
             ConnectionStatus = e;
+        }
+        private void _coreComClient_OnLogEventOccurred(object sender, LogEvent e)
+        {
+
+            if (e != null)
+            {
+                LatestLogEvent = e;
+            }
+
+
         }
         private ConnectionStatus _connectionStatus;
         public ConnectionStatus ConnectionStatus
@@ -83,6 +93,23 @@ namespace TestClientXamarin.Services
                 }
             }
         }
+        private LogEvent _latestLogEvent;
+        public LogEvent LatestLogEvent
+        {
+            get
+            {
+                return _latestLogEvent;
+            }
+
+            set
+            {
+                if (value != _latestLogEvent)
+                {
+                    SetProperty(ref _latestLogEvent, value);
+                }
+            }
+        }
+        
         private async Task<bool> Authenticate(string username, string password)
         {
             try
@@ -174,17 +201,21 @@ namespace TestClientXamarin.Services
             #endregion
             _coreComClient.OnConnectionStatusChange += _coreComClient_OnConnectionStatusChange;
             _coreComClient.OnLatestRpcExceptionChange += _coreComClient_OnLatestRpcExceptionChange;
+            _coreComClient.OnLogEventOccurred += _coreComClient_OnLogEventOccurred; 
             _coreComClient.Connect(_coreComOptions);
-
+            
             return true;
         }
+
+       
+
         public bool DisconnectCoreComServer()
         {
             _coreComClient.Disconnect();
 
             _coreComClient.OnConnectionStatusChange -= _coreComClient_OnConnectionStatusChange;
             _coreComClient.OnLatestRpcExceptionChange -= _coreComClient_OnLatestRpcExceptionChange;
-            
+            _coreComClient.OnLogEventOccurred -= _coreComClient_OnLogEventOccurred;
             return true;
         }
         public void CheckServerCue()

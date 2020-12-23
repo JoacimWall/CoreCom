@@ -1,0 +1,38 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<ContentPage xmlns="http://xamarin.com/schemas/2014/forms"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:viewmodel="clr-namespace:TestClientXamarin.ViewModel"
+              xmlns:ios="clr-namespace:Xamarin.Forms.PlatformConfiguration.iOSSpecific;assembly=Xamarin.Forms.Core"
+             mc:Ignorable="d"
+             x:Class="TestClientXamarin.View.LogView"
+              ios:Page.UseSafeArea="true"
+             BackgroundColor="Gray">
+
+    <ContentPage.BindingContext>
+        <viewmodel:LogViewModel  />
+    </ContentPage.BindingContext>
+    <ContentPage.Content>
+         <Grid Margin="{OnPlatform Android='5,5,5,5', iOS='5,5,5,5'}"
+          RowDefinitions="Auto,  *" >
+        <Label Grid.Row="0"  Text="Log:" TextColor="White"/>
+        <ListView Grid.Row="1"  SeparatorVisibility="None" HasUnevenRows="True"
+                  ItemsSource="{Binding LogEvents}" BackgroundColor="White" >
+            <ListView.ItemTemplate>
+                <DataTemplate>
+                    <ViewCell>
+                         <Frame Margin="4,10,4,0"  CornerRadius="4" IsClippedToBounds="True" HasShadow="False" BorderColor="Black" BackgroundColor="LightGray" >
+                            <Grid Margin="0" RowDefinitions="Auto, *" ColumnDefinitions="Auto,*" >
+                                <Label Margin="0" Grid.Row="0" Grid.Column="1" Text="{Binding MessagesSignature}" FontAttributes="Bold"/>
+                                <Label Margin="0" Grid.Row="1" Grid.Column="1" Text="{Binding TimeStampUtc}"/>
+                            </Grid>
+                        </Frame>
+                    </ViewCell>
+                </DataTemplate>
+            </ListView.ItemTemplate>
+            
+        </ListView>
+           
+    </Grid>
+    </ContentPage.Content>
+</ContentPage>
