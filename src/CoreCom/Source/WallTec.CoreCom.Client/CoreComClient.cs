@@ -145,7 +145,7 @@ namespace WallTec.CoreCom.Client
 
         public async void CheckServerCue()
         {
-            await SendAsync(CoreComInternalSignatures.CoreComInternal_PullCue).ConfigureAwait(false);
+            await SendAsync(CoreComInternalSignatures.CoreComInternal_PullQueue).ConfigureAwait(false);
         }
         public async Task<bool> SendAsync(object outgoingObject, string messageSignature)
         {
@@ -181,7 +181,7 @@ namespace WallTec.CoreCom.Client
         private async void _checkCueTimer_Elapsed(object sender, ElapsedEventArgs e)
         {
             _checkCueTimer.Enabled = false;
-            await SendAsync(CoreComInternalSignatures.CoreComInternal_PullCue).ConfigureAwait(false);
+            await SendAsync(CoreComInternalSignatures.CoreComInternal_PullQueue).ConfigureAwait(false);
         }
 
         private CallOptions GetCallOptions(bool isConnectToServer = false, bool addAuth = false)
@@ -295,7 +295,7 @@ namespace WallTec.CoreCom.Client
                 using (var DbContext = new CoreComContext(_dbContextOptions))
                 {
                     var outgoingMess = DbContext.OutgoingMessages.
-                        Where(x => x.TransferStatus < (int)TransferStatusEnum.Transferred).ToList();
+                        Where(x => x.TransferStatus < TransferStatusEnum.Transferred).ToList();
 
                     foreach (var item in outgoingMess)
                     {
@@ -303,7 +303,7 @@ namespace WallTec.CoreCom.Client
                         {
                             using var streamingCall = _coreComClient.SubscribeServerToClientAuth(item, GetCallOptions(false, item.SendAuth));
 
-                            item.TransferStatus = (int)TransferStatusEnum.Transferred;
+                            item.TransferStatus = TransferStatusEnum.Transferred;
                             await DbContext.SaveChangesAsync().ConfigureAwait(false);
                             LogEventOccurred(new LogEvent(item));
                             await foreach (var returnMessage in streamingCall.ResponseStream.ReadAllAsync().ConfigureAwait(false))
@@ -315,7 +315,7 @@ namespace WallTec.CoreCom.Client
                         {
                             using var streamingCall = _coreComClient.SubscribeServerToClient(item, GetCallOptions(false, item.SendAuth));
 
-                            item.TransferStatus = (int)TransferStatusEnum.Transferred;
+                            item.TransferStatus = TransferStatusEnum.Transferred;
                             await DbContext.SaveChangesAsync();
                             LogEventOccurred(new LogEvent(item));
                             await foreach (var returnMessage in streamingCall.ResponseStream.ReadAllAsync().ConfigureAwait(false))
@@ -324,7 +324,7 @@ namespace WallTec.CoreCom.Client
                             streamingCall.Dispose();
                         }
                         //Remove messages
-                        item.TransferStatus = (int)TransferStatusEnum.Transferred;
+                        item.TransferStatus = TransferStatusEnum.Transferred;
                         await DbContext.SaveChangesAsync().ConfigureAwait(false);
                     }
 

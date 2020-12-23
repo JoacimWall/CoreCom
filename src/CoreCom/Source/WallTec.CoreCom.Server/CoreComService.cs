@@ -120,7 +120,7 @@ namespace WallTec.CoreCom.Server
                     await ParseClientToServerMessage(request);
 
                 //Add loging
-                request.TransferStatus = (int)TransferStatusEnum.Recived;
+                request.TransferStatus = TransferStatusEnum.Recived;
                 dbContext.IncomingMessages.Add(request);
                 
                 await dbContext.SaveChangesAsync();
@@ -184,7 +184,7 @@ namespace WallTec.CoreCom.Server
                 {
                         var outgoingMess = DbContext.OutgoingMessages.
                             Where(x => x.ClientId == request.ClientId &&
-                            x.TransferStatus < (int)TransferStatusEnum.Transferred).ToList();
+                            x.TransferStatus < TransferStatusEnum.Transferred).ToList();
 
                         foreach (var item in outgoingMess)
                         {
@@ -195,7 +195,7 @@ namespace WallTec.CoreCom.Server
                                 //logging
                                 await WriteOutgoingMessagesLog(item);
                                 //Remove messages
-                                item.TransferStatus = (int)TransferStatusEnum.Transferred;
+                                item.TransferStatus = TransferStatusEnum.Transferred;
                                 await DbContext.SaveChangesAsync();
                             }
                       

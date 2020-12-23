@@ -7,6 +7,9 @@ package CoreCom;
 import "google/protobuf/empty.proto";
 import "google/protobuf/timestamp.proto";
 
+
+
+
 service CoreCom {
 	
 	rpc ClientConnectToServer(ConnectToServerRequest) returns (ConnectToServerResponse);
@@ -18,8 +21,16 @@ service CoreCom {
 	//Authenticated functions
 
 	rpc SubscribeServerToClientAuth(CoreComMessage) returns (stream CoreComMessageResponse);
-	//rpc ClientToServerCoreComMessage(CoreComMessage) returns (CoreComMessageResponse);
 }
+
+enum TransferStatusEnum {
+	New = 0;
+    InProcess = 1;
+    Recived = 2;
+    Transferred = 3;
+    Done = 4;
+}
+
 message ConnectToServerRequest {
 	string ClientId = 1;
 	
@@ -48,7 +59,7 @@ message CoreComMessage {
 	string MessageSignature = 4;
 	string JsonObjectType =5;
 	string JsonObject =6;
-	int32 TransferStatus=7;
+	TransferStatusEnum TransferStatus=7;
 	bool SendAuth=8;	
 }
 
@@ -59,7 +70,7 @@ message CoreComMessageResponse {
 	string MessageSignature = 4;
 	string JsonObjectType =5;
 	string JsonObject =6;
-	int32 TransferStatus=7;	
+	TransferStatusEnum TransferStatus=7;	
 }
 
 

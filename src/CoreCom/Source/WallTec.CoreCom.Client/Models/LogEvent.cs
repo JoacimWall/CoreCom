@@ -1,23 +1,21 @@
 ﻿using System;
-using System.Transactions;
-using WallTec.CoreCom.Sheard;
-using WallTec.CoreCom.Sheard.Models;
+using WallTec.CoreCom.Proto;
 
 namespace WallTec.CoreCom.Client.Models
 {
     public class LogEvent
     {
-        public LogEvent(CoreCom.Proto.CoreComMessage coreComMessage)
+        public LogEvent(CoreComMessage coreComMessage)
         {
             MessagesSignature = coreComMessage.MessageSignature;
             TimeStampUtc = DateTime.UtcNow;
-            TransferStatus = (TransferStatusEnum)coreComMessage.TransferStatus;
+            TransferStatus = coreComMessage.TransferStatus;
         }
-        public LogEvent(CoreCom.Proto.CoreComMessageResponse coreComMessage)
+        public LogEvent(CoreComMessageResponse coreComMessage)
         {
             MessagesSignature = coreComMessage.MessageSignature;
             TimeStampUtc = DateTime.UtcNow;
-            TransferStatus = (TransferStatusEnum)coreComMessage.TransferStatus;
+            TransferStatus = coreComMessage.TransferStatus;
         }
         public string MessagesSignature { get; set; }
         public DateTime TimeStampUtc { get; set; }
