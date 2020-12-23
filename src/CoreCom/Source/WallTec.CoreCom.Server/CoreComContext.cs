@@ -35,8 +35,8 @@ namespace WallTec.CoreCom.Server
             modelBuilder.Entity<TransferStatus>().HasData(new TransferStatus { TransferStatusId = 4, Name = "Done" });
         }
 
-        public DbSet<TransferStatus> TransferStatus { get; set; }
-        public DbSet<CoreComMessage> IncomingMessages { get; set; }
-        public DbSet<CoreComMessageResponse> OutgoingMessages { get; set; }
+        internal DbSet<TransferStatus> TransferStatus { get; set; }
+        internal DbSet<CoreComMessage> IncomingMessages { get; set; }
+        internal DbSet<CoreComMessageResponse> OutgoingMessages { get; set; }
     }
 }

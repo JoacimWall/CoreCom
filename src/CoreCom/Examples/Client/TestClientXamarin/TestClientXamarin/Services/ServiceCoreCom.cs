@@ -23,7 +23,7 @@ namespace TestClientXamarin.Services
         public CoreComClient _coreComClient = new CoreComClient();
         private CoreComOptions _coreComOptions;
         private static InMemoryData _inMemoryData = new InMemoryData();
-
+        
         //public CoreComClient CoreComClient
         //{
         //    get { return _coreComClient; }

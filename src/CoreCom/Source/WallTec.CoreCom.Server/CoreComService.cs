@@ -26,8 +26,6 @@ namespace WallTec.CoreCom.Server
         private List<Tuple<Func<CoreComUserInfo, Task>, string>> _receiveDelegatesOneParmAuth = new List<Tuple<Func<CoreComUserInfo, Task>, string>>();
         private List<Tuple<Func<object, CoreComUserInfo, Task>, string, System.Type>> _receiveDelegatesTwoParmAuth = new List<Tuple<Func<object, CoreComUserInfo, Task>, string, System.Type>>();
 
-
-
         private CoreComOptions _coreComOptions;
         private IConfiguration _config;
         private DbContextOptions _dbContextOptions;

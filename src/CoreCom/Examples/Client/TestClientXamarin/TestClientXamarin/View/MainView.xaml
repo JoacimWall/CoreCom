@@ -56,7 +56,9 @@
             </ListView.ItemTemplate>
             
         </ListView>
-                   <Label Grid.Row="6" Grid.ColumnSpan="4" Text="Latest log event:" HorizontalOptions="Fill" TextColor="White"/>
+                   <Label Grid.Row="6" Grid.ColumnSpan="2" Text="Latest log event:" HorizontalOptions="Fill" TextColor="White"/>
+                   <Label Grid.Row="6" Grid.Column="2" Grid.ColumnSpan="2" Text="{Binding ServiceCoreCom.LatestLogEvent.TimeStampUtc}" HorizontalOptions="End" HorizontalTextAlignment="End" TextColor="White"/>
+                  
                    <Label Grid.Row="7" Grid.ColumnSpan="4" Text="{Binding ServiceCoreCom.LatestLogEvent.MessagesSignature}" TextColor="White"/>
                     
         

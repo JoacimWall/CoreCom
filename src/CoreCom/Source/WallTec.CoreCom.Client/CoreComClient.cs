@@ -430,6 +430,7 @@ namespace WallTec.CoreCom.Client
             }
             using (var dbContext = new CoreComContext(_dbContextOptions))
             {
+                request.TransferStatus = TransferStatusEnum.Recived;
                 dbContext.IncomingMessages.Add(request);
                 await dbContext.SaveChangesAsync().ConfigureAwait(false);
                 LogEventOccurred(new LogEvent(request));

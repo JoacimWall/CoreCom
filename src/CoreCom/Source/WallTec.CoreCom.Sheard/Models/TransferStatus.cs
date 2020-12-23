@@ -5,7 +5,7 @@ using System.Text;
 
 namespace WallTec.CoreCom.Sheard.Models
 {
-   public class TransferStatus
+   internal class TransferStatus
     {
         [Key]
         public int TransferStatusId { get; set; }

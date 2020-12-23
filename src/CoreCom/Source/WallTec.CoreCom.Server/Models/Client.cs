@@ -8,7 +8,7 @@ namespace WallTec.CoreCom.Server.Models
   
         public CoreComUserInfo CoreComUserInfo  { get; set; }
 
-        public bool ClientIsSending { get; set; }
+        internal bool ClientIsSending { get; set; }
       
 
     }
