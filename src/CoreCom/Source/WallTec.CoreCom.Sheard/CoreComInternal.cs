@@ -11,13 +11,5 @@ namespace WallTec.CoreCom.Sheard
         public const string CoreComInternal_PullQueue = "CoreComInternal_PullQueue";
         public const string CoreComInternal_StatusUpdate = "CoreComInternal_StatusUpdate";
     }
-    //public enum TransferStatusEnum : int
-    //{
-    //    New = 0,
-    //    InProcess = 1,
-    //    Recived = 2,
-    //    Transferred = 3,
-    //    Done = 4
-
-    //}
+    
 }

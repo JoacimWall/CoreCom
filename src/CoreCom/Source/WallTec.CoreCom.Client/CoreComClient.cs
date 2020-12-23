@@ -295,7 +295,7 @@ namespace WallTec.CoreCom.Client
                 using (var DbContext = new CoreComContext(_dbContextOptions))
                 {
                     var outgoingMess = DbContext.OutgoingMessages.
-                        Where(x => x.TransferStatus < TransferStatusEnum.Transferred).ToList();
+                        Where(x => x.TransferStatus < (int)TransferStatusEnum.Transferred).ToList();
 
                     foreach (var item in outgoingMess)
                     {
@@ -303,9 +303,9 @@ namespace WallTec.CoreCom.Client
                         {
                             using var streamingCall = _coreComClient.SubscribeServerToClientAuth(item, GetCallOptions(false, item.SendAuth));
 
-                            item.TransferStatus = TransferStatusEnum.Transferred;
+                            item.TransferStatus = (int)TransferStatusEnum.Transferred;
                             await DbContext.SaveChangesAsync().ConfigureAwait(false);
-                            LogEventOccurred(new LogEvent(item));
+                            LogEventOccurred(new LogEvent { MessagesSignature = item.MessageSignature, TransferStatus = (TransferStatusEnum)item.TransferStatus });
                             await foreach (var returnMessage in streamingCall.ResponseStream.ReadAllAsync().ConfigureAwait(false))
                                 await ParseServerToClientMessage(returnMessage);
 
@@ -315,16 +315,16 @@ namespace WallTec.CoreCom.Client
                         {
                             using var streamingCall = _coreComClient.SubscribeServerToClient(item, GetCallOptions(false, item.SendAuth));
 
-                            item.TransferStatus = TransferStatusEnum.Transferred;
+                            item.TransferStatus = (int)TransferStatusEnum.Transferred;
                             await DbContext.SaveChangesAsync();
-                            LogEventOccurred(new LogEvent(item));
+                            LogEventOccurred(new LogEvent { MessagesSignature = item.MessageSignature, TransferStatus = (TransferStatusEnum)item.TransferStatus });
                             await foreach (var returnMessage in streamingCall.ResponseStream.ReadAllAsync().ConfigureAwait(false))
                                 await ParseServerToClientMessage(returnMessage);
 
                             streamingCall.Dispose();
                         }
                         //Remove messages
-                        item.TransferStatus = TransferStatusEnum.Transferred;
+                        item.TransferStatus = (int)TransferStatusEnum.Transferred;
                         await DbContext.SaveChangesAsync().ConfigureAwait(false);
                     }
 
@@ -430,10 +430,10 @@ namespace WallTec.CoreCom.Client
             }
             using (var dbContext = new CoreComContext(_dbContextOptions))
             {
-                request.TransferStatus = TransferStatusEnum.Recived;
+                request.TransferStatus = (int)TransferStatusEnum.Recived;
                 dbContext.IncomingMessages.Add(request);
                 await dbContext.SaveChangesAsync().ConfigureAwait(false);
-                LogEventOccurred(new LogEvent(request));
+                LogEventOccurred(new LogEvent { MessagesSignature = request.MessageSignature, TransferStatus = (TransferStatusEnum)request.TransferStatus });
 
                 CoreComUserInfo coreComUserInfo = new CoreComUserInfo { ClientId = request.ClientId };
                 if (string.IsNullOrEmpty(request.JsonObject))
