@@ -13,6 +13,7 @@ using System.Threading.Tasks;
 using WallTec.CoreCom.Proto;
 using WallTec.CoreCom.Server.Models;
 using WallTec.CoreCom.Sheard;
+using WallTec.CoreCom.Sheard.Models;
 
 namespace WallTec.CoreCom.Server
 {
@@ -78,7 +79,7 @@ namespace WallTec.CoreCom.Server
         {
             _receiveDelegatesTwoParmAuth.Add(Tuple.Create(callback, messageSignature, type));
         }
-
+        
         public override async Task<ConnectToServerResponse> ClientConnectToServer(ConnectToServerRequest request, ServerCallContext context)
         {
             //Add Client
@@ -118,7 +119,7 @@ namespace WallTec.CoreCom.Server
                     await ParseClientToServerMessage(request);
 
                 //Add loging
-                request.TransferStatus = TransferStatusEnum.Recived;
+                request.TransferStatus = (int)TransferStatusEnum.Recived;
                 dbContext.IncomingMessages.Add(request);
                 
                 await dbContext.SaveChangesAsync();
@@ -182,7 +183,7 @@ namespace WallTec.CoreCom.Server
                 {
                         var outgoingMess = DbContext.OutgoingMessages.
                             Where(x => x.ClientId == request.ClientId &&
-                            x.TransferStatus < TransferStatusEnum.Transferred).ToList();
+                            x.TransferStatus < (int)TransferStatusEnum.Transferred).ToList();
 
                         foreach (var item in outgoingMess)
                         {
@@ -193,7 +194,7 @@ namespace WallTec.CoreCom.Server
                                 //logging
                                 await WriteOutgoingMessagesLog(item);
                                 //Remove messages
-                                item.TransferStatus = TransferStatusEnum.Transferred;
+                                item.TransferStatus = (int)TransferStatusEnum.Transferred;
                                 await DbContext.SaveChangesAsync();
                             }
                       

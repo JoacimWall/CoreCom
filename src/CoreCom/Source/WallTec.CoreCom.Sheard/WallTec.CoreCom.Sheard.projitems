@@ -10,12 +10,10 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="$(MSBuildThisFileDirectory)CoreComInternal.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)Models\TransferStatus.cs" Condition=" '$(EnableDefaultCompileItems)' == 'true' " />
     <Compile Include="$(MSBuildThisFileDirectory)CoreComPublic.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Models\CoreComUserInfo.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Models\LogEvent.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Models\TransferStatus.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Models\CoreComPublic.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)Models\LogEvent.cs" Condition=" '$(EnableDefaultCompileItems)' == 'true' " />
-  </ItemGroup>
-  <ItemGroup>
-    <Folder Include="$(MSBuildThisFileDirectory)Models\" />
   </ItemGroup>
 </Project>

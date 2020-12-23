@@ -23,13 +23,6 @@ service CoreCom {
 	rpc SubscribeServerToClientAuth(CoreComMessage) returns (stream CoreComMessageResponse);
 }
 
-enum TransferStatusEnum {
-	New = 0;
-    InProcess = 1;
-    Recived = 2;
-    Transferred = 3;
-    Done = 4;
-}
 
 message ConnectToServerRequest {
 	string ClientId = 1;
@@ -59,7 +52,7 @@ message CoreComMessage {
 	string MessageSignature = 4;
 	string JsonObjectType =5;
 	string JsonObject =6;
-	TransferStatusEnum TransferStatus=7;
+	int32 TransferStatus=7;
 	bool SendAuth=8;	
 }
 
@@ -70,7 +63,7 @@ message CoreComMessageResponse {
 	string MessageSignature = 4;
 	string JsonObjectType =5;
 	string JsonObject =6;
-	TransferStatusEnum TransferStatus=7;	
+	int32 TransferStatus=7;	
 }
 
 

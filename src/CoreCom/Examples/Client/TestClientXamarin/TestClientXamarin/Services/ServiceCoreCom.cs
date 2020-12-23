@@ -12,6 +12,7 @@ using WallTec.CoreCom.Client.Models;
 using WallTec.CoreCom.Example.Shared;
 using WallTec.CoreCom.Example.Shared.Entitys;
 using WallTec.CoreCom.Sheard;
+using WallTec.CoreCom.Sheard.Models;
 using Xamarin.Essentials;
 using Xamarin.Forms;
 

@@ -13,6 +13,7 @@ using Grpc.Net.Client.Web;
 using System.Net.Http;
 using WallTec.CoreCom.Proto;
 using Microsoft.EntityFrameworkCore;
+using WallTec.CoreCom.Sheard.Models;
 
 namespace WallTec.CoreCom.Client
 {

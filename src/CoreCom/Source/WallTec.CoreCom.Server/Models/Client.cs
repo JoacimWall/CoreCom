@@ -1,5 +1,5 @@
 ﻿using WallTec.CoreCom.Sheard;
-
+using WallTec.CoreCom.Sheard.Models;
 
 namespace WallTec.CoreCom.Server.Models
 {

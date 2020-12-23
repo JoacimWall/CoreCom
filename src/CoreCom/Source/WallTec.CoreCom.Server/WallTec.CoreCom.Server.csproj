@@ -18,7 +18,7 @@
 
 
   <ItemGroup>
-    <Protobuf Include="Protos\corecom.proto" Access="Internal" />
+    <Protobuf Include="Protos\corecom.proto" Access="Public" />
   </ItemGroup>
 
 

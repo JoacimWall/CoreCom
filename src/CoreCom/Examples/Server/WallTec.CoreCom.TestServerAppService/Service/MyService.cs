@@ -6,6 +6,7 @@ using WallTec.CoreCom.Example.Shared.Entitys;
 using WallTec.CoreCom.Example.Shared;
 using WallTec.CoreCom.Server;
 using WallTec.CoreCom.Sheard;
+using WallTec.CoreCom.Sheard.Models;
 
 namespace WallTec.CoreCom.TestServerAppService.Service
 {
@@ -21,9 +22,9 @@ namespace WallTec.CoreCom.TestServerAppService.Service
             _coreComService.Register(GetAllProjectsFromDb, CoreComSignatures.RequestAllProjects);
             //This need that the user got token
             _coreComService.RegisterAuth(AddProjectsToDb, CoreComSignatures.AddProject, new Project().GetType());
-
+           
         }
-
+        
         private async Task<bool> AddProjectsToDb(object value, CoreComUserInfo arg)
         {
             _fakeDb.AddProject(value as Project);
