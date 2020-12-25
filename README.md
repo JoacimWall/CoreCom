@@ -18,14 +18,29 @@ The server use a Entity Framework Core in momory database. All current messages 
 ### Queue in databas mode (in development)
 The server use a Entity Framework Core connected database to store/handle messages queue. In this mode the server keep a database row for all messages that goes in and out from the server. We only store messages that are in progress when the are deliverd the are removed. To keep all transactions in the database select the logging setting "Logging to database". The database that are use in this senario is SQLite database. 
 
-### Logging to database
-The server log all messages to the Entity Framework Core connected database. You should not use this if you have Queue in memory mode.
+## Message logging
+Message logging is the rull of how and if you would like to save alla incoming and outgoing messages.
 
-### Logging all transations to file
-The server log all messages to IncommingMessages.log and utgoningMessages.log that are stored in the app folder.
+### Message logging to database
+The server log all messages to the Entity Framework Core connected database. You should not use this if you have Queue in memory mode. The tables are named OutgoingMessages and IncommingMessages.  
 
-### No Logging 
-We do no logging.
+### Message logging to file
+The server log all messages to the files IncommingMessages.log and utgoningMessages.log that are stored in the app folder. in this case the messageobject is parsed as json in the logfile.
+
+### No message Logging 
+We do no logging of messages.
+
+## Event logging
+Event logging is the rull of how and if you would like to save loggs of all transactions of messages and connection changes. The table EventLogs store this information if you target database and if you target file it will be named EventLogs.log 
+
+### Event logging to database
+The server log all transaction to the Entity Framework Core connected database. You should not use this if you have Queue in memory mode. Just the typ of message and size will be logged not the containing object.  
+
+### Event logging to file
+The server log all messages to the files EventLogs.log that are stored in the app folder. 
+
+### No Event logging 
+We do no logging of events.
 
 ## automatically increase deadline time on timeout messages (in development)
 
