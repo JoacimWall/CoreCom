@@ -184,7 +184,26 @@ namespace WallTec.CoreCom.Server
                         var outgoingMess = DbContext.OutgoingMessages.
                             Where(x => x.ClientId == request.ClientId &&
                             x.TransferStatus < (int)TransferStatusEnum.Transferred).ToList();
+                    //We need always responde with a message other vise loggin on client not work
+                    //and the same CoreComInternal_PullQueue from client will send and wo will have the same
+                    //transactionId twice result in db error 
+                    if (outgoingMess.Count == 0)
+                    {
+                        //send
+                        await responseStream.WriteAsync(new CoreComMessageResponse
+                        {
+                            MessageSignature = CoreComInternalSignatures.CoreComInternal_PullQueue,
+                            CoreComMessageResponseId = Guid.NewGuid().ToString(),
+                            ClientId = request.ClientId,
+                            TransactionIdentifier = Guid.NewGuid().ToString()
+                        });
+                       
+                        //Remove messages
+                       // await DbContext.SaveChangesAsync();
 
+                    }
+                    else
+                    { 
                         foreach (var item in outgoingMess)
                         {
                             if (context.Deadline > DateTime.UtcNow)
@@ -197,8 +216,9 @@ namespace WallTec.CoreCom.Server
                                 item.TransferStatus = (int)TransferStatusEnum.Transferred;
                                 await DbContext.SaveChangesAsync();
                             }
-                      
+
                         }
+                    }
                 }
             }
             catch (RpcException ex)

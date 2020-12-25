@@ -7,6 +7,8 @@
      <converters:Base64StringToImageSourceConverter x:Key="Base64StringToImageSourceConverter" />
      <converters:TransferStatusEnumConverter x:Key="TransferStatusEnumConverter" />
      <converters:MessageSizeToStringConverter x:Key="MessageSizeToStringConverter" />
+     <converters:MultiConnection_TransferStatusConverter x:Key="MultiConnection_TransferStatusConverter" />
+     
        
     
     <!-- Colors DO NOT ADD NEW COLOR BEFORE CHECK WITH DESIGN TEAM -->

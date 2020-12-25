@@ -47,7 +47,7 @@ namespace TestClientXamarin.Services
             }
         }
 
-        private void _coreComClient_OnConnectionStatusChange(object sender, ConnectionStatus e)
+        private void _coreComClient_OnConnectionStatusChange(object sender, ConnectionStatusEnum e)
         {
             ConnectionStatus = e;
         }
@@ -61,8 +61,8 @@ namespace TestClientXamarin.Services
 
 
         }
-        private ConnectionStatus _connectionStatus;
-        public ConnectionStatus ConnectionStatus
+        private ConnectionStatusEnum _connectionStatus;
+        public ConnectionStatusEnum ConnectionStatus
         {
             get
             {

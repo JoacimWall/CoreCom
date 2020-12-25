@@ -34,10 +34,10 @@ namespace WallTec.CoreCom.TestServerAppService
                 options.MaxSendMessageSize = null; //When set to null, the message size is unlimited.
 
             });
+            
             services.AddSingleton<CoreComService>();
             services.AddSingleton<IMyService,MyService>();
-           
-
+            
             services.AddAuthorization(options =>
             {
                 options.AddPolicy(JwtBearerDefaults.AuthenticationScheme, policy =>

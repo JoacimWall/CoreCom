@@ -1,4 +1,5 @@
 ﻿using System;
+
 namespace WallTec.CoreCom.Sheard.Models
 {
     public class LogEvent
@@ -7,9 +8,10 @@ namespace WallTec.CoreCom.Sheard.Models
         {
             TimeStampUtc = DateTime.UtcNow;
         }
-        public string MessagesSignature { get; set; }
+        public string Title { get; set; }
         public DateTime TimeStampUtc { get; set; }
-        public TransferStatusEnum TransferStatus { get; set; }
+        public TransferStatusEnum? TransferStatus { get; set; }
+        public ConnectionStatusEnum? ConnectionStatus { get; set; }
         public int MessageSize { get; set; }
     }
 }

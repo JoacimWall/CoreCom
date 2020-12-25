@@ -51,7 +51,7 @@
         <Label Grid.Row="6" Grid.ColumnSpan="2" Text="Latest log event:" HorizontalOptions="Fill" />
         <Label Grid.Row="6" Grid.Column="2" Grid.ColumnSpan="2" Text="{Binding ServiceCoreCom.LatestLogEvent.TimeStampUtc}" HorizontalOptions="End" HorizontalTextAlignment="End" />
 
-        <Label Grid.Row="7" Grid.ColumnSpan="3" Text="{Binding ServiceCoreCom.LatestLogEvent.MessagesSignature}" />
+        <Label Grid.Row="7" Grid.ColumnSpan="3" Text="{Binding ServiceCoreCom.LatestLogEvent.Title}" />
         <Label Grid.Row="7" Grid.Column="2" Grid.ColumnSpan="2" HorizontalTextAlignment="End"  Text="{Binding ServiceCoreCom.LatestLogEvent.MessageSize,Converter={StaticResource MessageSizeToStringConverter}}" />
 
 

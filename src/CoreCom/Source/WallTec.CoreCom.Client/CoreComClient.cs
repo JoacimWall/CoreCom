@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Threading.Tasks;
 using System.Text.Json;
-using System.Threading;
 using System.Collections.Generic;
 using WallTec.CoreCom.Sheard;
 using System.Linq;
@@ -17,13 +16,7 @@ using WallTec.CoreCom.Sheard.Models;
 
 namespace WallTec.CoreCom.Client
 {
-    public enum ConnectionStatus : byte
-    {
-        Disconnected = 0,
-        Connecting = 1,
-        Connected = 2
-
-    }
+    
     public class CoreComClient
     {
         #region Private Propertys
@@ -37,15 +30,15 @@ namespace WallTec.CoreCom.Client
         //Offline Propertys
         private System.Timers.Timer _timer;
         private System.Timers.Timer _checkCueTimer;
-        private ConnectionStatus _connectionStatus;
+        private ConnectionStatusEnum _connectionStatus;
         private RpcException _latestRpcException;
         private DbContextOptions _dbContextOptions;
         //Events
-        public event EventHandler<ConnectionStatus> OnConnectionStatusChange;
-        protected virtual void ConnectionStatusChange(ConnectionStatus e)
+        public event EventHandler<ConnectionStatusEnum> OnConnectionStatusChange;
+        protected virtual void ConnectionStatusChange(ConnectionStatusEnum e)
         {
             _connectionStatus = e;
-            EventHandler<ConnectionStatus> handler = OnConnectionStatusChange;
+            EventHandler<ConnectionStatusEnum> handler = OnConnectionStatusChange;
             if (handler != null)
             {
                 handler(this, e);
@@ -98,7 +91,7 @@ namespace WallTec.CoreCom.Client
 
                 //start timmer for connect to server
                 _timer.Enabled = false;
-                if (_connectionStatus == ConnectionStatus.Connected)
+                if (_connectionStatus == ConnectionStatusEnum.Connected)
                 {
                     var response = _coreComClient.ClientDisconnectFromServer(new DisconnectFromServerRequest
                     { ClientId = _coreComOptions.ClientId }, GetCallOptions(false));
@@ -115,7 +108,7 @@ namespace WallTec.CoreCom.Client
             }
             finally
             {
-                ConnectionStatusChange(ConnectionStatus.Disconnected);
+                ConnectionStatusChange(ConnectionStatusEnum.Disconnected);
             }
 
             return true;
@@ -216,10 +209,10 @@ namespace WallTec.CoreCom.Client
         {
             try
             {
-                if (_connectionStatus == ConnectionStatus.Connecting)
+                if (_connectionStatus == ConnectionStatusEnum.Connecting)
                     return false;
 
-                ConnectionStatusChange(ConnectionStatus.Connecting);
+                ConnectionStatusChange(ConnectionStatusEnum.Connecting);
                 //this is so you can debug on mac and emulator the server has "EndpointDefaults": { "Protocols": "Http1"
                 // Return `true` to allow certificates that are untrusted/invalid
                 if (_coreComOptions.DangerousAcceptAnyServerCertificateValidator)
@@ -251,7 +244,7 @@ namespace WallTec.CoreCom.Client
 
                 Console.WriteLine("Connected to Server " + _coreComOptions.ServerAddress);
 
-                ConnectionStatusChange(ConnectionStatus.Connected);
+                ConnectionStatusChange(ConnectionStatusEnum.Connected);
                 //Start timmer for check cue server and client
                 if (_coreComOptions.RequestServerQueueIntervalSec > 0)
                     _checkCueTimer.Enabled = true;
@@ -270,7 +263,7 @@ namespace WallTec.CoreCom.Client
                     ex.StatusCode == StatusCode.Unavailable)
                 {
 
-                    ConnectionStatusChange(ConnectionStatus.Disconnected);
+                    ConnectionStatusChange(ConnectionStatusEnum.Disconnected);
                     _timer.Enabled = true;
                 }
 
@@ -279,7 +272,7 @@ namespace WallTec.CoreCom.Client
             }
             catch (Exception ex)
             {
-                ConnectionStatusChange(ConnectionStatus.Disconnected);
+                ConnectionStatusChange(ConnectionStatusEnum.Disconnected);
                 _timer.Enabled = true;
                 return false;
             }
@@ -287,7 +280,7 @@ namespace WallTec.CoreCom.Client
         private bool _workingOnCue = false;
         private async Task<bool> ProcessCue()
         {
-            if (_workingOnCue || _connectionStatus != ConnectionStatus.Connected)
+            if (_workingOnCue || _connectionStatus != ConnectionStatusEnum.Connected)
                 return true;
 
             try
@@ -302,27 +295,39 @@ namespace WallTec.CoreCom.Client
                     {
                         if (item.SendAuth)
                         {
+                            item.ClientId = _coreComOptions.ClientId.ToString();
+
                             using var streamingCall = _coreComClient.SubscribeServerToClientAuth(item, GetCallOptions(false, item.SendAuth));
-
-                            item.TransferStatus = (int)TransferStatusEnum.Transferred;
-                            await DbContext.SaveChangesAsync().ConfigureAwait(false);
-                            LogEventOccurred(new LogEvent { MessagesSignature = item.MessageSignature, TransferStatus = (TransferStatusEnum)item.TransferStatus,MessageSize = item.CalculateSize() });
-                            
+                           
+                            //Now the outgoing messages is sent
                             await foreach (var returnMessage in streamingCall.ResponseStream.ReadAllAsync().ConfigureAwait(false))
+                            {
+                                if (item.TransferStatus == (int)TransferStatusEnum.New)
+                                {
+                                    item.TransferStatus = (int)TransferStatusEnum.Transferred;
+                                    await DbContext.SaveChangesAsync().ConfigureAwait(false);
+                                    LogEventOccurred(new LogEvent { Title = item.MessageSignature, TransferStatus = (TransferStatusEnum)item.TransferStatus, MessageSize = item.CalculateSize() });
+                                }
                                 await ParseServerToClientMessage(returnMessage);
-
+                            }
                             streamingCall.Dispose();
                         }
                         else
                         {
+                            item.ClientId = _coreComOptions.ClientId.ToString();
                             using var streamingCall = _coreComClient.SubscribeServerToClient(item, GetCallOptions(false, item.SendAuth));
 
-                            item.TransferStatus = (int)TransferStatusEnum.Transferred;
-                            await DbContext.SaveChangesAsync();
-                            LogEventOccurred(new LogEvent { MessagesSignature = item.MessageSignature, TransferStatus = (TransferStatusEnum)item.TransferStatus, MessageSize = item.CalculateSize() });
+                            //Now the outgoing messages is sent
                             await foreach (var returnMessage in streamingCall.ResponseStream.ReadAllAsync().ConfigureAwait(false))
+                            {
+                                if (item.TransferStatus == (int)TransferStatusEnum.New)
+                                {
+                                    item.TransferStatus = (int)TransferStatusEnum.Transferred;
+                                    await DbContext.SaveChangesAsync().ConfigureAwait(false);
+                                    LogEventOccurred(new LogEvent { Title = item.MessageSignature, TransferStatus = (TransferStatusEnum)item.TransferStatus, MessageSize = item.CalculateSize() });
+                                }
                                 await ParseServerToClientMessage(returnMessage);
-
+                            }
                             streamingCall.Dispose();
                         }
                         //Remove messages
@@ -349,7 +354,7 @@ namespace WallTec.CoreCom.Client
                         break;
                     case StatusCode.PermissionDenied:
                     case StatusCode.Unavailable:
-                        ConnectionStatusChange(ConnectionStatus.Disconnected);
+                        ConnectionStatusChange(ConnectionStatusEnum.Disconnected);
                         Console.WriteLine("PermissionDenied/Unavailable");
                         if (!_timer.Enabled)
                             _timer.Enabled = true;
@@ -395,7 +400,6 @@ namespace WallTec.CoreCom.Client
                 coreComMessage = new CoreComMessage
                 {
                     CoreComMessageId = Guid.NewGuid().ToString(),
-                    ClientId = _coreComOptions.ClientId.ToString(),
                     TransactionIdentifier = Guid.NewGuid().ToString(),
                     MessageSignature = messageSignature,
                     JsonObjectType = jsonObjectType,
@@ -435,7 +439,7 @@ namespace WallTec.CoreCom.Client
                 request.TransferStatus = (int)TransferStatusEnum.Recived;
                 dbContext.IncomingMessages.Add(request);
                 await dbContext.SaveChangesAsync().ConfigureAwait(false);
-                LogEventOccurred(new LogEvent { MessagesSignature = request.MessageSignature, TransferStatus = (TransferStatusEnum)request.TransferStatus, MessageSize = request.CalculateSize() });
+                LogEventOccurred(new LogEvent { Title = request.MessageSignature, TransferStatus = (TransferStatusEnum)request.TransferStatus, MessageSize = request.CalculateSize() });
 
                 CoreComUserInfo coreComUserInfo = new CoreComUserInfo { ClientId = request.ClientId };
                 if (string.IsNullOrEmpty(request.JsonObject))
