@@ -1,11 +1,10 @@
 ﻿using System;
 using System.Collections.ObjectModel;
-using WallTec.CoreCom.Client.Models;
 using WallTec.CoreCom.Sheard.Models;
 
 namespace TestClientXamarin.ViewModel
 {
-    public class LogViewModel : MvvmHelpers.BaseViewModel
+    public class LogViewModel : BaseViewModel
     {
         public LogViewModel()
         {

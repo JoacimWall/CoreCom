@@ -7,7 +7,9 @@ using WallTec.CoreCom.Example.Shared;
 using WallTec.CoreCom.Sheard;
 using System.Collections.Generic;
 using TestClientXamarin.View;
+using TestClientXamarin.Services.Dialog;
 
+[assembly: ExportFont("Awesome_5_Free_Regular_400.otf", Alias = "labelIconBaseStyle")]
 namespace TestClientXamarin
 {
     public partial class App : Application
@@ -17,12 +19,14 @@ namespace TestClientXamarin
         {
             InitializeComponent();
             
-            MainPage = new MainTabbedView();
+            MainPage = new AppShell();
         }
 
         protected async override void OnStart()
         {
-           ServiceCoreCom.SetupCoreComServer();
+            var dialogService = new DialogService();
+            DependencyService.RegisterSingleton(dialogService);
+            ServiceCoreCom.SetupCoreComServer();
            await ServiceCoreCom.ConnectCoreComServer();
         }
         
@@ -34,6 +38,20 @@ namespace TestClientXamarin
         protected async override void OnResume()
         {
             await ServiceCoreCom.ConnectCoreComServer();
+        }
+        public static void ConsoleWriteLineDebug(Exception ex)
+        {
+#if DEBUG
+            Console.WriteLine(ex);
+#endif
+
+        }
+        public static void ConsoleWriteLineDebug(string stringInfo)
+        {
+#if DEBUG
+            Console.WriteLine(stringInfo);
+#endif
+
         }
     }
 }

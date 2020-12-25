@@ -5,7 +5,7 @@ using Xamarin.Forms;
 
 namespace TestClientXamarin.View
 {
-    public partial class LogView : ContentPage
+    public partial class LogView : BaseContentPage
     {
         public LogView()
         {

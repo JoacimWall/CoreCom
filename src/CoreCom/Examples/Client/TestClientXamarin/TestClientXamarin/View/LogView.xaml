@@ -1,37 +1,31 @@
 ﻿<?xml version="1.0" encoding="UTF-8"?>
-<ContentPage xmlns="http://xamarin.com/schemas/2014/forms"
+<view:BaseContentPage  xmlns:view="clr-namespace:TestClientXamarin.View"
+             xmlns="http://xamarin.com/schemas/2014/forms"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
               xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:viewmodel="clr-namespace:TestClientXamarin.ViewModel"
-              xmlns:ios="clr-namespace:Xamarin.Forms.PlatformConfiguration.iOSSpecific;assembly=Xamarin.Forms.Core" xmlns:converters="clr-namespace:TestClientXamarin.Converters"
              x:Class="TestClientXamarin.View.LogView"
-              ios:Page.UseSafeArea="true"
-             BackgroundColor="Gray">
+            Shell.NavBarIsVisible="False"  >
 
     <ContentPage.BindingContext>
         <viewmodel:LogViewModel  />
     </ContentPage.BindingContext>
-     <ContentPage.Resources>
-        <ResourceDictionary>
-             <converters:TransferStatusEnumConverter x:Key="TransferStatusEnumConverter" />
-        </ResourceDictionary>
-    </ContentPage.Resources>
+
     <ContentPage.Content>
-         <Grid Margin="{OnPlatform Android='5,5,5,5', iOS='5,5,5,5'}"
-          RowDefinitions="Auto,  *" >
-        <Label Grid.Row="0"  Text="Log:" TextColor="White"/>
-        <ListView Grid.Row="1"  SeparatorVisibility="None" HasUnevenRows="True"
-                  ItemsSource="{Binding LogEvents}" BackgroundColor="White" >
+         <Grid Style="{StaticResource pageGridStyleNoLeftRightMargin}"  RowDefinitions="Auto,  *" >
+        <Label Grid.Row="0"  Text="Log:" />
+        <ListView Grid.Row="1" ItemsSource="{Binding LogEvents}" RowHeight="70" >
             <ListView.ItemTemplate>
                 <DataTemplate>
                     <ViewCell>
-                         <Frame Margin="4,10,4,0"  CornerRadius="4" IsClippedToBounds="True" HasShadow="False" BorderColor="Black" BackgroundColor="LightGray" >
-                            <Grid Margin="0" RowDefinitions="Auto, *" ColumnDefinitions="Auto,*" >
-                                <Label Margin="0" Grid.Row="0" Grid.Column="0" Text="{Binding TimeStampUtc}" />
-                                <Label Margin="0" Grid.Row="0" Grid.Column="1" Text="{Binding TransferStatus, Converter={StaticResource TransferStatusEnumConverter}}" HorizontalOptions="Fill" HorizontalTextAlignment="Start" />
+                         <Frame  >
+                            <Grid Padding="2" RowDefinitions="Auto, *" ColumnDefinitions="Auto,*" >
+                                <Label Grid.Row="0" Grid.Column="0" Text="{Binding TimeStampUtc}" />
+                                <Label Grid.Row="0" Grid.Column="1" Text="{Binding TransferStatus, Converter={StaticResource TransferStatusEnumConverter}}" HorizontalOptions="Fill" HorizontalTextAlignment="Start" />
       
-                                <Label Margin="0" Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2" Text="{Binding MessagesSignature}" />
-                               
+                                <Label Grid.Row="1" Grid.Column="0"  Text="{Binding MessagesSignature}" />
+                                <Label Grid.Row="1" Grid.Column="1" HorizontalTextAlignment="End"  Text="{Binding MessageSize,Converter={StaticResource MessageSizeToStringConverter}}" />
+
                             </Grid>
                         </Frame>
                     </ViewCell>
@@ -42,4 +36,4 @@
            
     </Grid>
     </ContentPage.Content>
-</ContentPage>
+</view:BaseContentPage>

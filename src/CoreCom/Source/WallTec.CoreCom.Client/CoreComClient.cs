@@ -306,7 +306,8 @@ namespace WallTec.CoreCom.Client
 
                             item.TransferStatus = (int)TransferStatusEnum.Transferred;
                             await DbContext.SaveChangesAsync().ConfigureAwait(false);
-                            LogEventOccurred(new LogEvent { MessagesSignature = item.MessageSignature, TransferStatus = (TransferStatusEnum)item.TransferStatus });
+                            LogEventOccurred(new LogEvent { MessagesSignature = item.MessageSignature, TransferStatus = (TransferStatusEnum)item.TransferStatus,MessageSize = item.CalculateSize() });
+                            
                             await foreach (var returnMessage in streamingCall.ResponseStream.ReadAllAsync().ConfigureAwait(false))
                                 await ParseServerToClientMessage(returnMessage);
 
@@ -318,7 +319,7 @@ namespace WallTec.CoreCom.Client
 
                             item.TransferStatus = (int)TransferStatusEnum.Transferred;
                             await DbContext.SaveChangesAsync();
-                            LogEventOccurred(new LogEvent { MessagesSignature = item.MessageSignature, TransferStatus = (TransferStatusEnum)item.TransferStatus });
+                            LogEventOccurred(new LogEvent { MessagesSignature = item.MessageSignature, TransferStatus = (TransferStatusEnum)item.TransferStatus, MessageSize = item.CalculateSize() });
                             await foreach (var returnMessage in streamingCall.ResponseStream.ReadAllAsync().ConfigureAwait(false))
                                 await ParseServerToClientMessage(returnMessage);
 
@@ -434,7 +435,7 @@ namespace WallTec.CoreCom.Client
                 request.TransferStatus = (int)TransferStatusEnum.Recived;
                 dbContext.IncomingMessages.Add(request);
                 await dbContext.SaveChangesAsync().ConfigureAwait(false);
-                LogEventOccurred(new LogEvent { MessagesSignature = request.MessageSignature, TransferStatus = (TransferStatusEnum)request.TransferStatus });
+                LogEventOccurred(new LogEvent { MessagesSignature = request.MessageSignature, TransferStatus = (TransferStatusEnum)request.TransferStatus, MessageSize = request.CalculateSize() });
 
                 CoreComUserInfo coreComUserInfo = new CoreComUserInfo { ClientId = request.ClientId };
                 if (string.IsNullOrEmpty(request.JsonObject))

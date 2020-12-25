@@ -10,5 +10,6 @@ namespace WallTec.CoreCom.Sheard.Models
         public string MessagesSignature { get; set; }
         public DateTime TimeStampUtc { get; set; }
         public TransferStatusEnum TransferStatus { get; set; }
+        public int MessageSize { get; set; }
     }
 }

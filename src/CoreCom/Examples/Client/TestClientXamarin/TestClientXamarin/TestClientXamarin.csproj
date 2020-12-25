@@ -21,6 +21,7 @@
     <PackageReference Include="Refractored.MvvmHelpers" Version="1.6.2" />
     <PackageReference Include="Xamarin.Forms" Version="4.8.0.1821" />
     <PackageReference Include="Xamarin.Essentials" Version="1.6.0-rc1" />
+    <PackageReference Include="Acr.UserDialogs" Version="7.1.0.470" />
   </ItemGroup>
 
   <ItemGroup>
@@ -29,14 +30,26 @@
     </Compile>
   </ItemGroup>
   <ItemGroup>
+    <None Remove="Resources\Fonts\Awesome_5_Free_Regular_400.otf" />
+  </ItemGroup>
+  <ItemGroup>
     <None Include="View\MainView.xaml" />
     <None Include="App.xaml" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Converters\" />
+    <Folder Include="Resources\" />
+    <Folder Include="Resources\Fonts\" />
+    <Folder Include="Resources\Theming\" />
+    <Folder Include="Interface\" />
+    <Folder Include="Controls\" />
+    <Folder Include="Helpers\" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\..\..\Source\WallTec.CoreCom.Client\WallTec.CoreCom.Client.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Resources\Fonts\Awesome_5_Free_Regular_400.otf" />
   </ItemGroup>
   <Import Project="..\..\..\Shared\WallTec.CoreCom.Example.Shared\WallTec.CoreCom.Example.Shared.projitems" Label="Shared" />
 </Project>

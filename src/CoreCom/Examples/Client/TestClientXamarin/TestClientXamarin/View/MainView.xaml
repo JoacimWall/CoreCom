@@ -1,67 +1,61 @@
 ﻿<?xml version="1.0" encoding="utf-8" ?>
-<ContentPage xmlns="http://xamarin.com/schemas/2014/forms"
+<view:BaseContentPage  xmlns:view="clr-namespace:TestClientXamarin.View"
+             xmlns="http://xamarin.com/schemas/2014/forms"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              xmlns:d="http://xamarin.com/schemas/2014/forms/design"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-             xmlns:ios="clr-namespace:Xamarin.Forms.PlatformConfiguration.iOSSpecific;assembly=Xamarin.Forms.Core"
              xmlns:viewmodel="clr-namespace:TestClientXamarin.ViewModel"
-             xmlns:converters="clr-namespace:TestClientXamarin.Converters"
-             ios:Page.UseSafeArea="true"
+             Shell.NavBarIsVisible="False"  
              mc:Ignorable="d"
-             BackgroundColor="Gray"
              x:Class="TestClientXamarin.View.MainView">
     <ContentPage.BindingContext>
         <viewmodel:MainViewModel  />
     </ContentPage.BindingContext>
-    <ContentPage.Resources>
-        <ResourceDictionary>
-             <converters:ConnectionStatusConverter x:Key="ConnectionStatusConverter" />
-            <converters:Base64StringToImageSourceConverter x:Key="Base64StringToImageSourceConverter" />
-        </ResourceDictionary>
-    </ContentPage.Resources>
-    
-    <Grid Margin="{OnPlatform Android='5,5,5,5', iOS='5,5,5,5'}"
-          RowDefinitions="Auto, Auto,35, 45,Auto, *,Auto,15" ColumnDefinitions="*, *,*,*">
-       
-        <StackLayout Grid.ColumnSpan="4" Orientation="Horizontal" HorizontalOptions="Center">
-            <Label Text="Connection Status:" TextColor="White"/>
-            <Label Text="{Binding ServiceCoreCom.ConnectionStatus, Converter={StaticResource ConnectionStatusConverter}}" HorizontalOptions="Fill" HorizontalTextAlignment="Center" TextColor="White"/>
-        </StackLayout>
-        <Label Grid.Row="1" Grid.ColumnSpan="4" Text="{Binding ServiceCoreCom.LatestRpcException}" HorizontalOptions="Fill" HorizontalTextAlignment="Center" TextColor="White"/>
 
-        <Button Grid.Row="2" Grid.Column="0" Padding="5" Text="Check Cue" BackgroundColor="LightGray" Command="{Binding  CheckCueCommand}" FontSize="13" />
-        <Button Grid.Row="2" Grid.Column="1" Padding="5"  Text="Get Projects" BackgroundColor="LightGray" Command="{Binding  GetProjectsCommand}" FontSize="13"/>
-        <Button Grid.Row="2" Grid.Column="2" Padding="5"  Text="Reauthorize" BackgroundColor="LightGray" Command="{Binding  ConnectToServerCommand}" FontSize="13" />
-        <Button Grid.Row="2" Grid.Column="3" Padding="5"  Text="Image" Command="{Binding  PickImageCommand}" BackgroundColor="LightGray" FontSize="13"/>
-        
-        <Button Grid.Row="3" Grid.Column="0" Padding="5" Margin="5" Text="Add" Command="{Binding  AddProjectsCommand}" BackgroundColor="LightGray" FontSize="13"/>
-        <Entry  Grid.Row="3" Grid.Column="1" Grid.ColumnSpan="2" Placeholder="Project Name" Margin="0,5,0,5" Text="{Binding AddProjectName}" HorizontalOptions="FillAndExpand" />
+
+    <Grid Style="{StaticResource pageGridStyleNoLeftRightMargin}"
+          RowDefinitions="Auto, Auto,35, 45,Auto, *,Auto,15" ColumnDefinitions="*, *,*,*">
+
+        <StackLayout Grid.ColumnSpan="4" Orientation="Horizontal" HorizontalOptions="Center">
+            <Label Text="Connection Status:" />
+            <Label Text="{Binding ServiceCoreCom.ConnectionStatus, Converter={StaticResource ConnectionStatusConverter}}" />
+        </StackLayout>
+        <Label Grid.Row="1" Grid.ColumnSpan="4" Text="{Binding ServiceCoreCom.LatestRpcException}" />
+
+        <Button Grid.Row="2" Grid.Column="0" Padding="5" Text="Check Cue" Command="{Binding  CheckCueCommand}"  />
+        <Button Grid.Row="2" Grid.Column="1" Padding="5"  Text="Get Projects"  Command="{Binding  GetProjectsCommand}" />
+        <Button Grid.Row="2" Grid.Column="2" Padding="5"  Text="Reauthorize"  Command="{Binding  ConnectToServerCommand}"  />
+        <Button Grid.Row="2" Grid.Column="3" Padding="5"  Text="Image" Command="{Binding  PickImageCommand}"/>
+
+        <Button Grid.Row="3" Grid.Column="0"  Text="Add" Command="{Binding  AddProjectsCommand}" />
+        <Entry  Grid.Row="3" Grid.Column="1" Grid.ColumnSpan="2"  Placeholder="Project Name"  Text="{Binding AddProjectName}"  />
         <Image  Grid.Row="3" Grid.Column="3" Source="{Binding ProjectImageSource}" HeightRequest="50" />
-        
-        <Label Grid.Row="4" Grid.ColumnSpan="2" Text="Projects:" TextColor="White"/>
-        <ListView Grid.Row="5" Grid.ColumnSpan="4" SeparatorVisibility="None" HasUnevenRows="True"
-                  ItemsSource="{Binding Projects}" BackgroundColor="White" >
+
+        <Label Grid.Row="4" Grid.ColumnSpan="2" Text="Projects:" Style="{StaticResource labelStyleNormalXMedium}"/>
+        <ListView Grid.Row="5" Grid.ColumnSpan="4" HasUnevenRows="False" RowHeight="70" ItemsSource="{Binding Projects}">
             <ListView.ItemTemplate>
                 <DataTemplate>
                     <ViewCell>
-                         <Frame Margin="4,10,4,0"  CornerRadius="4" IsClippedToBounds="True" HasShadow="False" BorderColor="Black" BackgroundColor="LightGray" >
-                            <Grid Margin="0" RowDefinitions="Auto, *" ColumnDefinitions="Auto,*" >
-                                <Image Margin="0" Grid.RowSpan="2" WidthRequest="70" Source="{Binding Base64Image,Converter={StaticResource Base64StringToImageSourceConverter}}"  />
-                                <Label Margin="0" Grid.Row="0" Grid.Column="1" Text="{Binding Name}" FontAttributes="Bold"/>
-                                <Label Margin="0" Grid.Row="1" Grid.Column="1" Text="{Binding Description}"/>
+                        <Frame >
+                            <Grid RowDefinitions="*,Auto,Auto, *" ColumnDefinitions="Auto,*" >
+                                <Image Margin="3" Grid.Row="1" Grid.RowSpan="2" WidthRequest="70" Source="{Binding Base64Image,Converter={StaticResource Base64StringToImageSourceConverter}}"  />
+                                <Label  Grid.Row="1" Grid.Column="1" Text="{Binding Name}" FontAttributes="Bold" />
+                                <Label  Grid.Row="2" Grid.Column="1" Text="{Binding Description}" VerticalOptions="Start"/>
                             </Grid>
                         </Frame>
                     </ViewCell>
                 </DataTemplate>
             </ListView.ItemTemplate>
-            
+
         </ListView>
-                   <Label Grid.Row="6" Grid.ColumnSpan="2" Text="Latest log event:" HorizontalOptions="Fill" TextColor="White"/>
-                   <Label Grid.Row="6" Grid.Column="2" Grid.ColumnSpan="2" Text="{Binding ServiceCoreCom.LatestLogEvent.TimeStampUtc}" HorizontalOptions="End" HorizontalTextAlignment="End" TextColor="White"/>
-                  
-                   <Label Grid.Row="7" Grid.ColumnSpan="4" Text="{Binding ServiceCoreCom.LatestLogEvent.MessagesSignature}" TextColor="White"/>
-                    
-        
+        <Label Grid.Row="6" Grid.ColumnSpan="2" Text="Latest log event:" HorizontalOptions="Fill" />
+        <Label Grid.Row="6" Grid.Column="2" Grid.ColumnSpan="2" Text="{Binding ServiceCoreCom.LatestLogEvent.TimeStampUtc}" HorizontalOptions="End" HorizontalTextAlignment="End" />
+
+        <Label Grid.Row="7" Grid.ColumnSpan="3" Text="{Binding ServiceCoreCom.LatestLogEvent.MessagesSignature}" />
+        <Label Grid.Row="7" Grid.Column="2" Grid.ColumnSpan="2" HorizontalTextAlignment="End"  Text="{Binding ServiceCoreCom.LatestLogEvent.MessageSize,Converter={StaticResource MessageSizeToStringConverter}}" />
+
+
+
     </Grid>
 
-</ContentPage>
+</view:BaseContentPage>

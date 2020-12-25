@@ -6,6 +6,15 @@
              mc:Ignorable="d"
              x:Class="TestClientXamarin.App">
     <Application.Resources>
-
+            <ResourceDictionary Source="/Resources/Theming/SharedStyle.xaml"/>
+            <ResourceDictionary Source="/Resources/Theming/PageStyle.xaml"/>
+            <ResourceDictionary Source="/Resources/Theming/FrameStyle.xaml"/>
+            <ResourceDictionary Source="/Resources/Theming/ButtonStyle.xaml"/>
+            <ResourceDictionary Source="/Resources/Theming/LabelStyle.xaml"/>
+            <ResourceDictionary Source="/Resources/Theming/EntryStyle.xaml"/>
+            <ResourceDictionary Source="/Resources/Theming/GridStyle.xaml"/>
+            <ResourceDictionary Source="/Resources/Theming/ImageStyle.xaml"/>
+            <ResourceDictionary Source="/Resources/Theming/ListViewStyle.xaml"/>
+            
     </Application.Resources>
 </Application>

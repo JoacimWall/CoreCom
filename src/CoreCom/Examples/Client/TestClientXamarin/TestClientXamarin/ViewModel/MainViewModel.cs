@@ -14,7 +14,7 @@ using Xamarin.Forms;
 
 namespace TestClientXamarin.ViewModel
 {
-    public class MainViewModel : MvvmHelpers.BaseViewModel
+    public class MainViewModel : BaseViewModel
     {
         public MainViewModel()
         {

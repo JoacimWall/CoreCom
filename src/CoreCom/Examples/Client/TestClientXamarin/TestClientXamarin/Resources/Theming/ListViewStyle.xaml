@@ -1,0 +1,19 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<?xaml-comp compile="true" ?>
+<ResourceDictionary xmlns="http://xamarin.com/schemas/2014/forms"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml">
+
+    <ResourceDictionary.MergedDictionaries>
+        <ResourceDictionary Source="SharedStyle.xaml"/>
+    </ResourceDictionary.MergedDictionaries>
+
+    <Style  TargetType="ListView" ApplyToDerivedTypes="True">
+        <Setter Property="BackgroundColor" Value="{StaticResource WhiteColor}" />
+        <Setter Property="SeparatorVisibility" Value="None" />
+        <Setter Property="HasUnevenRows" Value="False" />
+    </Style>
+    
+   
+   
+
+</ResourceDictionary>
