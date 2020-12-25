@@ -5,7 +5,7 @@ To use this please use the nuget's WallTec.CoreCom.Client and WallTec.CoreCom.Se
 The framework wrapping the Proto files and gRPC logic so the client only register functions that listen to diffrent messages on the server and client side. Please view the sample more information.       
 
 ### Offline suport
-Ramveket takes care of any connection or transmission errors and queues them to make a new transmission when connection is restored.
+The framework takes care of any connection or transmission errors and queues them to make a new transmission when connection is restored.
 ### Detailed logging
 Detailed logging can be turned on. All transactions are written to the database or text file.
 
