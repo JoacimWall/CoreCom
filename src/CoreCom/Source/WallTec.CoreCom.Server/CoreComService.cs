@@ -38,18 +38,11 @@ namespace WallTec.CoreCom.Server
                     .UseInMemoryDatabase(databaseName: "CoreComDb").Options;
 
             _config = config;
-            _coreComOptions.LogSettings.logSource = (logSource)Convert.ToInt32(_config["CoreCom:CoreComOptions:LogSettings_logSource"]);
+            _coreComOptions.LogSettings.LogMessageSource = (LogMessageSourceEnum)Convert.ToInt32(_config["CoreCom:CoreComOptions:LogSettings_logMessageSource"]);
+            _coreComOptions.LogSettings.LogEventSource = (LogEventSourceEnum)Convert.ToInt32(_config["CoreCom:CoreComOptions:LogSettings_logEventSource"]);
+            _coreComOptions.LogSettings.DatabaseMode = (DatabaseModeEnum)Convert.ToInt32(_config["CoreCom:CoreComOptions:LogSettings_DatabaseMode"]);
 
-            //  services.AddDbContext<CoreComContext>(options => options.UseInMemoryDatabase(databaseName: "CoreComDb"));
-
-            //using (var context = new CoreComContext(_dbContextOptions))
-            //{
-            //  //  context.Database.EnsureCreated();
-
-            //    var result = context.TransferStatus.ToList();
-
-
-            //}
+            
 
         }
 
@@ -365,7 +358,7 @@ namespace WallTec.CoreCom.Server
 
         private async Task WriteIncommingMessagesLog(CoreComMessage request)
         {
-            if (_coreComOptions.LogSettings.logSource != logSource.TextFile)
+            if (_coreComOptions.LogSettings.LogMessageSource != LogMessageSourceEnum.TextFile)
                 return;
 
             // Set a variable to the Documents path.
@@ -381,7 +374,7 @@ namespace WallTec.CoreCom.Server
         }
         private async Task WriteOutgoingMessagesLog(CoreComMessageResponse request)
         {
-            if (_coreComOptions.LogSettings.logSource != logSource.TextFile)
+            if (_coreComOptions.LogSettings.LogMessageSource != LogMessageSourceEnum.TextFile)
                 return;
 
             // Set a variable to the Documents path.

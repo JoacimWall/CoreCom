@@ -5,16 +5,37 @@ namespace WallTec.CoreCom.Sheard
     public enum TransferStatusEnum : byte
     {
         New = 0,
-        InProcess = 1,
-        Recived = 2,
-        Transferred = 3,
-        Done = 4
+        Recived = 1,
+        Transferred = 2,
+
     }
     public enum ConnectionStatusEnum : byte
     {
         Disconnected = 0,
         Connecting = 1,
         Connected = 2
+
+    }
+    public enum DatabaseModeEnum : byte
+    {
+        ImMemory = 0,
+        OnDisk = 1
+
+    }
+    public enum LogMessageSourceEnum : byte
+    {
+        NoLoging = 0,
+        TextFile = 1,
+        Database = 2
+
+
+    }
+    public enum LogEventSourceEnum : byte
+    {
+        NoLoging = 0,
+        TextFile = 1,
+        Database = 2
+
 
     }
 }

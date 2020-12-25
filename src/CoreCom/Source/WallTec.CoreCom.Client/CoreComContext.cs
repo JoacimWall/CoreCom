@@ -28,12 +28,10 @@ namespace WallTec.CoreCom.Client
 
             //Seed data
             modelBuilder.Entity<TransferStatus>().HasData(new TransferStatus { TransferStatusId = 0, Name = "New" });
-            modelBuilder.Entity<TransferStatus>().HasData(new TransferStatus { TransferStatusId = 1, Name = "InProcess" });
-            modelBuilder.Entity<TransferStatus>().HasData(new TransferStatus { TransferStatusId = 2, Name = "Recived" });
-            modelBuilder.Entity<TransferStatus>().HasData(new TransferStatus { TransferStatusId = 3, Name = "Transferred" });
-            modelBuilder.Entity<TransferStatus>().HasData(new TransferStatus { TransferStatusId = 4, Name = "Done" });
+            modelBuilder.Entity<TransferStatus>().HasData(new TransferStatus { TransferStatusId = 1, Name = "Recived" });
+            modelBuilder.Entity<TransferStatus>().HasData(new TransferStatus { TransferStatusId = 2, Name = "Transferred" });
         }
-
+        internal DbSet<LogEvent> LogEvents { get; set; }
         internal DbSet<TransferStatus> TransferStatus { get; set; }
         internal DbSet<CoreComMessageResponse> IncomingMessages { get; set; }
         internal DbSet<CoreComMessage> OutgoingMessages { get; set; }

@@ -9,7 +9,7 @@ namespace WallTec.CoreCom.Sheard
         public const string CoreComInternal = "CoreComInternal";
         public const string CoreComInternal_ConnectInstallId = "CoreComInternal_ConnectInstallId";
         public const string CoreComInternal_PullQueue = "CoreComInternal_PullQueue";
-        public const string CoreComInternal_StatusUpdate = "CoreComInternal_StatusUpdate";
+        
     }
     
 }

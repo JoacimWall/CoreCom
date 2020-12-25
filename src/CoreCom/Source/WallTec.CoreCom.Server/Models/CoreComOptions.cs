@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using WallTec.CoreCom.Sheard;
 
 namespace WallTec.CoreCom.Server.Models
 {
@@ -17,26 +18,18 @@ namespace WallTec.CoreCom.Server.Models
     }
     public class LogSettings
     {
-        public logSource logSource { get; set; }
+        public LogMessageSourceEnum LogMessageSource { get; set; }
+        public LogEventSourceEnum LogEventSource { get; set; }
+        public DatabaseModeEnum DatabaseMode { get; set; }
 
         public LogSettings()
         {
 
-            logSource = logSource.NoLoging;
+            LogMessageSource = LogMessageSourceEnum.NoLoging;
+            LogEventSource = LogEventSourceEnum.NoLoging;
+            DatabaseMode = DatabaseModeEnum.ImMemory;
         }
 
     }
-    public enum DatabaseMode
-    {
-        ImMemory=0,
-        OnDisk=1
-
-    }
-    public enum logSource
-    { 
-         NoLoging=0,
-         TextFile=1
-
-    
-    }
+   
 }
