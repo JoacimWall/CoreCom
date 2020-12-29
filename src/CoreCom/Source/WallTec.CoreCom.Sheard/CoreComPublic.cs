@@ -18,11 +18,12 @@ namespace WallTec.CoreCom.Sheard
     }
     public enum DatabaseModeEnum : byte
     {
-        ImMemory = 0,
-        OnDisk = 1
+        UseImMemory = 0,
+        UseSqlite = 1,
+        UseSqlServer = 2
 
     }
-    public enum LogMessageSourceEnum : byte
+    public enum LogMessageTargetEnum : byte
     {
         NoLoging = 0,
         TextFile = 1,
@@ -30,7 +31,7 @@ namespace WallTec.CoreCom.Sheard
 
 
     }
-    public enum LogEventSourceEnum : byte
+    public enum LogEventTargetEnum : byte
     {
         NoLoging = 0,
         TextFile = 1,

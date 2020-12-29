@@ -15,5 +15,6 @@
     <Compile Include="$(MSBuildThisFileDirectory)Models\LogEvent.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Models\TransferStatus.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Models\CoreComPublic.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Models\LogSettings.cs" />
   </ItemGroup>
 </Project>

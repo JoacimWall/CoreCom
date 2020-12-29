@@ -19,7 +19,11 @@ namespace WallTec.CoreCom.Server
         //}
         //protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         //{
-        //    optionsBuilder.UseInMemoryDatabase(databaseName: "CoreComDb");
+        //    //"DefaultConnection": "Server=(localdb)\\mssqllocaldb;Database=aspnet-MvcMovie-4ae3798a;Trusted_Connection=True;MultipleActiveResultSets=true"
+        //    //}
+        //    optionsBuilder.UseSqlite(@"Data Source=CoreComDb.db");
+        //    //optionsBuilder.UseSqlServer(@"Server=(localdb)\mssqllocaldb;Database=CoreComDb;Trusted_Connection=True;MultipleActiveResultSets=true");
+        //    //optionsBuilder.UseInMemoryDatabase(databaseName: "CoreComDb");
         //    base.OnConfiguring(optionsBuilder);
         //}
         protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -29,14 +33,15 @@ namespace WallTec.CoreCom.Server
 
             //Seed data
             modelBuilder.Entity<TransferStatus>().HasData(new TransferStatus { TransferStatusId = 0, Name = "New"});
-            modelBuilder.Entity<TransferStatus>().HasData(new TransferStatus { TransferStatusId = 1, Name = "InProcess" });
-            modelBuilder.Entity<TransferStatus>().HasData(new TransferStatus { TransferStatusId = 2, Name = "Recived" });
-            modelBuilder.Entity<TransferStatus>().HasData(new TransferStatus { TransferStatusId = 3, Name = "Transferred" });
-            modelBuilder.Entity<TransferStatus>().HasData(new TransferStatus { TransferStatusId = 4, Name = "Done" });
+            modelBuilder.Entity<TransferStatus>().HasData(new TransferStatus { TransferStatusId = 1, Name = "Recived" });
+            modelBuilder.Entity<TransferStatus>().HasData(new TransferStatus { TransferStatusId = 2, Name = "Transferred" });
         }
-
+        internal DbSet<LogEvent> LogEvents { get; set; }
         internal DbSet<TransferStatus> TransferStatus { get; set; }
         internal DbSet<CoreComMessage> IncomingMessages { get; set; }
         internal DbSet<CoreComMessageResponse> OutgoingMessages { get; set; }
+
+
+       
     }
 }

@@ -8,15 +8,13 @@ using Xamarin.Forms;
 namespace TestClientXamarin.ViewModel
 {
 
-    public class BaseViewModel : MvvmHelpers.BaseViewModel, IContentPageLifeCycleAsync // ExtendedBindableObject
+    public class BaseViewModel : MvvmHelpers.BaseViewModel, IContentPageLifeCycleAsync 
     {
         protected readonly IDialogService DialogService;
-        //protected readonly INavigationService NavigationService;
         public BaseViewModel()
         {
-            DialogService = new DialogService();
-            //NavigationService = ViewModelLocator.Resolve<INavigationService>();
-            FirstTimeAppearing = true;
+            DialogService = DependencyService.Resolve<IDialogService>();
+             FirstTimeAppearing = true;
 
 
         }
@@ -106,16 +104,16 @@ namespace TestClientXamarin.ViewModel
             {
                 if (_isBackPressed)
                 {
+                    // inform Android that we are done with the activity
                     if (Device.RuntimePlatform == Device.Android)
-                        DependencyService.Get<IAndroidCloseApp>().CloseApp();
-                    //FinishAffinity(); // inform Android that we are done with the activity
+                     DependencyService.Get<IAndroidCloseApp>().CloseApp();
+                     
                     return;
                 }
 
                 _isBackPressed = true;
                 DialogService.ShowToast("Press back again to Exit", Acr.UserDialogs.ToastPosition.Bottom);
-                // Toast.MakeText(this, AppResources.Press_back_Again_To_Exit, ToastLength.Short).Show();
-
+               
                 // Disable back to exit after 2 seconds.
                 Device.StartTimer(TimeSpan.FromSeconds(2), () =>
                 {

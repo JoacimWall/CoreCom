@@ -30,18 +30,48 @@ namespace WallTec.CoreCom.Server
         private CoreComOptions _coreComOptions;
         private IConfiguration _config;
         private DbContextOptions _dbContextOptions;
+
+        //events
+        public event EventHandler<LogEvent> OnLogEventOccurred;
+
         public CoreComService(IConfiguration config)
         {
             _coreComOptions = new CoreComOptions();
 
-            _dbContextOptions = new DbContextOptionsBuilder<CoreComContext>()
-                    .UseInMemoryDatabase(databaseName: "CoreComDb").Options;
-
             _config = config;
-            _coreComOptions.LogSettings.LogMessageSource = (LogMessageSourceEnum)Convert.ToInt32(_config["CoreCom:CoreComOptions:LogSettings_logMessageSource"]);
-            _coreComOptions.LogSettings.LogEventSource = (LogEventSourceEnum)Convert.ToInt32(_config["CoreCom:CoreComOptions:LogSettings_logEventSource"]);
-            _coreComOptions.LogSettings.DatabaseMode = (DatabaseModeEnum)Convert.ToInt32(_config["CoreCom:CoreComOptions:LogSettings_DatabaseMode"]);
+            _coreComOptions.LogSettings.LogMessageTarget = (LogMessageTargetEnum)System.Enum.Parse(typeof(LogMessageTargetEnum), _config["CoreCom:CoreComOptions:LogSettings:LogMessageTarget"]);
+            _coreComOptions.LogSettings.LogEventTarget = (LogEventTargetEnum)System.Enum.Parse(typeof(LogEventTargetEnum), _config["CoreCom:CoreComOptions:LogSettings:LogEventTarget"]);
+            _coreComOptions.DatabaseMode = (DatabaseModeEnum)System.Enum.Parse(typeof(DatabaseModeEnum), _config["CoreCom:CoreComOptions:Database:DatabaseMode"]);
 
+           string connectionstring = _config["CoreCom:CoreComOptions:Database:ConnectionString"];
+
+            switch (_coreComOptions.DatabaseMode)
+            {
+                case DatabaseModeEnum.UseImMemory:
+                    _dbContextOptions = new DbContextOptionsBuilder<CoreComContext>()
+                    .UseInMemoryDatabase(databaseName: "CoreComDb").Options;
+                    break;
+                case DatabaseModeEnum.UseSqlite:
+                    _dbContextOptions = new DbContextOptionsBuilder<CoreComContext>()
+                    .UseSqlite(connectionstring).Options;
+                    break;
+                case DatabaseModeEnum.UseSqlServer:
+                    _dbContextOptions = new DbContextOptionsBuilder<CoreComContext>()
+                    .UseSqlServer(@"Server=(localdb)\mssqllocaldb;Database=CoreComDb;Trusted_Connection=True;MultipleActiveResultSets=true").Options;
+                    break;   
+                default:
+                    break;
+            }
+            
+
+          
+            using (var dbContext = new CoreComContext(_dbContextOptions))
+            {
+
+                var test = dbContext.TransferStatus.Where(x => x.TransferStatusId > 0); 
+            }
+        
+            
             
 
         }
@@ -77,12 +107,16 @@ namespace WallTec.CoreCom.Server
         {
             //Add Client
             AddClient(request.ClientId);
+            LogEventOccurred(new LogEvent { ClientId = request.ClientId,  Description = "Client are connected" });
 
             return new ConnectToServerResponse { Response = "Client are connected", ServerDateTime = Timestamp.FromDateTime(DateTime.UtcNow) };
+
         }
         public override async Task<DisconnectFromServerResponse> ClientDisconnectFromServer(DisconnectFromServerRequest request, ServerCallContext context)
         {
             RemoveClient(request.ClientId);
+            LogEventOccurred(new LogEvent { ClientId = request.ClientId, Description = "Client are disconnected" });
+
             return new DisconnectFromServerResponse { Response = "Client are disconnected", ServerDateTime = Timestamp.FromDateTime(DateTime.UtcNow) } ;
         }
 
@@ -105,57 +139,24 @@ namespace WallTec.CoreCom.Server
         {
             using (var dbContext = new CoreComContext(_dbContextOptions))
             {
+                //Add loging
+                request.TransferStatus = (int)TransferStatusEnum.Recived;
+                LogEventOccurred(dbContext, request);
+
                 //First process messages so it's added to cure
                 if (isAuth)
                     await ParseClientToServerMessageAuth(request);
                 else
                     await ParseClientToServerMessage(request);
 
-                //Add loging
-                request.TransferStatus = (int)TransferStatusEnum.Recived;
-                dbContext.IncomingMessages.Add(request);
                 
-                await dbContext.SaveChangesAsync();
+                
+
             }
             //process cue
             await ProcessCue(request, responseStream, context);
 
-            //Check if we allready got this meessage
-            //var exist = await dbContext.OutgoingMessages.FirstOrDefaultAsync(x => x.TransactionIdentifier == request.TransactionIdentifier);
-            //if (exist == null)
-            //{
-
-            //    //First process messages so it's added to cure
-            //    if (isAuth)
-            //        await ParseClientToServerMessageAuth(request);
-            //    else
-            //        await ParseClientToServerMessage(request);
-
-            //    //Add loging
-            //    request.TransferStatus = (int)TransferStatusEnum.Recived;
-            //    dbContext.IncomingMessages.Add(request);
-            //    //Add response to client
-            //    dbContext.OutgoingMessages.Add(new CoreComMessageResponse
-            //    {
-            //        ClientId = request.ClientId,
-            //        CoreComMessageResponseId = Guid.NewGuid().ToString(),
-            //        TransactionIdentifier = request.TransactionIdentifier,
-            //        MessageSignature = CoreComInternalSignatures.CoreComInternal_StatusUpdate,
-            //        TransferStatus = request.TransferStatus
-            //    });
-
-            //    await dbContext.SaveChangesAsync();
-            //}
-            //else
-            //{ //message exist allready then the client need to get status update that we have recived it
-            //    //Change back from Transferd to Recived
-            //    exist.TransferStatus = (int)TransferStatusEnum.Recived;
-            //    await dbContext.SaveChangesAsync();
-            //}
-
-
-
-
+            
         }
         private async Task<bool> ProcessCue(CoreComMessage request, IServerStreamWriter<CoreComMessageResponse> responseStream, ServerCallContext context)
         {
@@ -172,54 +173,38 @@ namespace WallTec.CoreCom.Server
             
             try
             {
-                using (var DbContext = new CoreComContext(_dbContextOptions))
+                using (var dbContext = new CoreComContext(_dbContextOptions))
                 {
-                        var outgoingMess = DbContext.OutgoingMessages.
-                            Where(x => x.ClientId == request.ClientId &&
-                            x.TransferStatus < (int)TransferStatusEnum.Transferred).ToList();
                     //We need always responde with a message other vise loggin on client not work
                     //and the same CoreComInternal_PullQueue from client will send and wo will have the same
                     //transactionId twice result in db error 
-                    if (outgoingMess.Count == 0)
-                    {
-                        //send
-                        await responseStream.WriteAsync(new CoreComMessageResponse
-                        {
-                            MessageSignature = CoreComInternalSignatures.CoreComInternal_PullQueue,
-                            CoreComMessageResponseId = Guid.NewGuid().ToString(),
-                            ClientId = request.ClientId,
-                            TransactionIdentifier = Guid.NewGuid().ToString()
-                        });
-                       
-                        //Remove messages
-                       // await DbContext.SaveChangesAsync();
+                    var outgoingMess = dbContext.OutgoingMessages.
+                        Where(x => x.ClientId == request.ClientId &&
+                        x.TransferStatus < (int)TransferStatusEnum.Transferred).ToList();
+   
 
-                    }
-                    else
-                    { 
                         foreach (var item in outgoingMess)
                         {
                             if (context.Deadline > DateTime.UtcNow)
                             {
                                 //send
                                 await responseStream.WriteAsync(item);
-                                //logging
-                                await WriteOutgoingMessagesLog(item);
                                 //Remove messages
                                 item.TransferStatus = (int)TransferStatusEnum.Transferred;
-                                await DbContext.SaveChangesAsync();
+                                LogEventOccurred(dbContext, item);
                             }
 
                         }
-                    }
+                    
                 }
             }
             catch (RpcException ex)
             {
-                
+                LogEventOccurred(new LogEvent { Description = ex.Message });
                 switch (ex.StatusCode)
                 {
                     case StatusCode.Cancelled:
+                        
                         Console.WriteLine("Stream cancelled.");
                         break;
                     case StatusCode.PermissionDenied:
@@ -236,7 +221,7 @@ namespace WallTec.CoreCom.Server
             }
             catch (Exception ex)
             {
-
+                LogEventOccurred(new LogEvent { Description = ex.Message });
                 return false;
             }
             finally
@@ -281,8 +266,7 @@ namespace WallTec.CoreCom.Server
                 await ParseCoreComFrameworkMessage(request);
                 return;
             }
-            //Logg messages
-            await WriteIncommingMessagesLog(request);
+           
 
 
             CoreComUserInfo coreComUserInfo = new CoreComUserInfo { ClientId = request.ClientId };
@@ -315,14 +299,12 @@ namespace WallTec.CoreCom.Server
         private async Task ParseClientToServerMessageAuth(CoreComMessage request)
         {
             //this only hapend after first messages bin sent
-            if (request.MessageSignature.StartsWith("CoreComInternal"))
+            if (request.MessageSignature == CoreComInternalSignatures.CoreComInternal_PullQueue)
             {
                 await ParseCoreComFrameworkMessage(request);
                 return;
             }
-            //Logg messages
-            await WriteIncommingMessagesLog(request);
-
+           
 
             CoreComUserInfo coreComUserInfo = new CoreComUserInfo { ClientId = request.ClientId };
             if (string.IsNullOrEmpty(request.JsonObject))
@@ -353,12 +335,32 @@ namespace WallTec.CoreCom.Server
         }
         private async Task ParseCoreComFrameworkMessage(CoreComMessage request)
         {
-
+            //We need always responde with a message other vise loggin on client not work
+            //and the same CoreComInternal_PullQueue from client will send and wo will have the same
+            //transactionId twice result in db error
+            using (var dbContext = new CoreComContext(_dbContextOptions))
+            {
+                //queue is empty then create response message
+                if (!dbContext.OutgoingMessages.Any(x => x.ClientId == request.ClientId && x.TransferStatus < (int)TransferStatusEnum.Transferred))
+                {
+                    //send
+                    var internalMess = new CoreComMessageResponse
+                    {
+                        MessageSignature = CoreComInternalSignatures.CoreComInternal_PullQueue,
+                        CoreComMessageResponseId = Guid.NewGuid().ToString(),
+                        ClientId = request.ClientId,
+                        //CreateTimeUtc = Timestamp.FromDateTime(DateTime.UtcNow),
+                        TransactionIdentifier = Guid.NewGuid().ToString()
+                    };
+                    LogEventOccurred(dbContext, internalMess);
+                 
+                }
+            }
         }
 
         private async Task WriteIncommingMessagesLog(CoreComMessage request)
         {
-            if (_coreComOptions.LogSettings.LogMessageSource != LogMessageSourceEnum.TextFile)
+            if (_coreComOptions.LogSettings.LogMessageTarget != LogMessageTargetEnum.TextFile)
                 return;
 
             // Set a variable to the Documents path.
@@ -367,14 +369,14 @@ namespace WallTec.CoreCom.Server
             // Write the specified text asynchronously to a new file named "WriteTextAsync.txt".
             using (StreamWriter outputFile = new StreamWriter(Path.Combine(docPath, "IncommingMessages.log"), true))
             {
-                await outputFile.WriteLineAsync(DateTime.UtcNow.ToString() + "\t" + request.CoreComMessageId + "\t" + request.ClientId + "\t" + request.ClientId + "\t" + request.TransactionIdentifier + "\t" + request.MessageSignature);
+                await outputFile.WriteLineAsync(DateTime.UtcNow.ToString() + "\t" + request.CoreComMessageId + "\t" + request.MessageSignature + "\t" + request.ClientId  + "\t" + request.TransactionIdentifier + "\t" + ((TransferStatusEnum)request.TransferStatus).ToString() + "\t" + request.CalculateSize().ToString() + Environment.NewLine);
             }
 
 
         }
         private async Task WriteOutgoingMessagesLog(CoreComMessageResponse request)
         {
-            if (_coreComOptions.LogSettings.LogMessageSource != LogMessageSourceEnum.TextFile)
+            if (_coreComOptions.LogSettings.LogMessageTarget != LogMessageTargetEnum.TextFile)
                 return;
 
             // Set a variable to the Documents path.
@@ -383,7 +385,23 @@ namespace WallTec.CoreCom.Server
             // Write the specified text asynchronously to a new file named "WriteTextAsync.txt".
             using (StreamWriter outputFile = new StreamWriter(Path.Combine(docPath, "OutgoningMessages.log"), true))
             {
-                await outputFile.WriteLineAsync(DateTime.UtcNow.ToString() + "\t" + request.CoreComMessageResponseId + "\t" + request.ClientId + "\t" + request.TransactionIdentifier + "\t" + request.ClientId + "\t" + request.MessageSignature);
+                await outputFile.WriteLineAsync(DateTime.UtcNow.ToString() + "\t" + request.CoreComMessageResponseId + "\t" + request.MessageSignature + "\t" + request.ClientId + "\t" + request.TransactionIdentifier + "\t" + ((TransferStatusEnum)request.TransferStatus).ToString() + "\t"  + request.CalculateSize().ToString() + Environment.NewLine);
+            }
+
+
+        }
+        private async Task WriteEventLogtoFile(LogEvent logEvent)
+        {
+            if (_coreComOptions.LogSettings.LogEventTarget != LogEventTargetEnum.TextFile)
+                return;
+
+            // Set a variable to the Documents path.
+            string docPath = Environment.CurrentDirectory;
+
+            // Write the specified text asynchronously to a new file named "WriteTextAsync.txt".
+            using (StreamWriter outputFile = new StreamWriter(Path.Combine(docPath, "LogEvents.log"), true))
+            {
+                await outputFile.WriteLineAsync(logEvent.TimeStampUtc.ToString() + "\t" + logEvent.LogEventId + "\t" + logEvent.Description + "\t" + logEvent.ClientId + "\t" + logEvent.TransactionIdentifier  + "\t" + logEvent.TransferStatus.ToString() +  "\t" + logEvent.MessageSize.ToString() + Environment.NewLine);
             }
 
 
@@ -393,7 +411,6 @@ namespace WallTec.CoreCom.Server
             string jsonObjectType = string.Empty;
             string jsonObject = string.Empty;
             CoreComMessageResponse coreComMessage;
-            Client client;
             //Build  message
             try
             {
@@ -408,6 +425,7 @@ namespace WallTec.CoreCom.Server
                 {
                     CoreComMessageResponseId = Guid.NewGuid().ToString(),
                     ClientId = coreComUserInfo.ClientId,
+                    //CreateTimeUtc = Timestamp.FromDateTime(DateTime.UtcNow),
                     TransactionIdentifier = Guid.NewGuid().ToString(),
                     MessageSignature = messageSignature,
                     JsonObjectType = jsonObjectType,
@@ -415,8 +433,7 @@ namespace WallTec.CoreCom.Server
                 };
                 using (var dbContext = new CoreComContext(_dbContextOptions))
                 {
-                    dbContext.OutgoingMessages.Add(coreComMessage);
-                    await dbContext.SaveChangesAsync();
+                   LogEventOccurred(dbContext, coreComMessage);
 
                 }
 
@@ -434,6 +451,157 @@ namespace WallTec.CoreCom.Server
 
         }
 
+
+        #endregion
+        #region Internal functions
+       
+        internal async virtual void LogEventOccurred(CoreComContext dbContext, CoreComMessage coreComMessage)
+        {
+
+            LogEvent logEvent = new LogEvent { Description = coreComMessage.MessageSignature, ClientId = coreComMessage.ClientId
+                , TransactionIdentifier = coreComMessage.TransactionIdentifier,
+                TransferStatus = (TransferStatusEnum)coreComMessage.TransferStatus, MessageSize = coreComMessage.CalculateSize() };
+
+
+            //Messages
+            switch (_coreComOptions.LogSettings.LogMessageTarget)
+            {
+                case LogMessageTargetEnum.Database:
+                    //allways remove CoreComInternal from IncomingMessages table
+                    //if (coreComMessage.MessageSignature != CoreComInternalSignatures.CoreComInternal_PullQueue)
+                        dbContext.IncomingMessages.Add(coreComMessage);
+                    break;
+                case LogMessageTargetEnum.TextFile:
+                    //Create textfile log
+                    await WriteIncommingMessagesLog(coreComMessage).ConfigureAwait(false);
+                    break;
+                case LogMessageTargetEnum.NoLoging:
+                    //if (coreComMessage.TransferStatus != (int)TransferStatusEnum.New)
+                    //    dbContext.IncomingMessages.Remove(coreComMessage);
+                    break;
+                default:
+                    break;
+            }
+
+            //Events
+            switch (_coreComOptions.LogSettings.LogEventTarget)
+            {
+                case LogEventTargetEnum.Database:
+                    await dbContext.LogEvents.AddAsync(logEvent);
+
+                    break;
+                case LogEventTargetEnum.TextFile:
+                    //Create textfile log
+                    await WriteEventLogtoFile(logEvent).ConfigureAwait(false);
+                    break;
+                case LogEventTargetEnum.NoLoging:
+
+                    break;
+                default:
+                    break;
+            }
+
+            await dbContext.SaveChangesAsync().ConfigureAwait(false);
+
+
+            EventHandler<LogEvent> handler = OnLogEventOccurred;
+            if (handler != null)
+            {
+                handler(this, logEvent);
+            }
+        }
+        internal async virtual void LogEventOccurred(CoreComContext dbContext, CoreComMessageResponse coreComMessageResponse)
+        {
+
+            LogEvent logEvent = new LogEvent { Description = coreComMessageResponse.MessageSignature,
+                ClientId = coreComMessageResponse.ClientId,TransactionIdentifier = coreComMessageResponse.TransactionIdentifier,
+                TransferStatus = (TransferStatusEnum)coreComMessageResponse.TransferStatus, MessageSize = coreComMessageResponse.CalculateSize() };
+
+            //allways add to new outgoing to database 
+            if (coreComMessageResponse.TransferStatus == (int)TransferStatusEnum.New)
+                dbContext.OutgoingMessages.Add(coreComMessageResponse);
+
+
+            //Messages
+            switch (_coreComOptions.LogSettings.LogMessageTarget)
+            {
+                case LogMessageTargetEnum.Database:
+                    //status change will be writen to database on dbContext.SaveChangesAsync
+                    break;
+                case LogMessageTargetEnum.TextFile:
+                    //Create textfile log
+                     //add response message to file
+                     await WriteOutgoingMessagesLog(coreComMessageResponse);
+                    
+                    break;
+                case LogMessageTargetEnum.NoLoging: 
+                    if (coreComMessageResponse.TransferStatus == (int)TransferStatusEnum.Transferred)
+                    { 
+                       //remove message
+                       dbContext.OutgoingMessages.Remove(coreComMessageResponse);
+                    }
+                    break;
+                default:
+                    break;
+            }
+
+            //Events
+            switch (_coreComOptions.LogSettings.LogEventTarget)
+            {
+                case LogEventTargetEnum.Database:
+                    if (coreComMessageResponse.TransferStatus != (int)TransferStatusEnum.New)
+                        await dbContext.LogEvents.AddAsync(logEvent);
+
+                    break;
+                case LogEventTargetEnum.TextFile:
+                    //Create textfile log
+                    await WriteEventLogtoFile(logEvent).ConfigureAwait(false);
+                    break;
+                case LogEventTargetEnum.NoLoging:
+                   
+                    break;
+                default:
+                    break;
+            }
+            await dbContext.SaveChangesAsync().ConfigureAwait(false);
+
+            EventHandler<LogEvent> handler = OnLogEventOccurred;
+            if (handler != null)
+            {
+                handler(this, logEvent);
+            }
+        }
+        internal async virtual void LogEventOccurred(LogEvent logEvent)
+        {
+            using (var dbContext = new CoreComContext(_dbContextOptions))
+            {
+                //Events
+                switch (_coreComOptions.LogSettings.LogEventTarget)
+                {
+                    case LogEventTargetEnum.Database:
+                        await dbContext.LogEvents.AddAsync(logEvent);
+
+                        break;
+                    case LogEventTargetEnum.TextFile:
+                        //Create textfile log
+                        await WriteEventLogtoFile(logEvent).ConfigureAwait(false);
+                        break;
+                    case LogEventTargetEnum.NoLoging:
+
+                        break;
+                    default:
+                        break;
+                }
+
+                await dbContext.SaveChangesAsync().ConfigureAwait(false);
+
+            }
+            EventHandler<LogEvent> handler = OnLogEventOccurred;
+            if (handler != null)
+            {
+                handler(this, logEvent);
+            }
+        }
 
         #endregion
     }

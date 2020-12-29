@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using TestClientXamarin.Services.Dialog;
 using Xamarin.Forms;
+[assembly: Xamarin.Forms.Dependency(typeof(IDialogService))]
 namespace TestClientXamarin.Services.Dialog
 {
     public class DialogService : IDialogService

@@ -24,8 +24,7 @@ namespace TestClientXamarin
 
         protected async override void OnStart()
         {
-            var dialogService = new DialogService();
-            DependencyService.RegisterSingleton(dialogService);
+            DependencyService.RegisterSingleton<IDialogService>(new DialogService());
             ServiceCoreCom.SetupCoreComServer();
            await ServiceCoreCom.ConnectCoreComServer();
         }
