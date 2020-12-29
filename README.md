@@ -47,6 +47,8 @@ We do no logging of events.
 # Server
 Server side use gRPC-Web as framework to handle communication between server and clients. The server can run in different modes depending on the need for logging and offline support. 
 
+sqlite viewer https://sqlitebrowser.org/dl/
+
 
 Scenarios of user verifications can be built outside the framework and thus were independent of the framework. After verifying users, the framework is provided with a client ID which is then used to verify the user between client and server.
 
