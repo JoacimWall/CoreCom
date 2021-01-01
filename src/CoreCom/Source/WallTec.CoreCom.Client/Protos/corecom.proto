@@ -46,24 +46,28 @@ message DisconnectFromServerResponse {
 message CoreComMessage {
 	string CoreComMessageId=1;
 	string ClientId = 2;
-	//google.protobuf.Timestamp CreateTimeUtc = 3;
-	string TransactionIdentifier = 4;
-	string MessageSignature = 5;
-	string JsonObjectType =6;
-	string JsonObject =7;
-	int32 TransferStatus=8;
-	bool SendAuth=9;	
+	string NewUtc = 3;
+	string RecivedUtc = 4;
+    string TransferredUtc = 5;
+	string TransactionIdentifier = 6;
+	string MessageSignature = 7;
+	string JsonObjectType =8;
+	string JsonObject =9;
+	int32 TransferStatus=10;
+	bool SendAuth=11;	
 }
 
 message CoreComMessageResponse {
 	string CoreComMessageResponseId=1;
 	string ClientId = 2;
-	//google.protobuf.Timestamp CreateTimeUtc = 3;
-	string TransactionIdentifier = 4;
-	string MessageSignature = 5;
-	string JsonObjectType =6;
-	string JsonObject =7;
-	int32 TransferStatus=8;	
+	string NewUtc = 3;
+	string RecivedUtc = 4;
+    string TransferredUtc = 5;
+	string TransactionIdentifier = 6;
+	string MessageSignature = 7;
+	string JsonObjectType =8;
+	string JsonObject =9;
+	int32 TransferStatus=10;
 }
 
 

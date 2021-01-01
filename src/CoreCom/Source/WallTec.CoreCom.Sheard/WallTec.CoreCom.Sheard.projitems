@@ -16,5 +16,10 @@
     <Compile Include="$(MSBuildThisFileDirectory)Models\TransferStatus.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Models\CoreComPublic.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Models\LogSettings.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Models\LogError.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Helpers\DateTimeConverter.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="$(MSBuildThisFileDirectory)Helpers\" />
   </ItemGroup>
 </Project>

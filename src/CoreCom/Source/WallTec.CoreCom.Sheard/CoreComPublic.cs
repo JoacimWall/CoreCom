@@ -5,8 +5,8 @@ namespace WallTec.CoreCom.Sheard
     public enum TransferStatusEnum : byte
     {
         New = 0,
-        Recived = 1,
-        Transferred = 2,
+        Transferred = 1,
+        Recived = 2,
 
     }
     public enum ConnectionStatusEnum : byte
@@ -28,10 +28,14 @@ namespace WallTec.CoreCom.Sheard
         NoLoging = 0,
         TextFile = 1,
         Database = 2
-
-
     }
     public enum LogEventTargetEnum : byte
+    {
+        NoLoging = 0,
+        TextFile = 1,
+        Database = 2
+    }
+    public enum LogErrorTargetEnum : byte
     {
         NoLoging = 0,
         TextFile = 1,

@@ -163,15 +163,23 @@ namespace TestClientXamarin.Services
 
             //local debug
             _coreComOptions = new CoreComOptions
-            {
+            {   //debug on android emulator
                 ServerAddress = (Device.RuntimePlatform == Device.Android ? "https://10.0.2.2:5001" : "https://localhost:5001"),
                 //azure debug
                 //_coreComOptions.ServerAddress = "https://wallteccorecomtestserver.azurewebsites.net";
                 RequestServerQueueIntervalSec = 30,
                 ConnectToServerDeadlineSec = 5,
-                MessageDeadlineSec = 30
+                MessageDeadlineSec = 30,
+                LogSettings = new LogSettings
+                    {
+                        LogErrorTarget = LogErrorTargetEnum.TextFile,
+                        LogEventTarget = LogEventTargetEnum.TextFile,
+                        LogMessageTarget = LogMessageTargetEnum.TextFile
+
+                    }
 
             };
+            
             //Debug local on mac where the server is running in "Kestrel": { "EndpointDefaults": { "Protocols": "Http1"  }  }
 #if DEBUG
             _coreComOptions.DangerousAcceptAnyServerCertificateValidator = true;

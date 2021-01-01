@@ -5,6 +5,7 @@ using WallTec.CoreCom.Client.Models;
 using WallTec.CoreCom.Example.Shared.Entitys;
 using WallTec.CoreCom.Example.Shared;
 using WallTec.CoreCom.Sheard;
+using WallTec.CoreCom.Sheard.Models;
 
 namespace TestClient
 {

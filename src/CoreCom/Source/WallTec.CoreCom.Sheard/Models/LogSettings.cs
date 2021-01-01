@@ -5,13 +5,13 @@ namespace WallTec.CoreCom.Sheard.Models
     {
         public LogMessageTargetEnum LogMessageTarget { get; set; }
         public LogEventTargetEnum LogEventTarget { get; set; }
-        
+        public LogErrorTargetEnum LogErrorTarget { get; set; }
+
         public LogSettings()
         {
-
             LogMessageTarget = LogMessageTargetEnum.NoLoging;
             LogEventTarget = LogEventTargetEnum.NoLoging;
-           
+            LogErrorTarget = LogErrorTargetEnum.NoLoging;
         }
 
     }
