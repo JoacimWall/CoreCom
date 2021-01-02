@@ -37,7 +37,8 @@ namespace TestClientXamarin.ViewModel
 
         private async Task ConnectCommandAsync()
         {
-            await App.ServiceCoreCom.ConnectCoreComServer();
+            string username = (Device.RuntimePlatform == Device.Android ? "demoDroid" : "demoIos"); //simulate diffrent user
+            await App.ServiceCoreCom.Authenticate(username,"1234");
         }
 
         public ICommand GetProjectsCommand => new Command(async () => await GetProjectsAsync());

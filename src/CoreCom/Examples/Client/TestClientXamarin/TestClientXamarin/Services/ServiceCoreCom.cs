@@ -32,7 +32,9 @@ namespace TestClientXamarin.Services
         //}
         public ServiceCoreCom()
         {
-
+            _coreComClient.OnConnectionStatusChange += _coreComClient_OnConnectionStatusChange;
+            _coreComClient.OnLatestRpcExceptionChange += _coreComClient_OnLatestRpcExceptionChange;
+            _coreComClient.OnLogEventOccurred += _coreComClient_OnLogEventOccurred;
         }
 
         private void _coreComClient_OnLatestRpcExceptionChange(object sender, RpcException e)
@@ -111,7 +113,7 @@ namespace TestClientXamarin.Services
             }
         }
         
-        private async Task<bool> Authenticate(string username, string password)
+        public async Task<bool> Authenticate(string username, string password)
         {
             try
             {
@@ -164,21 +166,21 @@ namespace TestClientXamarin.Services
             //local debug
             _coreComOptions = new CoreComOptions
             {   //debug on android emulator
-                ServerAddress = (Device.RuntimePlatform == Device.Android ? "https://10.0.2.2:5001" : "https://localhost:5001"),
+                //ServerAddress = (Device.RuntimePlatform == Device.Android ? "https://10.0.2.2:5001" : "https://localhost:5001"),
                 //azure debug
-                //_coreComOptions.ServerAddress = "https://wallteccorecomtestserver.azurewebsites.net";
+                ServerAddress = "https://wallteccorecomtestserver.azurewebsites.net",
                 DatabaseMode = DatabaseModeEnum.UseSqlite,
                 GrpcOptions = new GrpcOptions
                 {
                     RequestServerQueueIntervalSec = 30,
                     ConnectToServerDeadlineSec = 5,
-                    MessageDeadlineSec = 30
+                    MessageDeadlineSec = 200
                 },
                 LogSettings = new LogSettings
                     {
-                        LogErrorTarget = LogErrorTargetEnum.TextFile,
-                        LogEventTarget = LogEventTargetEnum.TextFile,
-                        LogMessageTarget = LogMessageTargetEnum.TextFile
+                        LogErrorTarget = LogErrorTargetEnum.Database,
+                        LogEventTarget = LogEventTargetEnum.Database,
+                        LogMessageTarget = LogMessageTargetEnum.Database
 
                     }
 
@@ -190,6 +192,7 @@ namespace TestClientXamarin.Services
 #endif
             return true;
         }
+       
         public async Task<bool> ConnectCoreComServer()
         {
 
@@ -212,9 +215,7 @@ namespace TestClientXamarin.Services
             //}
             //coreComOptions.ClientId = id;
             #endregion
-            _coreComClient.OnConnectionStatusChange += _coreComClient_OnConnectionStatusChange;
-            _coreComClient.OnLatestRpcExceptionChange += _coreComClient_OnLatestRpcExceptionChange;
-            _coreComClient.OnLogEventOccurred += _coreComClient_OnLogEventOccurred; 
+           
             _coreComClient.Connect(_coreComOptions);
             
             return true;
@@ -226,9 +227,7 @@ namespace TestClientXamarin.Services
         {
             _coreComClient.Disconnect();
 
-            _coreComClient.OnConnectionStatusChange -= _coreComClient_OnConnectionStatusChange;
-            _coreComClient.OnLatestRpcExceptionChange -= _coreComClient_OnLatestRpcExceptionChange;
-            _coreComClient.OnLogEventOccurred -= _coreComClient_OnLogEventOccurred;
+          
             return true;
         }
         public void CheckServerCue()

@@ -12,14 +12,14 @@
     </ContentPage.BindingContext>
 
     <ContentPage.Content>
-         <Grid Style="{StaticResource pageGridStyleNoLeftRightMargin}"  RowDefinitions="Auto,  *" >
+         <Grid Style="{StaticResource pageGridStyleNoLeftRightMargin}"  RowDefinitions="auto,  *" >
         <Label Grid.Row="0"  Text="Log:" />
-        <ListView Grid.Row="1" ItemsSource="{Binding LogEvents}" RowHeight="70" >
+        <ListView Grid.Row="1" ItemsSource="{Binding LogEvents}" HasUnevenRows="True" >
             <ListView.ItemTemplate>
                 <DataTemplate>
                     <ViewCell>
                          <Frame  >
-                            <Grid Padding="2" RowDefinitions="Auto, *" ColumnDefinitions="Auto,*" >
+                            <Grid Padding="2" RowDefinitions="Auto, Auto" ColumnDefinitions="*,Auto" >
                                 <Label Grid.Row="0" Grid.Column="0"  HorizontalOptions="Fill" HorizontalTextAlignment="Start" Style="{StaticResource labelStyleNormalSmall}">
                                     <Label.Text>
                                         <MultiBinding Converter="{StaticResource MultiConnection_TransferStatusConverter}">
@@ -28,9 +28,9 @@
                                         </MultiBinding>
                                     </Label.Text>
                                 </Label>
-                            <Label Grid.Row="0" Grid.Column="1" Text="{Binding TimeStampUtc}" HorizontalTextAlignment="End" />
+                            <Label Grid.Row="0" Grid.Column="1" Text="{Binding TimeStampUtc}" HorizontalTextAlignment="End" Style="{StaticResource labelStyleNormalSmall}"/>
                                
-                                <Label Grid.Row="1" Grid.Column="0"  Text="{Binding Description}" Style="{StaticResource labelStyleNormalSmall}"/>
+                                <Label Grid.Row="1" Grid.Column="0"  Text="{Binding Description}" LineBreakMode="WordWrap" Style="{StaticResource labelStyleNormalSmall}"/>
                                 <Label Grid.Row="1" Grid.Column="1" HorizontalTextAlignment="End"  Text="{Binding MessageSize,Converter={StaticResource MessageSizeToStringConverter}}" Style="{StaticResource labelStyleNormalSmall}"/>
 
 

@@ -19,7 +19,7 @@ using Xamarin.Essentials;
 namespace WallTec.CoreCom.Client
 {
 
-    public class CoreComClient 
+    public class CoreComClient
     {
         #region Private Propertys
         private GrpcWebHandler _httpHandler;
@@ -34,7 +34,7 @@ namespace WallTec.CoreCom.Client
         private Timer _checkCueTimer;
         private ConnectionStatusEnum _connectionStatus;
         private DbContextOptions _dbContextOptions;
-        
+
         //Events
         public event EventHandler<ConnectionStatusEnum> OnConnectionStatusChange;
         protected virtual void ConnectionStatusChange(ConnectionStatusEnum e)
@@ -56,7 +56,7 @@ namespace WallTec.CoreCom.Client
                 handler(this, e);
             }
         }
-        
+
 
         #endregion
         #region Public Propertys
@@ -191,8 +191,10 @@ namespace WallTec.CoreCom.Client
             if (isConnectToServer)
                 deadlineSec = _coreComOptions.GrpcOptions.ConnectToServerDeadlineSec;
             else
-                deadlineSec = _coreComOptions.GrpcOptions.MessageDeadlineSec;
-
+            {
+                deadlineSec = _coreComOptions.GrpcOptions.MessageDeadlineSec * _coreComOptions.GrpcOptions.MessageDeadlineSecMultiply;
+                Console.WriteLine("deadlineSec=" + deadlineSec.ToString());
+            }
             CallOptions calloptions;
             if (addAuth && !string.IsNullOrEmpty(_coreComOptions.ClientToken))
             {
@@ -253,9 +255,9 @@ namespace WallTec.CoreCom.Client
                 LogEventOccurred(connectEvent);
                 var response = await _coreComClient.ClientConnectToServerAsync(connectMessage, GetCallOptions(true).WithWaitForReady(true));
                 //log request
-               
+
                 //log response
-                LogEventOccurred(new LogEvent {Description = response.Response, TransferStatus = TransferStatusEnum.Recived, MessageSize = response.CalculateSize() });
+                LogEventOccurred(new LogEvent { Description = response.Response, TransferStatus = TransferStatusEnum.Recived, MessageSize = response.CalculateSize() });
                 Console.WriteLine("Connected to Server " + _coreComOptions.ServerAddress);
 
                 ConnectionStatusChange(ConnectionStatusEnum.Connected);
@@ -273,16 +275,10 @@ namespace WallTec.CoreCom.Client
             {
                 LatestRpcExceptionChange(ex);
 
-                if (ex.StatusCode == StatusCode.PermissionDenied || ex.StatusCode == StatusCode.Unavailable)
-                {
-                    ConnectionStatusChange(ConnectionStatusEnum.Disconnected);
-                    LogEventOccurred(new LogEvent { Description = ex.Message, ConnectionStatus = _connectionStatus });
-                    _timer.Enabled = true;
-                }
-                else if (ex.StatusCode == StatusCode.DeadlineExceeded)
-                {
-                    LogEventOccurred(new LogEvent { Description = ex.Message, ConnectionStatus =_connectionStatus });
-                }
+                ConnectionStatusChange(ConnectionStatusEnum.Disconnected);
+                LogEventOccurred(new LogEvent { Description = ex.Message, ConnectionStatus = _connectionStatus });
+                _timer.Enabled = true;
+
                 return false;
 
             }
@@ -315,7 +311,7 @@ namespace WallTec.CoreCom.Client
                             item.ClientId = _coreComOptions.ClientId.ToString();
                             LogEventOccurred(dbContext, item);
                             using var streamingCall = _coreComClient.SubscribeServerToClientAuth(item, GetCallOptions(false, item.SendAuth));
-                           
+
                             //Now the outgoing messages is sent
                             await foreach (var returnMessage in streamingCall.ResponseStream.ReadAllAsync().ConfigureAwait(false))
                             {
@@ -364,6 +360,7 @@ namespace WallTec.CoreCom.Client
                 {
                     case StatusCode.DeadlineExceeded:
                         LogEventOccurred(new LogEvent { Description = ex.Message, ConnectionStatus = _connectionStatus });
+                        _coreComOptions.GrpcOptions.MessageDeadlineSecMultiply++;
                         break;
                     case StatusCode.Cancelled:
                         LogEventOccurred(new LogEvent { Description = ex.Message, ConnectionStatus = _connectionStatus });
@@ -391,6 +388,7 @@ namespace WallTec.CoreCom.Client
                 _workingOnCue = false;
 
             }
+
             _workingOnCue = false;
             //Start timmer for check cue server and client
             if (_coreComOptions.GrpcOptions.RequestServerQueueIntervalSec > 0)
@@ -459,14 +457,15 @@ namespace WallTec.CoreCom.Client
             {
                 case LogMessageTargetEnum.Database:
                     //allways remove CoreComInternal from outgoingmessage table
-                    if (coreComMessage.MessageSignature == CoreComInternalSignatures.CoreComInternal_PullQueue)
+                    if (coreComMessage.MessageSignature == CoreComInternalSignatures.CoreComInternal_PullQueue
+                        && coreComMessage.TransferStatus != (int)TransferStatusEnum.New)
                         dbContext.OutgoingMessages.Remove(coreComMessage);
 
                     //it's allready in db just update status
 
                     break;
                 case LogMessageTargetEnum.TextFile:
-                    
+
                     await WriteOutgoingMessagesLog(coreComMessage);
                     break;
                 case LogMessageTargetEnum.NoLoging:
@@ -485,7 +484,7 @@ namespace WallTec.CoreCom.Client
 
                     break;
                 case LogEventTargetEnum.TextFile:
-                    
+
                     await WriteEventLogtoFile(logEvent);
                     break;
                 case LogEventTargetEnum.NoLoging:
@@ -523,7 +522,7 @@ namespace WallTec.CoreCom.Client
                 case LogMessageTargetEnum.TextFile:
                     if (coreComMessageResponse.MessageSignature != CoreComInternalSignatures.CoreComInternal_PullQueue)
                     { //add incomming message to file
-                       await WriteIncommingMessagesLog(coreComMessageResponse);
+                        await WriteIncommingMessagesLog(coreComMessageResponse);
                     }
                     break;
                 case LogMessageTargetEnum.NoLoging:
@@ -622,7 +621,7 @@ namespace WallTec.CoreCom.Client
                         break;
                     case LogErrorTargetEnum.TextFile:
                         //Create textfile log
-                       // await WriteErrorLogtoFile(logError).ConfigureAwait(false);
+                        // await WriteErrorLogtoFile(logError).ConfigureAwait(false);
                         break;
                     case LogErrorTargetEnum.NoLoging:
                         //if (coreComMessage.TransferStatus != (int)TransferStatusEnum.New)
@@ -645,7 +644,7 @@ namespace WallTec.CoreCom.Client
         }
         private async Task ParseServerToClientMessage(CoreComMessageResponse request)
         {
-            
+
             using (var dbContext = new CoreComContext(_dbContextOptions))
             {
                 request.TransferStatus = (int)TransferStatusEnum.Recived;
@@ -716,7 +715,7 @@ namespace WallTec.CoreCom.Client
                 return;
 
             // Set a variable to the Documents path.
-            string docPath = FileSystem.AppDataDirectory; 
+            string docPath = FileSystem.AppDataDirectory;
 
             // Write the specified text asynchronously to a new file named "WriteTextAsync.txt".
             using (StreamWriter outputFile = new StreamWriter(Path.Combine(docPath, "OutgoningMessages.log"), true))
