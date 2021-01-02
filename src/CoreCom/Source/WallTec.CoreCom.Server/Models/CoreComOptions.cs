@@ -14,6 +14,12 @@ namespace WallTec.CoreCom.Server.Models
 
         }
     }
-    
-   
+    public enum DatabaseModeEnum : byte
+    {
+        UseImMemory = 0,
+        UseSqlite = 1,
+        UseSqlServer = 2
+
+    }
+
 }

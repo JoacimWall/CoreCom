@@ -21,7 +21,7 @@ namespace TestClientXamarin.Services
 
     public class ServiceCoreCom : MvvmHelpers.ObservableObject
     {
-        public CoreComClient _coreComClient = new CoreComClient();
+        public CoreComClient _coreComClient = new   CoreComClient();
         private CoreComOptions _coreComOptions;
         private static InMemoryData _inMemoryData = new InMemoryData();
         
@@ -167,9 +167,13 @@ namespace TestClientXamarin.Services
                 ServerAddress = (Device.RuntimePlatform == Device.Android ? "https://10.0.2.2:5001" : "https://localhost:5001"),
                 //azure debug
                 //_coreComOptions.ServerAddress = "https://wallteccorecomtestserver.azurewebsites.net";
-                RequestServerQueueIntervalSec = 30,
-                ConnectToServerDeadlineSec = 5,
-                MessageDeadlineSec = 30,
+                DatabaseMode = DatabaseModeEnum.UseSqlite,
+                GrpcOptions = new GrpcOptions
+                {
+                    RequestServerQueueIntervalSec = 30,
+                    ConnectToServerDeadlineSec = 5,
+                    MessageDeadlineSec = 30
+                },
                 LogSettings = new LogSettings
                     {
                         LogErrorTarget = LogErrorTargetEnum.TextFile,

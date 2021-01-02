@@ -16,13 +16,7 @@ namespace WallTec.CoreCom.Sheard
         Connected = 2
 
     }
-    public enum DatabaseModeEnum : byte
-    {
-        UseImMemory = 0,
-        UseSqlite = 1,
-        UseSqlServer = 2
-
-    }
+    
     public enum LogMessageTargetEnum : byte
     {
         NoLoging = 0,

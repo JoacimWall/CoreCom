@@ -7,6 +7,9 @@ namespace WallTec.CoreCom.Client
     {
         public CoreComContext(DbContextOptions options) : base(options)
         {
+            SQLitePCL.Batteries_V2.Init();
+
+            
             this.Database.EnsureCreated();
         }
         //public CoreComContext(DbContextOptions<CoreComContext> options) : this((DbContextOptions)options)

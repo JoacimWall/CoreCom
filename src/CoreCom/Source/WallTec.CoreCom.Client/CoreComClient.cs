@@ -71,8 +71,8 @@ namespace WallTec.CoreCom.Client
             _checkCueTimer = new Timer(30000);
             _checkCueTimer.Elapsed += _checkCueTimer_Elapsed;
 
-            _dbContextOptions = new DbContextOptionsBuilder<CoreComContext>()
-                    .UseInMemoryDatabase(databaseName: "CoreComDb").Options;
+            //_dbContextOptions = new DbContextOptionsBuilder<CoreComContext>()
+            //        .UseInMemoryDatabase(databaseName: "CoreComDb").Options;
 
         }
 
@@ -113,8 +113,23 @@ namespace WallTec.CoreCom.Client
             _timer.Interval = Convert.ToDouble(1000);
             _timer.Enabled = true;
 
-            _checkCueTimer.Interval = Convert.ToDouble(coreComOptions.RequestServerQueueIntervalSec * 1000);
+            _checkCueTimer.Interval = Convert.ToDouble(coreComOptions.GrpcOptions.RequestServerQueueIntervalSec * 1000);
+            switch (coreComOptions.DatabaseMode)
+            {
+                case DatabaseModeEnum.UseImMemory:
+                    _dbContextOptions = new DbContextOptionsBuilder<CoreComContext>()
+                    .UseInMemoryDatabase(databaseName: "CoreComDb").Options;
+                    break;
+                case DatabaseModeEnum.UseSqlite:
+                    string dbPath = Path.Combine(FileSystem.AppDataDirectory, "CoreComDb.db3");
+                    _dbContextOptions = new DbContextOptionsBuilder<CoreComContext>()
+                    .UseSqlite($"Filename={dbPath}").Options;
 
+                    break;
+
+                default:
+                    break;
+            }
             return true;
         }
 
@@ -174,9 +189,9 @@ namespace WallTec.CoreCom.Client
         {
             int deadlineSec;
             if (isConnectToServer)
-                deadlineSec = _coreComOptions.ConnectToServerDeadlineSec;
+                deadlineSec = _coreComOptions.GrpcOptions.ConnectToServerDeadlineSec;
             else
-                deadlineSec = _coreComOptions.MessageDeadlineSec;
+                deadlineSec = _coreComOptions.GrpcOptions.MessageDeadlineSec;
 
             CallOptions calloptions;
             if (addAuth && !string.IsNullOrEmpty(_coreComOptions.ClientToken))
@@ -245,7 +260,7 @@ namespace WallTec.CoreCom.Client
 
                 ConnectionStatusChange(ConnectionStatusEnum.Connected);
                 //Start timmer for check cue server and client
-                if (_coreComOptions.RequestServerQueueIntervalSec > 0)
+                if (_coreComOptions.GrpcOptions.RequestServerQueueIntervalSec > 0)
                     _checkCueTimer.Enabled = true;
 
                 LatestRpcExceptionChange(null);
@@ -378,7 +393,7 @@ namespace WallTec.CoreCom.Client
             }
             _workingOnCue = false;
             //Start timmer for check cue server and client
-            if (_coreComOptions.RequestServerQueueIntervalSec > 0)
+            if (_coreComOptions.GrpcOptions.RequestServerQueueIntervalSec > 0)
                 _checkCueTimer.Enabled = true;
 
             return true;

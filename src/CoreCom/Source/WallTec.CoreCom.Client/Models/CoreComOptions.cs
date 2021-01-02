@@ -10,20 +10,27 @@ namespace WallTec.CoreCom.Client.Models
     {
         public CoreComOptions()
         {
-            ConnectToServerDeadlineSec = 5;
-            MessageDeadlineSec = 30;
-            RequestServerQueueIntervalSec = 30;
+            
             LogSettings = new LogSettings();
+            GrpcOptions = new GrpcOptions();
     }
         public LogSettings LogSettings { get; set; }
-        public int ConnectToServerDeadlineSec { get; set; }
-        public int MessageDeadlineSec { get; set; }
-        public int RequestServerQueueIntervalSec { get; set; }
+        public GrpcOptions GrpcOptions { get; set; }
+        public DatabaseModeEnum DatabaseMode { get; set; }
+
+        
         public string ServerAddress { get; set; }
         public string ClientToken { get;  set; }
         public string ClientId { get; set; }
         public bool DangerousAcceptAnyServerCertificateValidator { get; set; }
        
         
+    }
+    public enum DatabaseModeEnum : byte
+    {
+        UseImMemory = 0,
+        UseSqlite = 1
+       
+
     }
 }
