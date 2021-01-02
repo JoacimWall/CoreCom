@@ -357,3 +357,5 @@ src/CoreCom/Source/.DS_Store
 src/CoreCom/.DS_Store
 src/.DS_Store
 .DS_Store
+*.db
+src/CoreCom/Examples/Server/WallTec.CoreCom.TestServerAppService/CoreComDb.db

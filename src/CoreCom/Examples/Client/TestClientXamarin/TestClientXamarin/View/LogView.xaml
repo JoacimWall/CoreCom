@@ -20,7 +20,7 @@
                     <ViewCell>
                          <Frame  >
                             <Grid Padding="2" RowDefinitions="Auto, *" ColumnDefinitions="Auto,*" >
-                                <Label Grid.Row="0" Grid.Column="0"  HorizontalOptions="Fill" HorizontalTextAlignment="Start" >
+                                <Label Grid.Row="0" Grid.Column="0"  HorizontalOptions="Fill" HorizontalTextAlignment="Start" Style="{StaticResource labelStyleNormalSmall}">
                                     <Label.Text>
                                         <MultiBinding Converter="{StaticResource MultiConnection_TransferStatusConverter}">
                                             <Binding Path="ConnectionStatus" />
@@ -30,8 +30,8 @@
                                 </Label>
                             <Label Grid.Row="0" Grid.Column="1" Text="{Binding TimeStampUtc}" HorizontalTextAlignment="End" />
                                
-                                <Label Grid.Row="1" Grid.Column="0"  Text="{Binding Description}" />
-                                <Label Grid.Row="1" Grid.Column="1" HorizontalTextAlignment="End"  Text="{Binding MessageSize,Converter={StaticResource MessageSizeToStringConverter}}" />
+                                <Label Grid.Row="1" Grid.Column="0"  Text="{Binding Description}" Style="{StaticResource labelStyleNormalSmall}"/>
+                                <Label Grid.Row="1" Grid.Column="1" HorizontalTextAlignment="End"  Text="{Binding MessageSize,Converter={StaticResource MessageSizeToStringConverter}}" Style="{StaticResource labelStyleNormalSmall}"/>
 
 
 

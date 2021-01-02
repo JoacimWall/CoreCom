@@ -35,7 +35,7 @@
     <!-- Margins -->
     <OnPlatform x:Key="PageMargin" x:TypeArguments="Thickness" iOS="15,15,15,0" Android="15,15,15,10"  />
     <OnPlatform x:Key="NoMargin" x:TypeArguments="Thickness" iOS="0,0,0,0" Android="0,0,0,0" />
-    <OnPlatform x:Key="PageMarginNavigationTitle" x:TypeArguments="Thickness" iOS="0,0,0,0" Android="0,10,0,0"  />
+    <OnPlatform x:Key="PageMarginNavigationTitle" x:TypeArguments="Thickness" iOS="0,0,0,0" Android="0,10,0,5"  />
     
     <!-- Heights-->
     <OnPlatform x:Key="PopupHeight"  x:TypeArguments="x:Double" iOS="140" Android="130"/>

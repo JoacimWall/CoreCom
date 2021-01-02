@@ -18,7 +18,8 @@ namespace TestClientXamarin
         public App()
         {
             InitializeComponent();
-            
+            Xamarin.Forms.DependencyService.RegisterSingleton<IDialogService>(new DialogService());
+
             MainPage = new AppShell();
         }
 
