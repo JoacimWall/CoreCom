@@ -14,7 +14,10 @@ namespace TestClientXamarin
 {
     public partial class App : Application
     {
-        public static Services.ServiceCoreCom ServiceCoreCom = new Services.ServiceCoreCom(); 
+
+        public static Services.ServiceCoreCom ServiceCoreCom = new Services.ServiceCoreCom();
+
+
         public App()
         {
             InitializeComponent();

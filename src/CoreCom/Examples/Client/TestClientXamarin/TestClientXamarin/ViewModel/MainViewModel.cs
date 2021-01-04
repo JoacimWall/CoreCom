@@ -32,13 +32,21 @@ namespace TestClientXamarin.ViewModel
 
         }
 
-        public ICommand CheckCueCommand => new Command(async () => await CheckCueCommandAsync());
+        public ICommand CheckQueueCommand => new Command(async () => await CheckQueueCommandAsync());
         public ICommand ConnectToServerCommand => new Command(async () => await ConnectCommandAsync());
 
         private async Task ConnectCommandAsync()
         {
-            string username = (Device.RuntimePlatform == Device.Android ? "demoDroid" : "demoIos"); //simulate diffrent user
-            await App.ServiceCoreCom.Authenticate(username,"1234");
+            ServiceCoreCom.LatestRpcException = string.Empty;
+            if (App.ServiceCoreCom.ConnectionStatus != WallTec.CoreCom.Sheard.ConnectionStatusEnum.Connected)
+            {
+                await App.ServiceCoreCom.ConnectCoreComServer();
+            }
+            else
+            {
+                string username = (Device.RuntimePlatform == Device.Android ? "demoDroid" : "demoIos"); //simulate diffrent user
+                await App.ServiceCoreCom.Authenticate(username, "1234");
+            }
         }
 
         public ICommand GetProjectsCommand => new Command(async () => await GetProjectsAsync());
@@ -92,9 +100,9 @@ namespace TestClientXamarin.ViewModel
             App.ServiceCoreCom.SendAuthAsync(new Project { Name = AddProjectName, Description = "project added from client",Base64Image = _base64 }, CoreComSignatures.AddProject);
             
         }
-        private async Task CheckCueCommandAsync()
+        private async Task CheckQueueCommandAsync()
         {
-            App.ServiceCoreCom.CheckServerCue();
+            App.ServiceCoreCom.CheckServerQueue();
         }
         private async Task GetProjectsAsync()
         {

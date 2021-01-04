@@ -31,7 +31,7 @@ namespace WallTec.CoreCom.Client
 
         //Offline Propertys
         private Timer _timer;
-        private Timer _checkCueTimer;
+        private Timer _checkQueueTimer;
         private ConnectionStatusEnum _connectionStatus;
         private DbContextOptions _dbContextOptions;
 
@@ -68,8 +68,8 @@ namespace WallTec.CoreCom.Client
             _timer = new Timer(1000);
             _timer.Elapsed += OnConnectTimedEvent;
 
-            _checkCueTimer = new Timer(30000);
-            _checkCueTimer.Elapsed += _checkCueTimer_Elapsed;
+            _checkQueueTimer = new Timer(30000);
+            _checkQueueTimer.Elapsed += _checkQueueTimer_Elapsed;
 
             //_dbContextOptions = new DbContextOptionsBuilder<CoreComContext>()
             //        .UseInMemoryDatabase(databaseName: "CoreComDb").Options;
@@ -113,7 +113,7 @@ namespace WallTec.CoreCom.Client
             _timer.Interval = Convert.ToDouble(1000);
             _timer.Enabled = true;
 
-            _checkCueTimer.Interval = Convert.ToDouble(coreComOptions.GrpcOptions.RequestServerQueueIntervalSec * 1000);
+            _checkQueueTimer.Interval = Convert.ToDouble(coreComOptions.GrpcOptions.RequestServerQueueIntervalSec * 1000);
             switch (coreComOptions.DatabaseMode)
             {
                 case DatabaseModeEnum.UseImMemory:
@@ -144,7 +144,7 @@ namespace WallTec.CoreCom.Client
             _receiveDelegatesTwoParm.Add(Tuple.Create(callback, messageSignature, type));
         }
 
-        public async void CheckServerCue()
+        public async void CheckServerQueue()
         {
             await SendAsync(CoreComInternalSignatures.CoreComInternal_PullQueue).ConfigureAwait(false);
         }
@@ -179,10 +179,19 @@ namespace WallTec.CoreCom.Client
             await OpenChannel().ConfigureAwait(false);
 
         }
-        private async void _checkCueTimer_Elapsed(object sender, ElapsedEventArgs e)
+        private async void _checkQueueTimer_Elapsed(object sender, ElapsedEventArgs e)
         {
-            _checkCueTimer.Enabled = false;
-            await SendAsync(CoreComInternalSignatures.CoreComInternal_PullQueue).ConfigureAwait(false);
+            _checkQueueTimer.Enabled = false;
+            using (var dbContext = new CoreComContext(_dbContextOptions))
+            {
+                var outgoingMess = dbContext.OutgoingMessages.
+                    Where(x => x.TransferStatus < (int)TransferStatusEnum.Transferred).ToList();
+
+                if (outgoingMess.Count == 0)
+                    await SendInternalAsync(null, CoreComInternalSignatures.CoreComInternal_PullQueue, false);
+                else
+                    await ProcessQueue().ConfigureAwait(false);
+            }
         }
 
         private CallOptions GetCallOptions(bool isConnectToServer = false, bool addAuth = false)
@@ -261,13 +270,12 @@ namespace WallTec.CoreCom.Client
                 Console.WriteLine("Connected to Server " + _coreComOptions.ServerAddress);
 
                 ConnectionStatusChange(ConnectionStatusEnum.Connected);
-                //Start timmer for check cue server and client
+                //Start timmer for check queue server and client
                 if (_coreComOptions.GrpcOptions.RequestServerQueueIntervalSec > 0)
-                    _checkCueTimer.Enabled = true;
+                    _checkQueueTimer.Enabled = true;
 
                 LatestRpcExceptionChange(null);
-                //send current cue
-                // var result = await SendCue();
+              
 
                 return true;
             }
@@ -290,20 +298,21 @@ namespace WallTec.CoreCom.Client
                 return false;
             }
         }
-        private bool _workingOnCue = false;
-        private async Task<bool> ProcessCue()
+        private bool _workingOnQueue = false;
+        private async Task<bool> ProcessQueue()
         {
-            if (_workingOnCue || _connectionStatus != ConnectionStatusEnum.Connected)
+            if (_workingOnQueue || _connectionStatus != ConnectionStatusEnum.Connected)
                 return true;
 
             try
             {
-                _workingOnCue = true;
+                _workingOnQueue = true;
                 using (var dbContext = new CoreComContext(_dbContextOptions))
                 {
                     var outgoingMess = dbContext.OutgoingMessages.
                         Where(x => x.TransferStatus < (int)TransferStatusEnum.Transferred).ToList();
 
+                    
                     foreach (var item in outgoingMess)
                     {
                         if (item.SendAuth)
@@ -315,13 +324,13 @@ namespace WallTec.CoreCom.Client
                             //Now the outgoing messages is sent
                             await foreach (var returnMessage in streamingCall.ResponseStream.ReadAllAsync().ConfigureAwait(false))
                             {
-                                if (item.TransferStatus == (int)TransferStatusEnum.New)
-                                {
-                                    item.TransferStatus = (int)TransferStatusEnum.Transferred;
-                                    item.TransferredUtc = Sheard.Helpers.DateTimeConverter.DateTimeUtcNow();
-                                    LogEventOccurred(dbContext, item);
-                                }
                                 await ParseServerToClientMessage(returnMessage);
+                            }
+                            if (item.TransferStatus == (int)TransferStatusEnum.New)
+                            {
+                                item.TransferStatus = (int)TransferStatusEnum.Transferred;
+                                item.TransferredUtc = Sheard.Helpers.DateTimeConverter.DateTimeUtcNow();
+                                LogEventOccurred(dbContext, item);
                             }
                             streamingCall.Dispose();
                         }
@@ -334,13 +343,13 @@ namespace WallTec.CoreCom.Client
                             //Now the outgoing messages is sent
                             await foreach (var returnMessage in streamingCall.ResponseStream.ReadAllAsync().ConfigureAwait(false))
                             {
-                                if (item.TransferStatus == (int)TransferStatusEnum.New)
-                                {
-                                    item.TransferStatus = (int)TransferStatusEnum.Transferred;
-                                    item.TransferredUtc = Sheard.Helpers.DateTimeConverter.DateTimeUtcNow();
-                                    LogEventOccurred(dbContext, item);
-                                }
                                 await ParseServerToClientMessage(returnMessage);
+                            }
+                            if (item.TransferStatus == (int)TransferStatusEnum.New)
+                            {
+                                item.TransferStatus = (int)TransferStatusEnum.Transferred;
+                                item.TransferredUtc = Sheard.Helpers.DateTimeConverter.DateTimeUtcNow();
+                                LogEventOccurred(dbContext, item);
                             }
                             streamingCall.Dispose();
                         }
@@ -354,13 +363,16 @@ namespace WallTec.CoreCom.Client
             }
             catch (RpcException ex)
             {
-                _workingOnCue = false;
+                _workingOnQueue = false;
+                
                 LatestRpcExceptionChange(ex);
                 switch (ex.StatusCode)
                 {
                     case StatusCode.DeadlineExceeded:
                         LogEventOccurred(new LogEvent { Description = ex.Message, ConnectionStatus = _connectionStatus });
-                        _coreComOptions.GrpcOptions.MessageDeadlineSecMultiply++;
+                        _coreComOptions.GrpcOptions.MessageDeadlineSecMultiply = _coreComOptions.GrpcOptions.MessageDeadlineSecMultiply * 2;
+                        await ProcessQueue().ConfigureAwait(false);
+                        return false;
                         break;
                     case StatusCode.Cancelled:
                         LogEventOccurred(new LogEvent { Description = ex.Message, ConnectionStatus = _connectionStatus });
@@ -376,6 +388,7 @@ namespace WallTec.CoreCom.Client
                         break;
                     case StatusCode.Unauthenticated:
                         Console.WriteLine("Unauthenticated.");
+                        LogEventOccurred(new LogEvent { Description = ex.Message, ConnectionStatus = _connectionStatus });
                         break;
                     default:
                         break;
@@ -385,14 +398,14 @@ namespace WallTec.CoreCom.Client
             catch (Exception ex)
             {
                 LogErrorOccurred(ex, new CoreComMessageResponse { ClientId = _coreComOptions.ClientId });
-                _workingOnCue = false;
+                _workingOnQueue = false;
 
             }
 
-            _workingOnCue = false;
-            //Start timmer for check cue server and client
+            _workingOnQueue = false;
+            //Start timmer for check Queue server and client
             if (_coreComOptions.GrpcOptions.RequestServerQueueIntervalSec > 0)
-                _checkCueTimer.Enabled = true;
+                _checkQueueTimer.Enabled = true;
 
             return true;
 
@@ -405,8 +418,8 @@ namespace WallTec.CoreCom.Client
 
             try
             {
-                //Turn of timmer for message cue as we get the cue from this call
-                _checkCueTimer.Enabled = false;
+                //Turn of timmer for message queue as we get the queue from this call
+                _checkQueueTimer.Enabled = false;
                 //error report to client
                 if (outgoingObject != null)
                 {
@@ -433,7 +446,7 @@ namespace WallTec.CoreCom.Client
                 }
 
 
-                await ProcessCue().ConfigureAwait(false);
+                await ProcessQueue().ConfigureAwait(false);
             }
             catch (Exception ex)
             {
@@ -516,6 +529,7 @@ namespace WallTec.CoreCom.Client
                     //allways remove CoreComInternal from incomming table/ the massage is new so it does not exist in table
                     if (coreComMessageResponse.MessageSignature != CoreComInternalSignatures.CoreComInternal_PullQueue)
                     { //add incomming message to db
+                        coreComMessageResponse.CoreComMessageResponseId = Guid.NewGuid().ToString();
                         dbContext.IncomingMessages.Add(coreComMessageResponse);
                     }
                     break;

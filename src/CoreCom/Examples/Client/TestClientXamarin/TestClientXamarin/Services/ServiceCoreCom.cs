@@ -174,7 +174,7 @@ namespace TestClientXamarin.Services
                 {
                     RequestServerQueueIntervalSec = 30,
                     ConnectToServerDeadlineSec = 5,
-                    MessageDeadlineSec = 200
+                    MessageDeadlineSec = 5
                 },
                 LogSettings = new LogSettings
                     {
@@ -230,9 +230,9 @@ namespace TestClientXamarin.Services
           
             return true;
         }
-        public void CheckServerCue()
+        public void CheckServerQueue()
         {
-            _coreComClient.CheckServerCue();
+            _coreComClient.CheckServerQueue();
            
         }
         public async void SendAsync(object outgoingObject, string messageSignature)

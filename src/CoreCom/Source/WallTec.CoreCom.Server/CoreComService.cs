@@ -223,16 +223,21 @@ namespace WallTec.CoreCom.Server
                     request.TransferStatus = (int)TransferStatusEnum.Recived;
                     request.RecivedUtc = Sheard.Helpers.DateTimeConverter.DateTimeUtcNow();
 
-                    LogEventOccurred(dbContext, request);
+                    //Check if we alread has responde to this
+                    if (!dbContext.IncomingMessages.Any(x => x.TransactionIdentifier == request.TransactionIdentifier))
+                    {
+                        //First process messages so it's added to cure
+                        if (isAuth)
+                            await ParseClientToServerMessageAuth(request);
+                        else
+                            await ParseClientToServerMessage(request);
 
-                    //First process messages so it's added to cure
-                    if (isAuth)
-                        await ParseClientToServerMessageAuth(request);
-                    else
-                        await ParseClientToServerMessage(request);
+                        //Logging
+                        LogEventOccurred(dbContext, request);
+                    }
                 }
                 //process cue
-                await ProcessCue(request, responseStream, context);
+                await ProcessQueue(request, responseStream, context).ConfigureAwait(false);
             }
             catch (Exception ex)
             {
@@ -244,7 +249,7 @@ namespace WallTec.CoreCom.Server
             }
         }
 
-        private async Task<bool> ProcessCue(CoreComMessage request, IServerStreamWriter<CoreComMessageResponse> responseStream, ServerCallContext context)
+        private async Task<bool> ProcessQueue(CoreComMessage request, IServerStreamWriter<CoreComMessageResponse> responseStream, ServerCallContext context)
         {
             //we have null ifall server restarted while client was connected
             if (!Clients.Any(x => x.CoreComUserInfo.ClientId == request.ClientId))
@@ -274,6 +279,7 @@ namespace WallTec.CoreCom.Server
                         if (context.Deadline > DateTime.UtcNow)
                         {
                             //send
+                            //await Task.Delay(7000);
                             await responseStream.WriteAsync(item);
                             //update messages
                             item.TransferStatus = (int)TransferStatusEnum.Transferred;
@@ -290,6 +296,9 @@ namespace WallTec.CoreCom.Server
                 LogEventOccurred(new LogEvent { Description = ex.Message });
                 switch (ex.StatusCode)
                 {
+                    case StatusCode.DeadlineExceeded:
+                        Console.WriteLine("DeadlineExceeded");
+                        break;
                     case StatusCode.Cancelled:
 
                         Console.WriteLine("Stream cancelled.");
@@ -325,7 +334,7 @@ namespace WallTec.CoreCom.Server
         {
 
             Clients.Remove(Clients.FirstOrDefault(c => c.CoreComUserInfo.ClientId == clientId));
-            //Todo: remove memory cue 
+            //Todo: remove memory Queue 
             return true;
         }
 
@@ -631,6 +640,9 @@ namespace WallTec.CoreCom.Server
                     //allways remove CoreComInternal from IncomingMessages table
                     if (coreComMessage.MessageSignature != CoreComInternalSignatures.CoreComInternal_PullQueue)
                     {
+                        //the same message can get recived many times if deadline exced has happend
+                        //its the TransactionIdentifier that connect them togheter
+                        coreComMessage.CoreComMessageId = Guid.NewGuid().ToString();
                         dbContext.IncomingMessages.Add(coreComMessage);
                     }
                     break;
@@ -638,6 +650,7 @@ namespace WallTec.CoreCom.Server
                     //Create textfile log
                     if (coreComMessage.MessageSignature != CoreComInternalSignatures.CoreComInternal_PullQueue)
                     {
+                        coreComMessage.CoreComMessageId = Guid.NewGuid().ToString();
                         await WriteIncommingMessagesLog(coreComMessage).ConfigureAwait(false);
                     }
                     break;

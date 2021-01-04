@@ -22,7 +22,7 @@
         </StackLayout>
         <Label Grid.Row="1" Grid.ColumnSpan="4" Text="{Binding ServiceCoreCom.LatestRpcException}" />
 
-        <Button Grid.Row="2" Grid.Column="0" Padding="5" Text="Check Cue" Command="{Binding  CheckCueCommand}"  />
+        <Button Grid.Row="2" Grid.Column="0" Padding="5" Text="Check Queue" Command="{Binding  CheckQueueCommand}"  />
         <Button Grid.Row="2" Grid.Column="1" Padding="5"  Text="Get Projects"  Command="{Binding  GetProjectsCommand}" />
         <Button Grid.Row="2" Grid.Column="2" Padding="5"  Text="Reauthorize"  Command="{Binding  ConnectToServerCommand}"  />
         <Button Grid.Row="2" Grid.Column="3" Padding="5"  Text="Image" Command="{Binding  PickImageCommand}"/>
