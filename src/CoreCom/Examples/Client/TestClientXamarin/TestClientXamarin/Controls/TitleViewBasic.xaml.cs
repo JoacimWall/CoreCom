@@ -1,25 +1,23 @@
-﻿
-using System;
+﻿using System;
 using System.Windows.Input;
 using TestClientXamarin.Helpers;
 using Xamarin.Forms;
 
 namespace TestClientXamarin.Controls
 {
-    
+
     public partial class TitleViewBasic : ContentView
     {
         private const int _widthIcon = 30;
-        private DateTime _lastClickTimeBack = DateTime.Now.AddDays(-1);
         private DateTime _lastClickTimeLeft = DateTime.Now.AddDays(-1);
         private DateTime _lastClickTimeRight = DateTime.Now.AddDays(-1);
         private TapGestureRecognizer gestureRecognizerActionBack;
-        
+
         public TitleViewBasic()
         {
             InitializeComponent();
 
-            
+
             //aligng with first char in status bar left and right
             //HandleInsideTitleView=true(default) this is when the control is inside a navigationpage
             if (Device.RuntimePlatform == Device.iOS)
@@ -44,12 +42,6 @@ namespace TestClientXamarin.Controls
             NotificationCountFrameCtrl.GestureRecognizers.Add(gestureRecognizerActionRight);
             NotificationCountLableCtrl.GestureRecognizers.Add(gestureRecognizerActionRight);
 
-            //gestureRecognizerActionBack.Tapped += (s, e) =>
-            //{
-            //    BackbuttonTapped();
-            //};
-
-
             gestureRecognizerActionRight.Tapped += (s, e) =>
             {
                 if (ActionRightCommand != null && ActionRightCommand.CanExecute(null))
@@ -66,8 +58,6 @@ namespace TestClientXamarin.Controls
                             return false; // True = Repeat again, False = Stop the timer
                         });
                     }
-
-
                     _lastClickTimeRight = DateTime.Now;
                 }
             };
@@ -92,9 +82,9 @@ namespace TestClientXamarin.Controls
                 }
             };
         }
-       
+
         #region Set Title Text Margin 
-      
+
 
         public void SetTitleTextMargin()
         {
@@ -108,10 +98,10 @@ namespace TestClientXamarin.Controls
             //heslt skulle manvilja använda with på stacklayouten men de är -1 
             int left = this.NavigationBackStackLayout.IsVisible ? 46 : 0;
             left += string.IsNullOrEmpty(this.ActionLeftIconSource) ? 0 : 55;
-            left += ActionLeftText.Length > 0 ? ActionLeftText.Length * 20: 0;
+            left += ActionLeftText.Length > 0 ? ActionLeftText.Length * 20 : 0;
 
             int right = string.IsNullOrEmpty(this.ActionRightIconSource) ? 0 : 55;
-             right += ActionRightText.Length > 0 ? ActionRightText.Length * 20:0; //20px/bokstav
+            right += ActionRightText.Length > 0 ? ActionRightText.Length * 20 : 0; //20px/bokstav
             int androidleftMaring = 0;
 
             if (InsideTitleView && Device.RuntimePlatform == Device.Android)
@@ -120,20 +110,17 @@ namespace TestClientXamarin.Controls
             }
             if (left > right)
             {
-                this.TitleTextCtrl.Margin = Device.RuntimePlatform == Device.Android ? new Thickness((left / 2), 0, (left / 2)+androidleftMaring, 0) : new Thickness(left / 2, 0, left / 2, 0);
+                this.TitleTextCtrl.Margin = Device.RuntimePlatform == Device.Android ? new Thickness((left / 2), 0, (left / 2) + androidleftMaring, 0) : new Thickness(left / 2, 0, left / 2, 0);
             }
             else if (right > 0)
             {
-                this.TitleTextCtrl.Margin = Device.RuntimePlatform == Device.Android ? new Thickness((right / 2), 0, (right / 2) + androidleftMaring, 0):new Thickness(right / 2, 0, right / 2, 0);
+                this.TitleTextCtrl.Margin = Device.RuntimePlatform == Device.Android ? new Thickness((right / 2), 0, (right / 2) + androidleftMaring, 0) : new Thickness(right / 2, 0, right / 2, 0);
             }
             else
             {
-                this.TitleTextCtrl.Margin = Device.RuntimePlatform == Device.Android ? new Thickness(3, 0, 3 + androidleftMaring, 0): new Thickness(3, 0, 3, 0);
+                this.TitleTextCtrl.Margin = Device.RuntimePlatform == Device.Android ? new Thickness(3, 0, 3 + androidleftMaring, 0) : new Thickness(3, 0, 3, 0);
 
             }
-            //this.TitleTextCtrl.Margin = Device.RuntimePlatform == Device.Android ? new Thickness(75, 0, 90, 0) : new Thickness(90, 0, 90, 0);
-
-            //this.TitleTextCtrl.Margin = Device.RuntimePlatform == Device.Android ? new Thickness(35, 0, 50, 0) : new Thickness(50, 0, 50, 0);
         }
         #endregion
 
@@ -180,7 +167,7 @@ namespace TestClientXamarin.Controls
             }
         }
 
-       
+
         #endregion
         #region Title Text
 
@@ -226,19 +213,13 @@ namespace TestClientXamarin.Controls
         }
         #endregion
         #region Action Left Propertys
-        //public static readonly BindableProperty ActionBackCommandProperty = BindableProperty.Create(nameof(ActionBackCommand), typeof(ICommand), typeof(TitleViewBasic), null);
-        //public ICommand ActionBackCommand
-        //{
-        //    get { return (ICommand)GetValue(ActionBackCommandProperty); }
-        //    set { SetValue(ActionBackCommandProperty, value); }
-        //}
-      
+
         #endregion
         #region Action Left Propertys
         // *********** Action Left Propertys **********************
         public static readonly BindableProperty ActionLeftCommandProperty = BindableProperty.Create(nameof(ActionLeftCommand), typeof(ICommand), typeof(TitleViewBasic), null);
         public static readonly BindableProperty ActionRightCommandProperty = BindableProperty.Create(nameof(ActionRightCommand), typeof(ICommand), typeof(TitleViewBasic), null);
-      
+
 
         public ICommand ActionLeftCommand
         {
@@ -280,15 +261,13 @@ namespace TestClientXamarin.Controls
                 {
                     bool setvalue = !string.IsNullOrEmpty((string)newValue);
                     targetView.ActionLeftStackLayout.IsVisible = setvalue;
-                    targetView.ActionLeftStackLayout.WidthRequest =  setvalue ? _widthIcon : -1; 
+                    targetView.ActionLeftStackLayout.WidthRequest = setvalue ? _widthIcon : -1;
                     targetView.ActionLeftImageCtrl.Text = ((string)newValue);
-                    //targetView.LeftElements += 1;
-                    //  targetView.SetTitleTextMargin();
                     targetView.SetTitleTextMargin();
                 }
                 catch (Exception e)
                 {
-                  App.ConsoleWriteLineDebug(e);
+                    App.ConsoleWriteLineDebug(e);
                 }
 
             }
@@ -309,7 +288,7 @@ namespace TestClientXamarin.Controls
                 }
                 catch (Exception e)
                 {
-                  App.ConsoleWriteLineDebug(e);
+                    App.ConsoleWriteLineDebug(e);
                 }
 
             }
@@ -362,8 +341,6 @@ namespace TestClientXamarin.Controls
             {
                 control.ActionLeftStackLayout.IsVisible = true;
                 control.ActionLeftLabelCtrl.Text = newValue.ToString();
-                //control.LeftElements += 1;
-                //  control.SetTitleTextMargin();
                 control.SetTitleTextMargin();
 
             }
@@ -375,8 +352,6 @@ namespace TestClientXamarin.Controls
             {
                 control.ActionRightStackLayout.IsVisible = true;
                 control.ActionRightLabelCtrl.Text = newValue.ToString();
-                //control.RightElements += 1;
-                //   control.SetTitleTextMargin();
                 control.SetTitleTextMargin();
             }
         }
@@ -397,7 +372,7 @@ namespace TestClientXamarin.Controls
                 }
 
             }
-            else 
+            else
             {
                 control.NotificationCountFrameCtrl.IsVisible = false;
                 control.NotificationCountLableCtrl.Text = "0";
@@ -414,20 +389,12 @@ namespace TestClientXamarin.Controls
         public bool ActionLeftCanExecute
         {
             get { return (bool)GetValue(ActionLeftCanExecuteProperty); }
-            set
-            {
-                //if (this.ActionRightCanExecute != value)
-                SetValue(ActionLeftCanExecuteProperty, value);
-            }
+            set { SetValue(ActionLeftCanExecuteProperty, value); }
         }
         public bool ActionRightCanExecute
         {
             get { return (bool)GetValue(ActionRightCanExecuteProperty); }
-            set
-            {
-                //if (this.ActionRightCanExecute != value)
-                SetValue(ActionRightCanExecuteProperty, value);
-            }
+            set { SetValue(ActionRightCanExecuteProperty, value); }
         }
         public static BindableProperty ActionLeftCanExecuteProperty = BindableProperty.Create(propertyName: nameof(ActionLeftCanExecute),
         returnType: typeof(bool), declaringType: typeof(ContentView),
@@ -464,14 +431,13 @@ namespace TestClientXamarin.Controls
             TitleViewBasic targetView;
 
             targetView = (TitleViewBasic)bindable;
-            //Här sker logiken föra att ställa om knappen utseende
             if (targetView != null && newValue != null)
             {
                 bool currentvalue = (bool)newValue;
 
-                targetView.ActionRightImageCtrl.TextColor = currentvalue ? StyleResources.WhiteColor(): StyleResources.Primary400Color();
+                targetView.ActionRightImageCtrl.TextColor = currentvalue ? StyleResources.WhiteColor() : StyleResources.Primary400Color();
                 targetView.ActionRightLabelCtrl.TextColor = currentvalue ? StyleResources.WhiteColor() : StyleResources.Primary400Color();
-                
+
                 targetView.ActionRightImageCtrl.IsEnabled = currentvalue;
                 targetView.ActionRightLabelCtrl.IsEnabled = currentvalue;
                 targetView.ActionRightStackLayout.IsEnabled = currentvalue;
@@ -484,7 +450,7 @@ namespace TestClientXamarin.Controls
             get { return (bool)GetValue(InsideTitleViewProperty); }
             set
             {
-                
+
                 SetValue(InsideTitleViewProperty, value);
             }
         }
@@ -498,31 +464,26 @@ namespace TestClientXamarin.Controls
             TitleViewBasic targetView;
 
             targetView = (TitleViewBasic)bindable;
-            //Här sker logiken föra att ställa om knappen utseende
             if (targetView != null && newValue != null)
             {
                 bool currentvalue = (bool)newValue;
-                
                 if (currentvalue)
                 {
                     targetView.MainGrid.Margin = new Thickness(0, 0, 0, 0);
                 }
                 else
                 {
-                    //aligng with first char in status bar left and right
                     if (Device.RuntimePlatform == Device.iOS)
                         targetView.MainGrid.Margin = new Thickness(9, 0, 6, 0);
                     else
                         targetView.MainGrid.Margin = new Thickness(14, 0, 10, 0);
                 }
 
-
             }
         }
 
-        #endregion
-
+    }
+    #endregion
+}
         
 
-    }
-}

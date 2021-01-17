@@ -1,9 +1,6 @@
 ﻿using System;
 using System.Globalization;
-using WallTec.CoreCom.Client;
 using Xamarin.Forms;
-using Xamarin.Forms.Xaml;
-
 namespace TestClientXamarin.Converters
 {
     

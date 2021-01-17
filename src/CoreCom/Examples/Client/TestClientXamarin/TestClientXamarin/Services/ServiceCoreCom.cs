@@ -1,16 +1,10 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Net.Http;
-using System.Text;
 using System.Threading.Tasks;
 using System.Web;
 using Grpc.Core;
-using TestClientXamarin.Messages;
-using TestClientXamarin.Repository;
 using WallTec.CoreCom.Client;
 using WallTec.CoreCom.Client.Models;
-using WallTec.CoreCom.Example.Shared;
-using WallTec.CoreCom.Example.Shared.Entitys;
 using WallTec.CoreCom.Sheard;
 using WallTec.CoreCom.Sheard.Models;
 using Xamarin.Forms;
@@ -23,8 +17,6 @@ namespace TestClientXamarin.Services
         public CoreComClient CoreComClient = new CoreComClient();
         private CoreComOptions _coreComOptions;
         
-        
-       
         public ServiceCoreCom()
         {
             CoreComClient.OnConnectionStatusChange += _coreComClient_OnConnectionStatusChange;
@@ -43,7 +35,6 @@ namespace TestClientXamarin.Services
                 LatestRpcException = string.Empty;
             }
         }
-
         private void _coreComClient_OnConnectionStatusChange(object sender, ConnectionStatusEnum e)
         {
             ConnectionStatus = e;
@@ -112,9 +103,7 @@ namespace TestClientXamarin.Services
         {
             try
             {
-                
-                Console.WriteLine($"Authenticating as {username}...");
-
+               App.ConsoleWriteLineDebug($"Authenticating as {username}...");
                 var httpClientHandler = new HttpClientHandler();
                 //this is so you can debug on mac and emulator the server has "EndpointDefaults": { "Protocols": "Http1"
                 // Return `true` to allow certificates that are untrusted/invalid
@@ -134,7 +123,7 @@ namespace TestClientXamarin.Services
                 tokenResponse.EnsureSuccessStatusCode();
 
                 var token = await tokenResponse.Content.ReadAsStringAsync();
-                Console.WriteLine("Successfully authenticated.");
+                App.ConsoleWriteLineDebug("Successfully authenticated.");
                 string[] values = token.Split("|");
 
                 _coreComOptions.ClientToken = values[0];

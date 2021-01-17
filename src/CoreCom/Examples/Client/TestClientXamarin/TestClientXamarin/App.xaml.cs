@@ -1,12 +1,5 @@
 ﻿using System;
 using Xamarin.Forms;
-using Xamarin.Forms.Xaml;
-using WallTec.CoreCom.Client;
-using System.Threading.Tasks;
-using WallTec.CoreCom.Example.Shared;
-using WallTec.CoreCom.Sheard;
-using System.Collections.Generic;
-using TestClientXamarin.View;
 using TestClientXamarin.Services.Dialog;
 using TestClientXamarin.Repository;
 
@@ -23,8 +16,8 @@ namespace TestClientXamarin
         {
             InitializeComponent();
             DependencyService.RegisterSingleton<IDialogService>(new DialogService());
-            DependencyService.RegisterSingleton<IDialogService>(new DialogService());
-            DependencyService.RegisterSingleton<ViewModel.LogViewModel>(new ViewModel.LogViewModel());
+            //This so we capture logenvent from start not jsut efter first view of the logview
+            DependencyService.RegisterSingleton(new ViewModel.LogViewModel());
 
             MainPage = new AppShell();
         }

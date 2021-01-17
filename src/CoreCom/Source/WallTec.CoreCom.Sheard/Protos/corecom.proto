@@ -1,0 +1,73 @@
+syntax = "proto3";
+
+option csharp_namespace = "WallTec.CoreCom.Proto";
+
+package CoreCom;
+
+import "google/protobuf/empty.proto";
+import "google/protobuf/timestamp.proto";
+
+
+
+
+service CoreCom {
+	
+	rpc ClientConnectToServer(ConnectToServerRequest) returns (ConnectToServerResponse);
+
+	rpc ClientDisconnectFromServer(DisconnectFromServerRequest) returns (DisconnectFromServerResponse);
+	//Public functions needs no token
+
+	rpc SubscribeServerToClient(CoreComMessage) returns (stream CoreComMessageResponse);
+	//Authenticated functions
+
+	rpc SubscribeServerToClientAuth(CoreComMessage) returns (stream CoreComMessageResponse);
+}
+
+
+message ConnectToServerRequest {
+	string ClientId = 1;
+	
+}
+message ConnectToServerResponse {
+	string Response = 1;
+	google.protobuf.Timestamp ServerDateTime = 2;
+	
+}
+
+message DisconnectFromServerRequest {
+	string ClientId = 1;
+	
+}
+
+message DisconnectFromServerResponse {
+	string Response = 1;
+	google.protobuf.Timestamp ServerDateTime = 2;
+	
+}
+
+message CoreComMessage {
+	string CoreComMessageId=1;
+	string ClientId = 2;
+	string NewUtc = 3;
+	string RecivedUtc = 4;
+    string TransferredUtc = 5;
+	string TransactionIdentifier = 6;
+	string MessageSignature = 7;
+	string JsonObject =8;
+	int32 TransferStatus=9;
+	bool SendAuth=10;	
+}
+
+message CoreComMessageResponse {
+	string CoreComMessageResponseId=1;
+	string ClientId = 2;
+	string NewUtc = 3;
+	string RecivedUtc = 4;
+    string TransferredUtc = 5;
+	string TransactionIdentifier = 6;
+	string MessageSignature = 7;
+	string JsonObject =8;
+	int32 TransferStatus=9;
+}
+
+
