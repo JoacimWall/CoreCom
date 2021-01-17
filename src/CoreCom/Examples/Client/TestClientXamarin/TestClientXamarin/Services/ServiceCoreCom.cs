@@ -13,7 +13,6 @@ using WallTec.CoreCom.Example.Shared;
 using WallTec.CoreCom.Example.Shared.Entitys;
 using WallTec.CoreCom.Sheard;
 using WallTec.CoreCom.Sheard.Models;
-using Xamarin.Essentials;
 using Xamarin.Forms;
 
 namespace TestClientXamarin.Services
@@ -21,20 +20,16 @@ namespace TestClientXamarin.Services
 
     public class ServiceCoreCom : MvvmHelpers.ObservableObject
     {
-        public CoreComClient _coreComClient = new   CoreComClient();
+        public CoreComClient CoreComClient = new CoreComClient();
         private CoreComOptions _coreComOptions;
-        private static InMemoryData _inMemoryData = new InMemoryData();
         
-        //public CoreComClient CoreComClient
-        //{
-        //    get { return _coreComClient; }
-
-        //}
+        
+       
         public ServiceCoreCom()
         {
-            _coreComClient.OnConnectionStatusChange += _coreComClient_OnConnectionStatusChange;
-            _coreComClient.OnLatestRpcExceptionChange += _coreComClient_OnLatestRpcExceptionChange;
-            _coreComClient.OnLogEventOccurred += _coreComClient_OnLogEventOccurred;
+            CoreComClient.OnConnectionStatusChange += _coreComClient_OnConnectionStatusChange;
+            CoreComClient.OnLatestRpcExceptionChange += _coreComClient_OnLatestRpcExceptionChange;
+            CoreComClient.OnLogEventOccurred += _coreComClient_OnLogEventOccurred;
         }
 
         private void _coreComClient_OnLatestRpcExceptionChange(object sender, RpcException e)
@@ -117,7 +112,7 @@ namespace TestClientXamarin.Services
         {
             try
             {
-
+                
                 Console.WriteLine($"Authenticating as {username}...");
 
                 var httpClientHandler = new HttpClientHandler();
@@ -154,35 +149,30 @@ namespace TestClientXamarin.Services
             }
         }
 
-
-
         public bool SetupCoreComServer()
         {
 
-            //Setup events
-            _coreComClient.Register(GetAllProjects, CoreComSignatures.ResponseAllProjects, new List<Project>().GetType());
-            _coreComClient.Register(GetAddedProject, CoreComSignatures.AddProject, new Project().GetType());
+            
 
             //local debug
             _coreComOptions = new CoreComOptions
             {   //debug on android emulator
-                //ServerAddress = (Device.RuntimePlatform == Device.Android ? "https://10.0.2.2:5001" : "https://localhost:5001"),
+                ServerAddress = (Device.RuntimePlatform == Device.Android ? "https://10.0.2.2:5001" : "https://localhost:5001"),
                 //azure debug
-                ServerAddress = "https://wallteccorecomtestserver.azurewebsites.net",
-                DatabaseMode = DatabaseModeEnum.UseSqlite,
+                //ServerAddress = "https://wallteccorecomtestserver.azurewebsites.net",
+                DatabaseMode = DatabaseModeEnum.UseImMemory,
                 GrpcOptions = new GrpcOptions
                 {
                     RequestServerQueueIntervalSec = 30,
-                    ConnectToServerDeadlineSec = 5,
-                    MessageDeadlineSec = 5
+                    MessageDeadlineSec = 30
                 },
                 LogSettings = new LogSettings
                     {
-                        LogErrorTarget = LogErrorTargetEnum.Database,
-                        LogEventTarget = LogEventTargetEnum.Database,
-                        LogMessageTarget = LogMessageTargetEnum.Database
+                        LogErrorTarget = LogErrorTargetEnum.NoLoging,
+                        LogEventTarget = LogEventTargetEnum.NoLoging,
+                        LogMessageTarget = LogMessageTargetEnum.NoLoging
 
-                    }
+                }
 
             };
             
@@ -216,54 +206,39 @@ namespace TestClientXamarin.Services
             //coreComOptions.ClientId = id;
             #endregion
            
-            _coreComClient.Connect(_coreComOptions);
+            CoreComClient.Connect(_coreComOptions);
             
             return true;
         }
 
-       
-
         public bool DisconnectCoreComServer()
         {
-            _coreComClient.Disconnect();
+            CoreComClient.Disconnect();
 
           
             return true;
         }
         public void CheckServerQueue()
         {
-            _coreComClient.CheckServerQueue();
+            CoreComClient.CheckServerQueue();
            
         }
         public async void SendAsync(object outgoingObject, string messageSignature)
         {
-            await _coreComClient.SendAsync(outgoingObject, messageSignature);
+            await CoreComClient.SendAsync(outgoingObject, messageSignature);
         }
         public async void SendAsync(string messageSignature)
         {
-            await _coreComClient.SendAsync(messageSignature);
+            await CoreComClient.SendAsync(messageSignature);
         }
         public async void SendAuthAsync(object outgoingObject, string messageSignature)
         {
-            await _coreComClient.SendAuthAsync(outgoingObject, messageSignature);
+            await CoreComClient.SendAuthAsync(outgoingObject, messageSignature);
         }
         public async void SendAuthAsync(string messageSignature)
         {
-            await _coreComClient.SendAuthAsync(messageSignature);
+            await CoreComClient.SendAuthAsync(messageSignature);
         }
-        private static async Task GetAllProjects(object value, CoreComUserInfo coreComUserInfo)
-        {
-            var project = value as List<Project>;
-            _inMemoryData.Projects = project;
-            MessagingCenter.Send<List<Project>>(project, MessageConstants.AllProjectsListUpdate);
-
-        }
-        private static async Task GetAddedProject(object value, CoreComUserInfo coreComUserInfo)
-        {
-            var project = value as Project;
-            _inMemoryData.Projects.Add(project);
-            MessagingCenter.Send<Project>(project, MessageConstants.AddedProjectsListUpdate);
-
-        }
+       
     }
 }

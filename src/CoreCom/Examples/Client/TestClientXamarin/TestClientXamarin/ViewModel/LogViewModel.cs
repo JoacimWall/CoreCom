@@ -9,8 +9,8 @@ namespace TestClientXamarin.ViewModel
     {
         public LogViewModel()
         {
-            App.ServiceCoreCom._coreComClient.OnLogEventOccurred += CoreComClient_OnLogEventOccurred;
-            App.ServiceCoreCom._coreComClient.OnLogErrorOccurred += _coreComClient_OnLogErrorOccurred;
+            App.ServiceCoreCom.CoreComClient.OnLogEventOccurred += CoreComClient_OnLogEventOccurred;
+            App.ServiceCoreCom.CoreComClient.OnLogErrorOccurred += _coreComClient_OnLogErrorOccurred;
             LogEvents = new ObservableCollection<LogEvent>();
         }
 

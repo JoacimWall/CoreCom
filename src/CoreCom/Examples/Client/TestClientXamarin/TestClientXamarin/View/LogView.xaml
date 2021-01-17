@@ -7,10 +7,6 @@
              x:Class="TestClientXamarin.View.LogView"
             Shell.NavBarIsVisible="False"  >
 
-    <ContentPage.BindingContext>
-        <viewmodel:LogViewModel  />
-    </ContentPage.BindingContext>
-
     <ContentPage.Content>
          <Grid Style="{StaticResource pageGridStyleNoLeftRightMargin}"  RowDefinitions="auto,  *" >
         <Label Grid.Row="0"  Text="Log:" />

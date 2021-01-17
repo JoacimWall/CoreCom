@@ -10,6 +10,7 @@ namespace TestClientXamarin.View
         public LogView()
         {
             InitializeComponent();
+            this.BindingContext = DependencyService.Get<ViewModel.LogViewModel>();
         }
     }
 }

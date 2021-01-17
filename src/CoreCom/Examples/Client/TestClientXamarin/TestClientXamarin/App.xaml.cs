@@ -8,6 +8,7 @@ using WallTec.CoreCom.Sheard;
 using System.Collections.Generic;
 using TestClientXamarin.View;
 using TestClientXamarin.Services.Dialog;
+using TestClientXamarin.Repository;
 
 [assembly: ExportFont("Awesome_5_Free_Regular_400.otf", Alias = "labelIconBaseStyle")]
 namespace TestClientXamarin
@@ -16,19 +17,21 @@ namespace TestClientXamarin
     {
 
         public static Services.ServiceCoreCom ServiceCoreCom = new Services.ServiceCoreCom();
-
+        public static InMemoryData InMemoryData = new InMemoryData();
 
         public App()
         {
             InitializeComponent();
-            Xamarin.Forms.DependencyService.RegisterSingleton<IDialogService>(new DialogService());
+            DependencyService.RegisterSingleton<IDialogService>(new DialogService());
+            DependencyService.RegisterSingleton<IDialogService>(new DialogService());
+            DependencyService.RegisterSingleton<ViewModel.LogViewModel>(new ViewModel.LogViewModel());
 
             MainPage = new AppShell();
         }
 
         protected async override void OnStart()
         {
-            DependencyService.RegisterSingleton<IDialogService>(new DialogService());
+            
             ServiceCoreCom.SetupCoreComServer();
            await ServiceCoreCom.ConnectCoreComServer();
         }

@@ -18,17 +18,11 @@ namespace TestClientXamarin.ViewModel
     {
         public MainViewModel()
         {
+            //Setup events
+            App.ServiceCoreCom.CoreComClient.Register<List<Project>>(CoreComSignatures.ResponseAllProjects, GetAllProjects);
+            App.ServiceCoreCom.CoreComClient.Register<Project>(CoreComSignatures.AddProject, GetAddedProject);
+
            
-            MessagingCenter.Subscribe<List<Project>>(this, MessageConstants.AllProjectsListUpdate, (sender) =>
-            {
-                Projects = new ObservableCollection<Project>(sender);
-            });
-            MessagingCenter.Subscribe<Project>(this, MessageConstants.AddedProjectsListUpdate, (sender) =>
-            {
-                if (_projects == null)
-                    Projects = new ObservableCollection<Project>();
-                Projects.Add(sender);
-            });
 
         }
 
@@ -52,6 +46,9 @@ namespace TestClientXamarin.ViewModel
         public ICommand GetProjectsCommand => new Command(async () => await GetProjectsAsync());
         public ICommand AddProjectsCommand => new Command(async () => await AddProjectsAsync());
         public ICommand PickImageCommand => new Command(async () => await PickImageAsync());
+
+       
+
         private string _base64;
         private async Task PickImageAsync()
         {
@@ -126,6 +123,25 @@ namespace TestClientXamarin.ViewModel
         {
             get { return App.ServiceCoreCom; }
            
+        }
+        private async void GetAllProjects(List<Project> projects)
+        {
+            App.InMemoryData.Projects = projects;
+           
+                Projects = new ObservableCollection<Project>(projects);
+           
+
+        }
+        private async void GetAddedProject(Project project)
+        {
+           
+          App.InMemoryData.Projects.Add(project);
+          
+           if (_projects == null)
+                    Projects = new ObservableCollection<Project>();
+
+            Projects.Add(project);
+          
         }
     }
 }

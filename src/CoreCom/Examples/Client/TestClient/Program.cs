@@ -24,7 +24,7 @@ namespace TestClient
               
 
                 Console.WriteLine("Connection response: " + response.ToString());
-                coreComClient.Register(GetAllProjectsFromDb, CoreComSignatures.ResponseAllProjects, new Project().GetType());
+                //coreComClient.Register(GetAllProjectsFromDb, CoreComSignatures.ResponseAllProjects, new Project().GetType());
                 Console.WriteLine("Press any key to exit...");
                 Console.ReadKey();
                 coreComClient.SendAsync(CoreComSignatures.RequestAllProjects);

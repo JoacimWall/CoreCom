@@ -31,16 +31,17 @@
     </Shell.Resources>
 
     <TabBar>
+         <ShellContent Title="Projects"  Route="MatchPage" ContentTemplate="{DataTemplate local:MainView}">
+             <ShellContent.Icon>
+                <FontImageSource FontFamily="labelIconBaseStyle" Glyph="{StaticResource comments}" Color="{StaticResource WhiteColor}" Size="20"  />
+           </ShellContent.Icon>
+        </ShellContent>
          <ShellContent Title="Log"  ContentTemplate="{DataTemplate local:LogView}">
              <ShellContent.Icon>
                 <FontImageSource FontFamily="labelIconBaseStyle" Glyph="{StaticResource clock}" Color="{StaticResource WhiteColor}" Size="20"  />
            </ShellContent.Icon>
         </ShellContent>
-        <ShellContent Title="Projects"  Route="MatchPage" ContentTemplate="{DataTemplate local:MainView}">
-             <ShellContent.Icon>
-                <FontImageSource FontFamily="labelIconBaseStyle" Glyph="{StaticResource comments}" Color="{StaticResource WhiteColor}" Size="20"  />
-           </ShellContent.Icon>
-        </ShellContent>
+       
        
     </TabBar>
 
