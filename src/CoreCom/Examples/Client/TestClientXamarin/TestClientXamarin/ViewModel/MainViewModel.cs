@@ -7,6 +7,7 @@ using System.Windows.Input;
 using TestClientXamarin.Services;
 using WallTec.CoreCom.Example.Shared;
 using WallTec.CoreCom.Example.Shared.Entitys;
+using WallTec.CoreCom.Sheard.Models;
 using Xamarin.Essentials;
 using Xamarin.Forms;
 
@@ -18,7 +19,7 @@ namespace TestClientXamarin.ViewModel
         {
             //Setup events
             App.ServiceCoreCom.CoreComClient.Register<List<Project>>(CoreComSignatures.ResponseAllProjects, GetAllProjects);
-            App.ServiceCoreCom.CoreComClient.Register<Project>(CoreComSignatures.AddProject, GetAddedProject);
+            App.ServiceCoreCom.CoreComClient.Register<Result<Project>>(CoreComSignatures.AddProject, GetAddedProject);
         }
 
         public ICommand CheckQueueCommand => new Command(async () => await CheckQueueCommandAsync());
@@ -127,15 +128,26 @@ namespace TestClientXamarin.ViewModel
            
 
         }
-        private async void GetAddedProject(Project project)
+        private async void GetAddedProject(Result<Project> result)
         {
-           
-          App.InMemoryData.Projects.Add(project);
+            //the server wrapps in a result object to be able to return errors/validation 
+            if (!result.WasSuccessful)
+            {
+                MainThread.BeginInvokeOnMainThread(async () =>
+                {
+                    // Code to run on the main thread
+                    await DialogService.ShowAlertAsync(result.UserMessage, "CoreCom", "Ok");
+                });
+               
+                return;
+            }
+
+          App.InMemoryData.Projects.Add(result.Model);
           
            if (_projects == null)
                     Projects = new ObservableCollection<Project>();
 
-            Projects.Add(project);
+            Projects.Add(result.Model);
           
         }
     }

@@ -19,25 +19,33 @@ namespace WallTec.CoreCom.TestServerAppService.Service
         {
             _coreComService = coreComService;
             //This public
-            _coreComService.Register(GetAllProjectsFromDb, CoreComSignatures.RequestAllProjects);
+            _coreComService.Register(CoreComSignatures.RequestAllProjects, GetAllProjectsFromDb);
             //This need that the user got token
-            _coreComService.RegisterAuth(AddProjectsToDb, CoreComSignatures.AddProject, new Project().GetType());
-           
+            // _coreComService.RegisterAuth(AddProjectsToDb, CoreComSignatures.AddProject, new Project().GetType());
+            _coreComService.Register<Project>(CoreComSignatures.AddProject, AddProjectsToDb,true);
         }
         
-        private async Task<bool> AddProjectsToDb(object value, CoreComUserInfo arg)
+        private async void AddProjectsToDb(Project value, CoreComUserInfo arg)
         {
+            //Validate input
+            if (string.IsNullOrEmpty(value.Name))
+            {
+                var error = new Result<Project>("The project need a name");
+                await _coreComService.SendAsync(error, CoreComSignatures.AddProject, arg);
+                return;
+            }
+
             _fakeDb.AddProject(value as Project);
             //send the new projet to all client that are connected 
             foreach (var item in _coreComService.Clients)
             {
                 await _coreComService.SendAsync(value as Project, CoreComSignatures.AddProject, new CoreComUserInfo { ClientId = item.CoreComUserInfo.ClientId });
             }
-            return true;
+            
         }
 
        
-        private async Task GetAllProjectsFromDb(CoreComUserInfo coreComUserInfo)
+        private async void GetAllProjectsFromDb(CoreComUserInfo coreComUserInfo)
         {
             await _coreComService.SendAsync(_fakeDb.GetAllProjects(), CoreComSignatures.ResponseAllProjects, coreComUserInfo);
         }

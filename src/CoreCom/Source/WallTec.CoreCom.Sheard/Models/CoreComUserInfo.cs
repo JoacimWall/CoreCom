@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace WallTec.CoreCom.Sheard.Models
+﻿namespace WallTec.CoreCom.Sheard.Models
 {
     public class CoreComUserInfo
     {

@@ -12,18 +12,7 @@ namespace WallTec.CoreCom.Client
             
             this.Database.EnsureCreated();
         }
-        //public CoreComContext(DbContextOptions<CoreComContext> options) : this((DbContextOptions)options)
-        //{
-        //}
-        //public CoreComContext()
-        //{
-        //    this.Database.EnsureCreated();
-        //}
-        //protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
-        //{
-        //    optionsBuilder.UseInMemoryDatabase(databaseName: "CoreComDb");
-        //    base.OnConfiguring(optionsBuilder);
-        //}
+       
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             modelBuilder.Entity<TransferStatus>().Property(p => p.TransferStatusId).ValueGeneratedNever();

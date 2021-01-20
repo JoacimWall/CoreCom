@@ -25,10 +25,6 @@
     <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="5.0.1" />
   </ItemGroup>
 
-  <ItemGroup>
-    <Protobuf Include="Protos\corecom.proto" Access="Internal" />
-  </ItemGroup>
-
   <Import Project="..\WallTec.CoreCom.Sheard\WallTec.CoreCom.Sheard.projitems" Label="Shared" />
 
 </Project>

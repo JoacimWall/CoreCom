@@ -18,24 +18,19 @@ namespace WallTec.CoreCom.Server
 {
     public class CoreComService : Proto.CoreCom.CoreComBase
     {
-        //Public
+        #region Public propertys
         public List<Client> Clients = new List<Client>();
         public event EventHandler<LogEvent> OnLogEventOccurred;
         public event EventHandler<LogError> OnLogErrorOccurred;
-        //Private
-        //Functions needs no token
-        private List<Tuple<Func<CoreComUserInfo, Task>, string>> _receiveDelegatesOneParm = new List<Tuple<Func<CoreComUserInfo, Task>, string>>();
-        private List<Tuple<Func<object, CoreComUserInfo, Task>, string, System.Type>> _receiveDelegatesTwoParm = new List<Tuple<Func<object, CoreComUserInfo, Task>, string, System.Type>>();
-        //functions authenticated 
-        private List<Tuple<Func<CoreComUserInfo, Task>, string>> _receiveDelegatesOneParmAuth = new List<Tuple<Func<CoreComUserInfo, Task>, string>>();
-        private List<Tuple<Func<object, CoreComUserInfo, Task>, string, System.Type>> _receiveDelegatesTwoParmAuth = new List<Tuple<Func<object, CoreComUserInfo, Task>, string, System.Type>>();
 
+        #endregion
+        #region Private proppertys
         private CoreComOptions _coreComOptions;
         private IConfiguration _config;
         private DbContextOptions _dbContextOptions;
 
-
-
+        #endregion
+        #region public functions
         public CoreComService(IConfiguration config)
         {
             _coreComOptions = new CoreComOptions();
@@ -43,8 +38,6 @@ namespace WallTec.CoreCom.Server
             _config = config;
             try
             {
-
-
                 _coreComOptions.LogSettings.LogMessageTarget = (LogMessageTargetEnum)System.Enum.Parse(typeof(LogMessageTargetEnum), _config["CoreCom:CoreComOptions:LogSettings:LogMessageTarget"]);
                 _coreComOptions.LogSettings.LogEventTarget = (LogEventTargetEnum)System.Enum.Parse(typeof(LogEventTargetEnum), _config["CoreCom:CoreComOptions:LogSettings:LogEventTarget"]);
                 _coreComOptions.LogSettings.LogErrorTarget = (LogErrorTargetEnum)System.Enum.Parse(typeof(LogErrorTargetEnum), _config["CoreCom:CoreComOptions:LogSettings:LogErrorTarget"]);
@@ -102,45 +95,18 @@ namespace WallTec.CoreCom.Server
         {
             return await SendInternalAsync(null, messageSignature, coreComUserInfo);
         }
-        /// <summary>
-        /// Regsiter function that is trigerd by the provided Message signature. 
-        /// </summary>
-        /// <param name="callback"></param>
-        /// <param name="messageSignature"></param>
-        public void Register(Func<CoreComUserInfo, Task> callback, string messageSignature)
+       
+        public void Register(string message, Action<CoreComUserInfo> callback,Boolean authorizedRequired=false)
         {
-            _receiveDelegatesOneParm.Add(Tuple.Create(callback, messageSignature));
+            CoreComMessagingCenter.Subscribe(message, callback, authorizedRequired);
         }
-        /// <summary>
-        /// Regsiter function that is trigerd by the provided Message signature and expect object as payload
-        /// </summary>
-        /// <param name="callback"></param>
-        /// <param name="messageSignature"></param>
-        /// <param name="type"></param>
-        public void Register(Func<object, CoreComUserInfo, Task> callback, string messageSignature, System.Type type)
+        public void Register<Targs>(string message, Action<Targs, CoreComUserInfo> callback, Boolean authorizedRequired = false) where Targs : class
         {
-            _receiveDelegatesTwoParm.Add(Tuple.Create(callback, messageSignature, type));
+            CoreComMessagingCenter.Subscribe(message, callback, authorizedRequired);
         }
-        /// <summary>
-        /// Regsiter function that is trigerd by the provided Message signature.
-        /// Require that the user also has authenticated JWT token
-        /// </summary>
-        /// <param name="callback"></param>
-        /// <param name="messageSignature"></param>
-        public void RegisterAuth(Func<CoreComUserInfo, Task> callback, string messageSignature)
+        public void UnRegister(string message)
         {
-            _receiveDelegatesOneParmAuth.Add(Tuple.Create(callback, messageSignature));
-        }
-        /// <summary>
-        /// Regsiter function that is trigerd by the provided Message signature and expect object as payload.
-        /// Require that the user also has authenticated JWT token
-        /// </summary>
-        /// <param name="callback"></param>
-        /// <param name="messageSignature"></param>
-        /// <param name="type"></param>
-        public void RegisterAuth(Func<object, CoreComUserInfo, Task> callback, string messageSignature, System.Type type)
-        {
-            _receiveDelegatesTwoParmAuth.Add(Tuple.Create(callback, messageSignature, type));
+            CoreComMessagingCenter.Unsubscribe(message);
         }
         /// <summary>
         /// This is used by the framework dont use this from your own code
@@ -196,8 +162,13 @@ namespace WallTec.CoreCom.Server
         /// <returns></returns>
         public override async Task SubscribeServerToClient(CoreComMessage request, IServerStreamWriter<CoreComMessageResponse> responseStream, ServerCallContext context)
         {
-
-            await SubscribeServerToClientInternal(false, request, responseStream, context);
+            if (request.MessageSignature != CoreComInternalSignatures.CoreComInternal_PullQueue &&
+                CoreComMessagingCenter.GetMessageIsAuth(request.MessageSignature))
+            {
+                LogErrorOccurred("Client try to use function un Authenticated", request);
+                return;
+            }
+            await SubscribeServerToClientInternal(request, responseStream, context);
         }
         /// <summary>
         /// This is used by the framework dont use this from your own code
@@ -208,136 +179,17 @@ namespace WallTec.CoreCom.Server
         [Authorize] //Authenticated functions
         public override async Task SubscribeServerToClientAuth(CoreComMessage request, IServerStreamWriter<CoreComMessageResponse> responseStream, ServerCallContext context)
         {
-            await SubscribeServerToClientInternal(true, request, responseStream, context);
+            await SubscribeServerToClientInternal(request, responseStream, context);
         }
 
-
-        #region "private functions"
-        private async Task SubscribeServerToClientInternal(bool isAuth, CoreComMessage request, IServerStreamWriter<CoreComMessageResponse> responseStream, ServerCallContext context)
-        {
-            try
-            {
-                using (var dbContext = new CoreComContext(_dbContextOptions))
-                {
-                    //Add loging
-                    request.TransferStatus = (int)TransferStatusEnum.Recived;
-                    request.RecivedUtc = Sheard.Helpers.DateTimeConverter.DateTimeUtcNow();
-
-                    //Check if we alread has responde to this
-                    if (!dbContext.IncomingMessages.Any(x => x.TransactionIdentifier == request.TransactionIdentifier))
-                    {
-                        //First process messages so it's added to cure
-                        if (isAuth)
-                            await ParseClientToServerMessageAuth(request);
-                        else
-                            await ParseClientToServerMessage(request);
-
-                        //Logging
-                        LogEventOccurred(dbContext, request);
-                    }
-                }
-                //process cue
-                await ProcessQueue(request, responseStream, context).ConfigureAwait(false);
-            }
-            catch (Exception ex)
-            {
-                LogErrorOccurred(ex, new CoreComMessage
-                {
-                    ClientId = request.ClientId
-                });
-
-            }
-        }
-
-        private async Task<bool> ProcessQueue(CoreComMessage request, IServerStreamWriter<CoreComMessageResponse> responseStream, ServerCallContext context)
-        {
-            //we have null ifall server restarted while client was connected
-            if (!Clients.Any(x => x.CoreComUserInfo.ClientId == request.ClientId))
-                AddClient(request.ClientId);
-
-            //check if we are sending allready
-            if (Clients.FirstOrDefault(x => x.CoreComUserInfo.ClientId == request.ClientId).ClientIsSending)
-                return true;
-
-
-            Clients.FirstOrDefault(x => x.CoreComUserInfo.ClientId == request.ClientId).ClientIsSending = true;
-
-            try
-            {
-                using (var dbContext = new CoreComContext(_dbContextOptions))
-                {
-                    //We need always responde with a message other vise loggin on client not work
-                    //and the same CoreComInternal_PullQueue from client will send and wo will have the same
-                    //transactionId twice result in db error 
-                    var outgoingMess = dbContext.OutgoingMessages.
-                        Where(x => x.ClientId == request.ClientId &&
-                        x.TransferStatus < (int)TransferStatusEnum.Transferred).ToList();
-
-
-                    foreach (var item in outgoingMess)
-                    {
-                        if (context.Deadline > DateTime.UtcNow)
-                        {
-                            //send
-                            //await Task.Delay(7000);
-                            await responseStream.WriteAsync(item);
-                            //update messages
-                            item.TransferStatus = (int)TransferStatusEnum.Transferred;
-                            item.TransferredUtc = Sheard.Helpers.DateTimeConverter.DateTimeUtcNow();
-                            LogEventOccurred(dbContext, item);
-                        }
-
-                    }
-
-                }
-            }
-            catch (RpcException ex)
-            {
-                LogEventOccurred(new LogEvent { Description = ex.Message });
-                switch (ex.StatusCode)
-                {
-                    case StatusCode.DeadlineExceeded:
-                        Console.WriteLine("DeadlineExceeded");
-                        break;
-                    case StatusCode.Cancelled:
-
-                        Console.WriteLine("Stream cancelled.");
-                        break;
-                    case StatusCode.PermissionDenied:
-                    case StatusCode.Unavailable:
-                        Console.WriteLine("PermissionDenied/Unavailable");
-                        break;
-                    case StatusCode.Unauthenticated:
-                        Console.WriteLine("Unauthenticated.");
-                        break;
-                    default:
-                        break;
-                }
-                return false;
-            }
-            catch (Exception ex)
-            {
-                LogErrorOccurred(ex, new CoreComMessage { ClientId = request.ClientId, MessageSignature = request.MessageSignature });
-
-                return false;
-            }
-            finally
-            {
-                Clients.FirstOrDefault(x => x.CoreComUserInfo.ClientId == request.ClientId).ClientIsSending = false;
-
-            }
-            return true;
-
-
-        }
+        #endregion
+        #region Internal functions
         internal bool RemoveClient(string clientId)
         {
-
             Clients.Remove(Clients.FirstOrDefault(c => c.CoreComUserInfo.ClientId == clientId));
             //Todo: remove memory Queue 
             return true;
         }
-
         internal Client AddClient(string clientId)
         {
             Client client;
@@ -354,219 +206,6 @@ namespace WallTec.CoreCom.Server
             }
             return client;
         }
-
-        private async Task ParseClientToServerMessage(CoreComMessage request)
-        {
-            //this only hapend after first messages bin sent
-            if (request.MessageSignature == CoreComInternalSignatures.CoreComInternal_PullQueue)
-            {
-                await ParseCoreComFrameworkMessage(request);
-                return;
-            }
-
-            CoreComUserInfo coreComUserInfo = new CoreComUserInfo { ClientId = request.ClientId };
-            if (string.IsNullOrEmpty(request.JsonObject))
-            {
-                var funcToRun = _receiveDelegatesOneParm.FirstOrDefault(x => x.Item2 == request.MessageSignature);
-                if (funcToRun != null)
-                {
-                    await funcToRun.Item1.Invoke(coreComUserInfo);
-                }
-                else
-                {
-                    
-                    LogErrorOccurred("No function mapped to " + request.MessageSignature, request);
-                }
-            }
-            else
-            {
-                var funcToRun = _receiveDelegatesTwoParm.FirstOrDefault(x => x.Item2 == request.MessageSignature);
-                if (funcToRun != null)
-                {
-                    var objectDeser = JsonSerializer.Deserialize(request.JsonObject, funcToRun.Item3);
-                    await funcToRun.Item1.Invoke(objectDeser, coreComUserInfo);
-                }
-                else
-                {
-                    LogErrorOccurred("No function mapped to " + request.MessageSignature, request);
-                }
-            }
-        }
-        private async Task ParseClientToServerMessageAuth(CoreComMessage request)
-        {
-            //this only hapend after first messages bin sent
-            if (request.MessageSignature == CoreComInternalSignatures.CoreComInternal_PullQueue)
-            {
-                await ParseCoreComFrameworkMessage(request);
-                return;
-            }
-
-
-            CoreComUserInfo coreComUserInfo = new CoreComUserInfo { ClientId = request.ClientId };
-            if (string.IsNullOrEmpty(request.JsonObject))
-            {
-                var funcToRun = _receiveDelegatesOneParmAuth.FirstOrDefault(x => x.Item2 == request.MessageSignature);
-                if (funcToRun != null)
-                {
-                    await funcToRun.Item1.Invoke(coreComUserInfo);
-                }
-                else
-                {
-                    LogErrorOccurred("No function mapped to " + request.MessageSignature, request);
-                }
-            }
-            else
-            {
-                var funcToRun = _receiveDelegatesTwoParmAuth.FirstOrDefault(x => x.Item2 == request.MessageSignature);
-                if (funcToRun != null)
-                {
-                    var objectDeser = JsonSerializer.Deserialize(request.JsonObject, funcToRun.Item3);
-                    await funcToRun.Item1.Invoke(objectDeser, coreComUserInfo);
-                }
-                else
-                {
-                    LogErrorOccurred("No function mapped to " + request.MessageSignature, request);
-                }
-            }
-        }
-        private async Task ParseCoreComFrameworkMessage(CoreComMessage request)
-        {
-            //We need always responde with a message other vise loggin on client not work
-            //and the same CoreComInternal_PullQueue from client will send and wo will have the same
-            //transactionId twice result in db error
-            using (var dbContext = new CoreComContext(_dbContextOptions))
-            {
-                //queue is empty then create response message
-                if (!dbContext.OutgoingMessages.Any(x => x.ClientId == request.ClientId && x.TransferStatus < (int)TransferStatusEnum.Transferred))
-                {
-                    //send
-                    var internalMess = new CoreComMessageResponse
-                    {
-                        MessageSignature = CoreComInternalSignatures.CoreComInternal_PullQueue,
-                        CoreComMessageResponseId = Guid.NewGuid().ToString(),
-                        ClientId = request.ClientId,
-                        NewUtc = Sheard.Helpers.DateTimeConverter.DateTimeUtcNow(),
-                        TransactionIdentifier = Guid.NewGuid().ToString()
-                    };
-                    LogEventOccurred(dbContext, internalMess);
-
-                }
-            }
-        }
-        //TODO:Add date to filename
-        private async Task WriteIncommingMessagesLog(CoreComMessage request)
-        {
-            if (_coreComOptions.LogSettings.LogMessageTarget != LogMessageTargetEnum.TextFile)
-                return;
-
-            // Set a variable to the Documents path.
-            string docPath = Environment.CurrentDirectory;
-
-            // Write the specified text asynchronously to a new file named "WriteTextAsync.txt".
-            using (StreamWriter outputFile = new StreamWriter(Path.Combine(docPath, "IncommingMessages.log"), true))
-            {
-                await outputFile.WriteLineAsync(DateTime.UtcNow.ToString() + "\t" + request.CoreComMessageId + "\t" + request.MessageSignature + "\t" + request.ClientId + "\t" + request.TransactionIdentifier + "\t" + ((TransferStatusEnum)request.TransferStatus).ToString() + "\t" + request.CalculateSize().ToString() + Environment.NewLine);
-            }
-
-
-        }
-        private async Task WriteOutgoingMessagesLog(CoreComMessageResponse request)
-        {
-            if (_coreComOptions.LogSettings.LogMessageTarget != LogMessageTargetEnum.TextFile)
-                return;
-
-            // Set a variable to the Documents path.
-            string docPath = Environment.CurrentDirectory;
-
-            // Write the specified text asynchronously to a new file named "WriteTextAsync.txt".
-            using (StreamWriter outputFile = new StreamWriter(Path.Combine(docPath, "OutgoningMessages.log"), true))
-            {
-                await outputFile.WriteLineAsync(DateTime.UtcNow.ToString() + "\t" + request.CoreComMessageResponseId + "\t" + request.MessageSignature + "\t" + request.ClientId + "\t" + request.TransactionIdentifier + "\t" + ((TransferStatusEnum)request.TransferStatus).ToString() + "\t" + request.CalculateSize().ToString() + Environment.NewLine);
-            }
-
-
-        }
-        private async Task WriteEventLogtoFile(LogEvent logEvent)
-        {
-            if (_coreComOptions.LogSettings.LogEventTarget != LogEventTargetEnum.TextFile)
-                return;
-
-            // Set a variable to the Documents path.
-            string docPath = Environment.CurrentDirectory;
-
-            // Write the specified text asynchronously to a new file named "WriteTextAsync.txt".
-            using (StreamWriter outputFile = new StreamWriter(Path.Combine(docPath, "LogEvents.log"), true))
-            {
-                await outputFile.WriteLineAsync(logEvent.TimeStampUtc.ToString() + "\t" + logEvent.LogEventId + "\t" + logEvent.Description + "\t" + logEvent.ClientId + "\t" + logEvent.TransactionIdentifier + "\t" + logEvent.TransferStatus.ToString() + "\t" + logEvent.MessageSize.ToString() + Environment.NewLine);
-            }
-
-
-        }
-        private async Task WriteErrorLogtoFile(LogError logError)
-        {
-            if (_coreComOptions.LogSettings.LogErrorTarget != LogErrorTargetEnum.TextFile)
-                return;
-
-            // Set a variable to the Documents path.
-            string docPath = Environment.CurrentDirectory;
-
-            // Write the specified text asynchronously to a new file named "WriteTextAsync.txt".
-            using (StreamWriter outputFile = new StreamWriter(Path.Combine(docPath, "LogError.log"), true))
-            {
-                await outputFile.WriteLineAsync(logError.TimeStampUtc.ToString() + "\t" + logError.LogErrorId + "\t" + logError.Description + "\t" + logError.ClientId + "\t" + logError.TransactionIdentifier + "\t" + logError.Stacktrace + Environment.NewLine);
-            }
-
-
-        }
-        private async Task<bool> SendInternalAsync(object outgoingObject, string messageSignature, CoreComUserInfo coreComUserInfo)
-        {
-            string jsonObjectType = string.Empty;
-            string jsonObject = string.Empty;
-            CoreComMessageResponse coreComMessage;
-            //Build  message
-            try
-            {
-                //error report to client
-                if (outgoingObject != null)
-                {
-                    jsonObjectType = outgoingObject.GetType().ToString();
-                    jsonObject = JsonSerializer.Serialize(outgoingObject);
-                }
-
-                coreComMessage = new CoreComMessageResponse
-                {
-                    CoreComMessageResponseId = Guid.NewGuid().ToString(),
-                    ClientId = coreComUserInfo.ClientId,
-                    NewUtc = Sheard.Helpers.DateTimeConverter.DateTimeUtcNow(),
-                    TransactionIdentifier = Guid.NewGuid().ToString(),
-                    MessageSignature = messageSignature,
-                    JsonObjectType = jsonObjectType,
-                    JsonObject = jsonObject
-                };
-                using (var dbContext = new CoreComContext(_dbContextOptions))
-                {
-                    LogEventOccurred(dbContext, coreComMessage);
-
-                }
-
-
-            }
-            catch (Exception ex)
-            {
-                LogErrorOccurred(ex, new CoreComMessage { ClientId = coreComUserInfo.ClientId, MessageSignature = messageSignature });
-                return false;
-            }
-
-
-            return true;
-
-
-
-        }
-
-
-        #endregion
-        #region Internal functions
         internal async virtual void LogErrorOccurred(Exception exception, CoreComMessage coreComMessage)
         {
             LogErrorOccurred(exception.Message, coreComMessage, exception);
@@ -795,5 +434,277 @@ namespace WallTec.CoreCom.Server
         }
 
         #endregion
+        #region "private functions"
+        private async Task SubscribeServerToClientInternal( CoreComMessage request, IServerStreamWriter<CoreComMessageResponse> responseStream, ServerCallContext context)
+        {
+            try
+            {
+                using (var dbContext = new CoreComContext(_dbContextOptions))
+                {
+                    //Add loging
+                    request.TransferStatus = (int)TransferStatusEnum.Recived;
+                    request.RecivedUtc = Sheard.Helpers.DateTimeConverter.DateTimeUtcNow();
+
+                    //Check if we alread has responde to this
+                    if (!dbContext.IncomingMessages.Any(x => x.TransactionIdentifier == request.TransactionIdentifier))
+                    {
+                        await ParseClientToServerMessage(request);
+
+                        //Logging
+                        LogEventOccurred(dbContext, request);
+                    }
+                }
+                //process cue
+                await ProcessQueue(request, responseStream, context).ConfigureAwait(false);
+            }
+            catch (Exception ex)
+            {
+                LogErrorOccurred(ex, new CoreComMessage
+                {
+                    ClientId = request.ClientId
+                });
+
+            }
+        }
+        private async Task<bool> ProcessQueue(CoreComMessage request, IServerStreamWriter<CoreComMessageResponse> responseStream, ServerCallContext context)
+        {
+            //we have null ifall server restarted while client was connected
+            if (!Clients.Any(x => x.CoreComUserInfo.ClientId == request.ClientId))
+                AddClient(request.ClientId);
+
+            //check if we are sending allready
+            if (Clients.FirstOrDefault(x => x.CoreComUserInfo.ClientId == request.ClientId).ClientIsSending)
+                return true;
+
+
+            Clients.FirstOrDefault(x => x.CoreComUserInfo.ClientId == request.ClientId).ClientIsSending = true;
+
+            try
+            {
+                using (var dbContext = new CoreComContext(_dbContextOptions))
+                {
+                    //We need always responde with a message other vise loggin on client not work
+                    //and the same CoreComInternal_PullQueue from client will send and wo will have the same
+                    //transactionId twice result in db error 
+                    var outgoingMess = dbContext.OutgoingMessages.
+                        Where(x => x.ClientId == request.ClientId &&
+                        x.TransferStatus < (int)TransferStatusEnum.Transferred).ToList();
+
+
+                    foreach (var item in outgoingMess)
+                    {
+                        if (context.Deadline > DateTime.UtcNow)
+                        {
+                            //send
+                            //await Task.Delay(7000);
+                            await responseStream.WriteAsync(item);
+                            //update messages
+                            item.TransferStatus = (int)TransferStatusEnum.Transferred;
+                            item.TransferredUtc = Sheard.Helpers.DateTimeConverter.DateTimeUtcNow();
+                            LogEventOccurred(dbContext, item);
+                        }
+
+                    }
+
+                }
+            }
+            catch (RpcException ex)
+            {
+                LogEventOccurred(new LogEvent { Description = ex.Message });
+                switch (ex.StatusCode)
+                {
+                    case StatusCode.DeadlineExceeded:
+                        Console.WriteLine("DeadlineExceeded");
+                        break;
+                    case StatusCode.Cancelled:
+
+                        Console.WriteLine("Stream cancelled.");
+                        break;
+                    case StatusCode.PermissionDenied:
+                    case StatusCode.Unavailable:
+                        Console.WriteLine("PermissionDenied/Unavailable");
+                        break;
+                    case StatusCode.Unauthenticated:
+                        Console.WriteLine("Unauthenticated.");
+                        break;
+                    default:
+                        break;
+                }
+                return false;
+            }
+            catch (Exception ex)
+            {
+                LogErrorOccurred(ex, new CoreComMessage { ClientId = request.ClientId, MessageSignature = request.MessageSignature });
+
+                return false;
+            }
+            finally
+            {
+                Clients.FirstOrDefault(x => x.CoreComUserInfo.ClientId == request.ClientId).ClientIsSending = false;
+
+            }
+            return true;
+
+
+        }
+        private async Task ParseClientToServerMessage(CoreComMessage request)
+        {
+            //this only hapend after first messages bin sent
+            if (request.MessageSignature == CoreComInternalSignatures.CoreComInternal_PullQueue)
+            {
+                await ParseCoreComFrameworkMessage(request);
+                return;
+            }
+
+            
+
+            CoreComUserInfo coreComUserInfo = new CoreComUserInfo { ClientId = request.ClientId };
+            if (string.IsNullOrEmpty(request.JsonObject))
+            {
+                CoreComMessagingCenter.Send(request.MessageSignature, coreComUserInfo);
+                
+            }
+            else
+            {
+                var objectDeser = JsonSerializer.Deserialize(request.JsonObject, CoreComMessagingCenter.GetMessageArgType(request.MessageSignature));
+
+                CoreComMessagingCenter.Send(request.MessageSignature, coreComUserInfo, objectDeser);
+               
+            }
+        }
+        private async Task ParseCoreComFrameworkMessage(CoreComMessage request)
+        {
+            //We need always responde with a message other vise loggin on client not work
+            //and the same CoreComInternal_PullQueue from client will send and wo will have the same
+            //transactionId twice result in db error
+            using (var dbContext = new CoreComContext(_dbContextOptions))
+            {
+                //queue is empty then create response message
+                if (!dbContext.OutgoingMessages.Any(x => x.ClientId == request.ClientId && x.TransferStatus < (int)TransferStatusEnum.Transferred))
+                {
+                    //send
+                    var internalMess = new CoreComMessageResponse
+                    {
+                        MessageSignature = CoreComInternalSignatures.CoreComInternal_PullQueue,
+                        CoreComMessageResponseId = Guid.NewGuid().ToString(),
+                        ClientId = request.ClientId,
+                        NewUtc = Sheard.Helpers.DateTimeConverter.DateTimeUtcNow(),
+                        TransactionIdentifier = Guid.NewGuid().ToString()
+                    };
+                    LogEventOccurred(dbContext, internalMess);
+
+                }
+            }
+        }
+        
+        private async Task WriteIncommingMessagesLog(CoreComMessage request)
+        {
+            //TODO:Add date to filename
+            if (_coreComOptions.LogSettings.LogMessageTarget != LogMessageTargetEnum.TextFile)
+                return;
+
+            // Set a variable to the Documents path.
+            string docPath = Environment.CurrentDirectory;
+
+            // Write the specified text asynchronously to a new file named "WriteTextAsync.txt".
+            using (StreamWriter outputFile = new StreamWriter(Path.Combine(docPath, "IncommingMessages.log"), true))
+            {
+                await outputFile.WriteLineAsync(DateTime.UtcNow.ToString() + "\t" + request.CoreComMessageId + "\t" + request.MessageSignature + "\t" + request.ClientId + "\t" + request.TransactionIdentifier + "\t" + ((TransferStatusEnum)request.TransferStatus).ToString() + "\t" + request.CalculateSize().ToString() + Environment.NewLine);
+            }
+
+
+        }
+        private async Task WriteOutgoingMessagesLog(CoreComMessageResponse request)
+        {
+            if (_coreComOptions.LogSettings.LogMessageTarget != LogMessageTargetEnum.TextFile)
+                return;
+
+            // Set a variable to the Documents path.
+            string docPath = Environment.CurrentDirectory;
+
+            // Write the specified text asynchronously to a new file named "WriteTextAsync.txt".
+            using (StreamWriter outputFile = new StreamWriter(Path.Combine(docPath, "OutgoningMessages.log"), true))
+            {
+                await outputFile.WriteLineAsync(DateTime.UtcNow.ToString() + "\t" + request.CoreComMessageResponseId + "\t" + request.MessageSignature + "\t" + request.ClientId + "\t" + request.TransactionIdentifier + "\t" + ((TransferStatusEnum)request.TransferStatus).ToString() + "\t" + request.CalculateSize().ToString() + Environment.NewLine);
+            }
+
+
+        }
+        private async Task WriteEventLogtoFile(LogEvent logEvent)
+        {
+            if (_coreComOptions.LogSettings.LogEventTarget != LogEventTargetEnum.TextFile)
+                return;
+
+            // Set a variable to the Documents path.
+            string docPath = Environment.CurrentDirectory;
+
+            // Write the specified text asynchronously to a new file named "WriteTextAsync.txt".
+            using (StreamWriter outputFile = new StreamWriter(Path.Combine(docPath, "LogEvents.log"), true))
+            {
+                await outputFile.WriteLineAsync(logEvent.TimeStampUtc.ToString() + "\t" + logEvent.LogEventId + "\t" + logEvent.Description + "\t" + logEvent.ClientId + "\t" + logEvent.TransactionIdentifier + "\t" + logEvent.TransferStatus.ToString() + "\t" + logEvent.MessageSize.ToString() + Environment.NewLine);
+            }
+
+
+        }
+        private async Task WriteErrorLogtoFile(LogError logError)
+        {
+            if (_coreComOptions.LogSettings.LogErrorTarget != LogErrorTargetEnum.TextFile)
+                return;
+
+            // Set a variable to the Documents path.
+            string docPath = Environment.CurrentDirectory;
+
+            // Write the specified text asynchronously to a new file named "WriteTextAsync.txt".
+            using (StreamWriter outputFile = new StreamWriter(Path.Combine(docPath, "LogError.log"), true))
+            {
+                await outputFile.WriteLineAsync(logError.TimeStampUtc.ToString() + "\t" + logError.LogErrorId + "\t" + logError.Description + "\t" + logError.ClientId + "\t" + logError.TransactionIdentifier + "\t" + logError.Stacktrace + Environment.NewLine);
+            }
+
+
+        }
+        private async Task<bool> SendInternalAsync(object outgoingObject, string messageSignature, CoreComUserInfo coreComUserInfo)
+        {
+            string jsonObject = string.Empty;
+            CoreComMessageResponse coreComMessage;
+            //Build  message
+            try
+            {
+                //error report to client
+                if (outgoingObject != null)
+                {
+                    jsonObject = JsonSerializer.Serialize(outgoingObject);
+                }
+
+                coreComMessage = new CoreComMessageResponse
+                {
+                    CoreComMessageResponseId = Guid.NewGuid().ToString(),
+                    ClientId = coreComUserInfo.ClientId,
+                    NewUtc = Sheard.Helpers.DateTimeConverter.DateTimeUtcNow(),
+                    TransactionIdentifier = Guid.NewGuid().ToString(),
+                    MessageSignature = messageSignature,
+                    JsonObject = jsonObject
+                };
+                using (var dbContext = new CoreComContext(_dbContextOptions))
+                {
+                    LogEventOccurred(dbContext, coreComMessage);
+
+                }
+
+
+            }
+            catch (Exception ex)
+            {
+                LogErrorOccurred(ex, new CoreComMessage { ClientId = coreComUserInfo.ClientId, MessageSignature = messageSignature });
+                return false;
+            }
+
+
+            return true;
+
+
+
+        }
+        #endregion
+       
     }
 }

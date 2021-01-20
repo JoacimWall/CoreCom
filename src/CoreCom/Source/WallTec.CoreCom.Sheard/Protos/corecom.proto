@@ -7,9 +7,6 @@ package CoreCom;
 import "google/protobuf/empty.proto";
 import "google/protobuf/timestamp.proto";
 
-
-
-
 service CoreCom {
 	
 	rpc ClientConnectToServer(ConnectToServerRequest) returns (ConnectToServerResponse);

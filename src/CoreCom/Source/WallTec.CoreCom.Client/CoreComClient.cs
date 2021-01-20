@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Threading.Tasks;
 using System.Text.Json;
-using System.Collections.Generic;
 using WallTec.CoreCom.Sheard;
 using System.Linq;
 using System.Timers;
@@ -21,41 +20,21 @@ namespace WallTec.CoreCom.Client
 
     public class CoreComClient
     {
-        #region Private Propertys
+        #region Private Propertys/Events
         private GrpcWebHandler _httpHandler;
         private GrpcChannel _channel;
         private CoreComOptions _coreComOptions;
         private Proto.CoreCom.CoreComClient _coreComClient;
-        private readonly List<Tuple<Func<CoreComUserInfo, Task>, string>> _receiveDelegatesOneParm = new List<Tuple<Func<CoreComUserInfo, Task>, string>>();
-        private readonly List<Tuple<Func<object, CoreComUserInfo, Task>, string, System.Type>> _receiveDelegatesTwoParm = new List<Tuple<Func<object, CoreComUserInfo, Task>, string, System.Type>>();
-
-        //Offline Propertys
         private Timer _timer;
         private Timer _checkQueueTimer;
         private ConnectionStatusEnum _connectionStatus;
         private DbContextOptions _dbContextOptions;
-
+        private bool _workingOnQueue = false;
         //Events
         public event EventHandler<ConnectionStatusEnum> OnConnectionStatusChange;
-        protected virtual void ConnectionStatusChange(ConnectionStatusEnum e)
-        {
-            _connectionStatus = e;
-            EventHandler<ConnectionStatusEnum> handler = OnConnectionStatusChange;
-            if (handler != null)
-            {
-                handler(this, e);
-            }
-        }
+        public event EventHandler<LogEvent> OnLogEventOccurred;
         public event EventHandler<RpcException> OnLatestRpcExceptionChange;
-        protected virtual void LatestRpcExceptionChange(RpcException e)
-        {
-
-            EventHandler<RpcException> handler = OnLatestRpcExceptionChange;
-            if (handler != null)
-            {
-                handler(this, e);
-            }
-        }
+        public event EventHandler<LogError> OnLogErrorOccurred;
 
 
         #endregion
@@ -70,12 +49,7 @@ namespace WallTec.CoreCom.Client
 
             _checkQueueTimer = new Timer(30000);
             _checkQueueTimer.Elapsed += _checkQueueTimer_Elapsed;
-
-            //_dbContextOptions = new DbContextOptionsBuilder<CoreComContext>()
-            //        .UseInMemoryDatabase(databaseName: "CoreComDb").Options;
-
         }
-
         public async Task<bool> Disconnect()
         {
             try
@@ -108,7 +82,6 @@ namespace WallTec.CoreCom.Client
         public bool Connect(CoreComOptions coreComOptions)
         {
             _coreComOptions = coreComOptions;
-            //LogSettings = logSettings;
             //start timmer for connect to server
             _timer.Interval = Convert.ToDouble(1000);
             _timer.Enabled = true;
@@ -132,18 +105,18 @@ namespace WallTec.CoreCom.Client
             }
             return true;
         }
-
-        public void Register(Func<CoreComUserInfo, Task> callback, string messageSignature)
+        public void Register(string message, Action callback) 
         {
-            _receiveDelegatesOneParm.Add(Tuple.Create(callback, messageSignature));
+            CoreComMessagingCenter.Subscribe(message, callback,false);
         }
-        public void Register(Func<object, CoreComUserInfo, Task> callback, string messageSignature, System.Type type)
+        public void Register<Targs>(string message, Action<Targs> callback) where Targs : class
         {
-            //var parameter= callback.Method.GetParameters().First();
-
-            _receiveDelegatesTwoParm.Add(Tuple.Create(callback, messageSignature, type));
+            CoreComMessagingCenter.Subscribe<Targs>(message, callback,false);
         }
-
+        public void UnRegister(string message)
+        {
+            CoreComMessagingCenter.Unsubscribe(message);
+        }
         public async void CheckServerQueue()
         {
             await SendAsync(CoreComInternalSignatures.CoreComInternal_PullQueue).ConfigureAwait(false);
@@ -197,14 +170,15 @@ namespace WallTec.CoreCom.Client
         private CallOptions GetCallOptions(bool isConnectToServer = false, bool addAuth = false)
         {
             int deadlineSec;
+            CallOptions calloptions;
             if (isConnectToServer)
                 deadlineSec = _coreComOptions.GrpcOptions.ConnectToServerDeadlineSec;
             else
             {
-                deadlineSec = _coreComOptions.GrpcOptions.MessageDeadlineSec * _coreComOptions.GrpcOptions.MessageDeadlineSecMultiply;
+                deadlineSec = _coreComOptions.GrpcOptions.MessageDeadlineSec * _coreComOptions.GrpcOptions.MessageDeadlineSecMultiplay;
                 Console.WriteLine("deadlineSec=" + deadlineSec.ToString());
             }
-            CallOptions calloptions;
+          
             if (addAuth && !string.IsNullOrEmpty(_coreComOptions.ClientToken))
             {
                 var headers = new Metadata();
@@ -298,7 +272,7 @@ namespace WallTec.CoreCom.Client
                 return false;
             }
         }
-        private bool _workingOnQueue = false;
+        
         private async Task<bool> ProcessQueue()
         {
             if (_workingOnQueue || _connectionStatus != ConnectionStatusEnum.Connected)
@@ -370,10 +344,9 @@ namespace WallTec.CoreCom.Client
                 {
                     case StatusCode.DeadlineExceeded:
                         LogEventOccurred(new LogEvent { Description = ex.Message, ConnectionStatus = _connectionStatus });
-                        _coreComOptions.GrpcOptions.MessageDeadlineSecMultiply = _coreComOptions.GrpcOptions.MessageDeadlineSecMultiply * 2;
+                        _coreComOptions.GrpcOptions.MessageDeadlineSecMultiplay = _coreComOptions.GrpcOptions.MessageDeadlineSecMultiplay * 2;
                         await ProcessQueue().ConfigureAwait(false);
                         return false;
-                        break;
                     case StatusCode.Cancelled:
                         LogEventOccurred(new LogEvent { Description = ex.Message, ConnectionStatus = _connectionStatus });
                         Console.WriteLine("Stream cancelled.");
@@ -399,7 +372,6 @@ namespace WallTec.CoreCom.Client
             {
                 LogErrorOccurred(ex, new CoreComMessageResponse { ClientId = _coreComOptions.ClientId });
                 _workingOnQueue = false;
-
             }
 
             _workingOnQueue = false;
@@ -408,11 +380,9 @@ namespace WallTec.CoreCom.Client
                 _checkQueueTimer.Enabled = true;
 
             return true;
-
         }
         private async Task<bool> SendInternalAsync(object outgoingObject, string messageSignature, bool sendAuth)
         {
-            string jsonObjectType = string.Empty;
             string jsonObject = string.Empty;
             CoreComMessage coreComMessage;
 
@@ -423,7 +393,7 @@ namespace WallTec.CoreCom.Client
                 //error report to client
                 if (outgoingObject != null)
                 {
-                    jsonObjectType = outgoingObject.GetType().ToString();
+                    
                     jsonObject = JsonSerializer.Serialize(outgoingObject);
                 }
 
@@ -433,7 +403,6 @@ namespace WallTec.CoreCom.Client
                     TransactionIdentifier = Guid.NewGuid().ToString(),
                     NewUtc = Sheard.Helpers.DateTimeConverter.DateTimeUtcNow(),
                     MessageSignature = messageSignature,
-                    JsonObjectType = jsonObjectType,
                     JsonObject = jsonObject,
                     SendAuth = sendAuth
                 };
@@ -451,14 +420,137 @@ namespace WallTec.CoreCom.Client
             catch (Exception ex)
             {
                 LogErrorOccurred(ex, new CoreComMessageResponse { ClientId = _coreComOptions.ClientId });
+            }
+            return true;
+        }
+        private async Task ParseServerToClientMessage(CoreComMessageResponse request)
+        {
+
+            using (var dbContext = new CoreComContext(_dbContextOptions))
+            {
+                request.TransferStatus = (int)TransferStatusEnum.Recived;
+                request.RecivedUtc = Sheard.Helpers.DateTimeConverter.DateTimeUtcNow();
+
+                if (request.MessageSignature == CoreComInternalSignatures.CoreComInternal_PullQueue)
+                {
+                    await ParseCoreComFrameworkFromServerMessage(request).ConfigureAwait(false);
+                    LogEventOccurred(dbContext, request);
+                    return;
+                }
 
 
+
+                LogEventOccurred(dbContext, request);
+                //System.Type type = Type.GetType(request.JsonObjectType);
+                // erer = new CoreComMessagingCenter();
+                Type type = CoreComMessagingCenter.GetMessageArgType(request.MessageSignature);
+                if (type == null)
+                {
+                    CoreComMessagingCenter.Send(request.MessageSignature, null);
+                }
+                else
+                {
+                    var objectDeser = JsonSerializer.Deserialize(request.JsonObject, type);
+                    CoreComMessagingCenter.Send(request.MessageSignature, null, objectDeser);
+                }
+                //CoreComUserInfo coreComUserInfo = new CoreComUserInfo { ClientId = request.ClientId };
+                //if (string.IsNullOrEmpty(request.JsonObject))
+                //{
+                //    var funcToRun = _receiveDelegatesOneParm.FirstOrDefault(x => x.Item2 == request.MessageSignature);
+                //    if (funcToRun != null)
+                //    {
+                //        await funcToRun.Item1.Invoke(coreComUserInfo).ConfigureAwait(false);
+                //    }
+                //    else
+                //    {
+                //        LogErrorOccurred("No function mapped to " + request.MessageSignature, request);
+                //    }
+                //}
+                //else
+                //{
+                //    var funcToRun = _receiveDelegatesTwoParm.FirstOrDefault(x => x.Item2 == request.MessageSignature);
+                //    if (funcToRun != null)
+                //    {
+                //        var objectDeser = JsonSerializer.Deserialize(request.JsonObject, funcToRun.Item3);
+                //        await funcToRun.Item1.Invoke(objectDeser, coreComUserInfo).ConfigureAwait(false);
+                //    }
+                //    else
+                //    {
+                //        LogErrorOccurred("No function mapped to " + request.MessageSignature, request);
+                //    }
+                //}
+            }
+        }
+        private async Task ParseCoreComFrameworkFromServerMessage(CoreComMessageResponse request)
+        {
+
+        }
+        private async Task WriteIncommingMessagesLog(CoreComMessageResponse request)
+        {
+            if (_coreComOptions.LogSettings.LogMessageTarget != LogMessageTargetEnum.TextFile)
+                return;
+
+            // Set a variable to the Documents path.
+            string docPath = FileSystem.AppDataDirectory;// Environment.CurrentDirectory;
+
+            // Write the specified text asynchronously to a new file named "WriteTextAsync.txt".
+            using (StreamWriter outputFile = new StreamWriter(Path.Combine(docPath, "IncommingMessages.log"), true))
+            {
+                await outputFile.WriteLineAsync(DateTime.UtcNow.ToString() + "\t" + request.CoreComMessageResponseId + "\t" + request.MessageSignature + "\t" + request.ClientId + "\t" + request.TransactionIdentifier + "\t" + ((TransferStatusEnum)request.TransferStatus).ToString() + "\t" + request.CalculateSize().ToString() + Environment.NewLine);
             }
 
 
-            return true;
         }
-        public event EventHandler<LogEvent> OnLogEventOccurred;
+        private async Task WriteOutgoingMessagesLog(CoreComMessage request)
+        {
+            if (_coreComOptions.LogSettings.LogMessageTarget != LogMessageTargetEnum.TextFile)
+                return;
+
+            // Set a variable to the Documents path.
+            string docPath = FileSystem.AppDataDirectory;
+
+            // Write the specified text asynchronously to a new file named "WriteTextAsync.txt".
+            using (StreamWriter outputFile = new StreamWriter(Path.Combine(docPath, "OutgoningMessages.log"), true))
+            {
+                await outputFile.WriteLineAsync(DateTime.UtcNow.ToString() + "\t" + request.CoreComMessageId + "\t" + request.MessageSignature + "\t" + request.ClientId + "\t" + request.TransactionIdentifier + "\t" + ((TransferStatusEnum)request.TransferStatus).ToString() + "\t" + request.CalculateSize().ToString() + Environment.NewLine);
+            }
+
+
+        }
+        private async Task WriteEventLogtoFile(LogEvent logEvent)
+        {
+            if (_coreComOptions.LogSettings.LogEventTarget != LogEventTargetEnum.TextFile)
+                return;
+
+            // Set a variable to the Documents path.
+            string docPath = FileSystem.AppDataDirectory;
+
+            // Write the specified text asynchronously to a new file named "WriteTextAsync.txt".
+            using (StreamWriter outputFile = new StreamWriter(Path.Combine(docPath, "LogEvents.log"), true))
+            {
+                await outputFile.WriteLineAsync(logEvent.TimeStampUtc.ToString() + "\t" + logEvent.LogEventId + "\t" + logEvent.Description + "\t" + logEvent.ClientId + "\t" + logEvent.TransactionIdentifier + "\t" + logEvent.TransferStatus.ToString() + "\t" + logEvent.MessageSize.ToString() + Environment.NewLine);
+            }
+
+
+        }
+        private async Task WriteErrorLogtoFile(LogError logError)
+        {
+            if (_coreComOptions.LogSettings.LogErrorTarget != LogErrorTargetEnum.TextFile)
+                return;
+
+            // Set a variable to the Documents path.
+            string docPath = FileSystem.AppDataDirectory;
+
+            // Write the specified text asynchronously to a new file named "WriteTextAsync.txt".
+            using (StreamWriter outputFile = new StreamWriter(Path.Combine(docPath, "LogError.log"), true))
+            {
+                await outputFile.WriteLineAsync(logError.TimeStampUtc.ToString() + "\t" + logError.LogErrorId + "\t" + logError.Description + "\t" + logError.ClientId + "\t" + logError.TransactionIdentifier + "\t" + logError.Stacktrace + Environment.NewLine);
+            }
+
+
+        }
+        #endregion
+        #region internal Event handlers
         internal async virtual void LogEventOccurred(CoreComContext dbContext, CoreComMessage coreComMessage)
         {
 
@@ -603,8 +695,6 @@ namespace WallTec.CoreCom.Client
                 handler(this, logEvent);
             }
         }
-
-        public event EventHandler<LogError> OnLogErrorOccurred;
         internal async virtual void LogErrorOccurred(Exception exception, CoreComMessageResponse coreComMessage)
         {
             LogErrorOccurred(exception.Message, coreComMessage, exception);
@@ -656,123 +746,25 @@ namespace WallTec.CoreCom.Client
                 handler(this, logError);
             }
         }
-        private async Task ParseServerToClientMessage(CoreComMessageResponse request)
+
+        protected virtual void ConnectionStatusChange(ConnectionStatusEnum e)
         {
-
-            using (var dbContext = new CoreComContext(_dbContextOptions))
+            _connectionStatus = e;
+            EventHandler<ConnectionStatusEnum> handler = OnConnectionStatusChange;
+            if (handler != null)
             {
-                request.TransferStatus = (int)TransferStatusEnum.Recived;
-                request.RecivedUtc = Sheard.Helpers.DateTimeConverter.DateTimeUtcNow();
-
-                if (request.MessageSignature == CoreComInternalSignatures.CoreComInternal_PullQueue)
-                {
-                    await ParseCoreComFrameworkFromServerMessage(request).ConfigureAwait(false);
-                    LogEventOccurred(dbContext, request);
-                    return;
-                }
-
-
-
-                LogEventOccurred(dbContext, request);
-
-                CoreComUserInfo coreComUserInfo = new CoreComUserInfo { ClientId = request.ClientId };
-                if (string.IsNullOrEmpty(request.JsonObject))
-                {
-                    var funcToRun = _receiveDelegatesOneParm.FirstOrDefault(x => x.Item2 == request.MessageSignature);
-                    if (funcToRun != null)
-                    {
-                        await funcToRun.Item1.Invoke(coreComUserInfo).ConfigureAwait(false);
-                    }
-                    else
-                    {
-                        LogErrorOccurred("No function mapped to " + request.MessageSignature, request);
-                    }
-                }
-                else
-                {
-                    var funcToRun = _receiveDelegatesTwoParm.FirstOrDefault(x => x.Item2 == request.MessageSignature);
-                    if (funcToRun != null)
-                    {
-                        var objectDeser = JsonSerializer.Deserialize(request.JsonObject, funcToRun.Item3);
-                        await funcToRun.Item1.Invoke(objectDeser, coreComUserInfo).ConfigureAwait(false);
-                    }
-                    else
-                    {
-                        LogErrorOccurred("No function mapped to " + request.MessageSignature, request);
-                    }
-                }
+                handler(this, e);
             }
         }
-        private async Task ParseCoreComFrameworkFromServerMessage(CoreComMessageResponse request)
+        protected virtual void LatestRpcExceptionChange(RpcException e)
         {
 
-        }
-        private async Task WriteIncommingMessagesLog(CoreComMessageResponse request)
-        {
-            if (_coreComOptions.LogSettings.LogMessageTarget != LogMessageTargetEnum.TextFile)
-                return;
-
-            // Set a variable to the Documents path.
-            string docPath = FileSystem.AppDataDirectory;// Environment.CurrentDirectory;
-
-            // Write the specified text asynchronously to a new file named "WriteTextAsync.txt".
-            using (StreamWriter outputFile = new StreamWriter(Path.Combine(docPath, "IncommingMessages.log"), true))
+            EventHandler<RpcException> handler = OnLatestRpcExceptionChange;
+            if (handler != null)
             {
-                await outputFile.WriteLineAsync(DateTime.UtcNow.ToString() + "\t" + request.CoreComMessageResponseId + "\t" + request.MessageSignature + "\t" + request.ClientId + "\t" + request.TransactionIdentifier + "\t" + ((TransferStatusEnum)request.TransferStatus).ToString() + "\t" + request.CalculateSize().ToString() + Environment.NewLine);
+                handler(this, e);
             }
-
-
         }
-        private async Task WriteOutgoingMessagesLog(CoreComMessage request)
-        {
-            if (_coreComOptions.LogSettings.LogMessageTarget != LogMessageTargetEnum.TextFile)
-                return;
-
-            // Set a variable to the Documents path.
-            string docPath = FileSystem.AppDataDirectory;
-
-            // Write the specified text asynchronously to a new file named "WriteTextAsync.txt".
-            using (StreamWriter outputFile = new StreamWriter(Path.Combine(docPath, "OutgoningMessages.log"), true))
-            {
-                await outputFile.WriteLineAsync(DateTime.UtcNow.ToString() + "\t" + request.CoreComMessageId + "\t" + request.MessageSignature + "\t" + request.ClientId + "\t" + request.TransactionIdentifier + "\t" + ((TransferStatusEnum)request.TransferStatus).ToString() + "\t" + request.CalculateSize().ToString() + Environment.NewLine);
-            }
-
-
-        }
-        private async Task WriteEventLogtoFile(LogEvent logEvent)
-        {
-            if (_coreComOptions.LogSettings.LogEventTarget != LogEventTargetEnum.TextFile)
-                return;
-
-            // Set a variable to the Documents path.
-            string docPath = FileSystem.AppDataDirectory;
-
-            // Write the specified text asynchronously to a new file named "WriteTextAsync.txt".
-            using (StreamWriter outputFile = new StreamWriter(Path.Combine(docPath, "LogEvents.log"), true))
-            {
-                await outputFile.WriteLineAsync(logEvent.TimeStampUtc.ToString() + "\t" + logEvent.LogEventId + "\t" + logEvent.Description + "\t" + logEvent.ClientId + "\t" + logEvent.TransactionIdentifier + "\t" + logEvent.TransferStatus.ToString() + "\t" + logEvent.MessageSize.ToString() + Environment.NewLine);
-            }
-
-
-        }
-        private async Task WriteErrorLogtoFile(LogError logError)
-        {
-            if (_coreComOptions.LogSettings.LogErrorTarget != LogErrorTargetEnum.TextFile)
-                return;
-
-            // Set a variable to the Documents path.
-            string docPath = FileSystem.AppDataDirectory;
-
-            // Write the specified text asynchronously to a new file named "WriteTextAsync.txt".
-            using (StreamWriter outputFile = new StreamWriter(Path.Combine(docPath, "LogError.log"), true))
-            {
-                await outputFile.WriteLineAsync(logError.TimeStampUtc.ToString() + "\t" + logError.LogErrorId + "\t" + logError.Description + "\t" + logError.ClientId + "\t" + logError.TransactionIdentifier + "\t" + logError.Stacktrace + Environment.NewLine);
-            }
-
-
-        }
-
-
         #endregion
     }
 }

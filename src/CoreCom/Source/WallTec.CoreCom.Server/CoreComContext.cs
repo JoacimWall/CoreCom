@@ -13,8 +13,6 @@ namespace WallTec.CoreCom.Server
     
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
-            //modelBuilder.Entity<CoreComMessage>().Ignore(c => c.CreateTimeUtc);
-
             modelBuilder.Entity<TransferStatus>().Property(p => p.TransferStatusId).ValueGeneratedNever();
 
             //Seed data

@@ -14,12 +14,25 @@
     <Compile Include="$(MSBuildThisFileDirectory)Models\CoreComUserInfo.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Models\LogEvent.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Models\TransferStatus.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)Models\CoreComPublic.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Models\LogSettings.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Models\LogError.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Helpers\DateTimeConverter.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)CoreComMessagingCenter.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Models\Result.cs" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="$(MSBuildThisFileDirectory)Helpers\" />
+    <Folder Include="$(MSBuildThisFileDirectory)Protos\" />
+  </ItemGroup>
+  <ItemGroup>
+    <Protobuf Include="$(MSBuildThisFileDirectory)Protos\corecom.proto">
+      <Access>Public</Access>
+      <GrpcServices>Both</GrpcServices>
+      <ProtoCompile>True</ProtoCompile>
+      <ProtoRoot></ProtoRoot>
+      <CompileOutputs>True</CompileOutputs>
+      <OutputDir>obj\Debug\netcoreapp3.1\</OutputDir>
+      <Generator>MSBuild:Compile</Generator>
+    </Protobuf>
   </ItemGroup>
 </Project>

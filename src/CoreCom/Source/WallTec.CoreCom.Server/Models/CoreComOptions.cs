@@ -1,5 +1,4 @@
-﻿using WallTec.CoreCom.Sheard;
-using WallTec.CoreCom.Sheard.Models;
+﻿using WallTec.CoreCom.Sheard.Models;
 
 namespace WallTec.CoreCom.Server.Models
 {
@@ -11,7 +10,6 @@ namespace WallTec.CoreCom.Server.Models
         {
             LogSettings = new LogSettings();
             DatabaseMode = DatabaseModeEnum.UseImMemory;
-
         }
     }
     public enum DatabaseModeEnum : byte

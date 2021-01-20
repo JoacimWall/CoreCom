@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace WallTec.CoreCom.Example.Shared
+﻿namespace WallTec.CoreCom.Example.Shared
 {
     public static class CoreComSignatures
     {
@@ -12,9 +8,6 @@ namespace WallTec.CoreCom.Example.Shared
         public static string RequestAllProjects = "RequestAllProjects";
         public static string ResponseAllProjects = "ResponseAllProjects";
       
-        
-
-
-
+ 
     }
 }

@@ -7,14 +7,12 @@ namespace WallTec.CoreCom.Sheard
         New = 0,
         Transferred = 1,
         Recived = 2,
-
     }
     public enum ConnectionStatusEnum : byte
     {
         Disconnected = 0,
         Connecting = 1,
         Connected = 2
-
     }
     
     public enum LogMessageTargetEnum : byte
@@ -34,7 +32,5 @@ namespace WallTec.CoreCom.Sheard
         NoLoging = 0,
         TextFile = 1,
         Database = 2
-
-
     }
 }

@@ -19,10 +19,5 @@
   </ItemGroup>
 
 
-  <ItemGroup>
-    <Protobuf Include="Protos\corecom.proto" Access="Public" />
-  </ItemGroup>
-
-
   <Import Project="..\WallTec.CoreCom.Sheard\WallTec.CoreCom.Sheard.projitems" Label="Shared" />
 </Project>
