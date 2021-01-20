@@ -7,6 +7,18 @@
     <Description>Framework for simplifying communication between client and server with gRPC. Main features: offline support, message queue</Description>
     <Product>CoreCom</Product>
     <NeutralLanguage>en</NeutralLanguage>
+    <ReleaseVersion>1.0.1</ReleaseVersion>
+    <SynchReleaseVersion>false</SynchReleaseVersion>
+    <PackageId>WallTec.CoreCom.Server</PackageId>
+    <PackageVersion>1.0.0-alpha</PackageVersion>
+    <Copyright>Walltec</Copyright>
+    <Owners>Walltec</Owners>
+    <PackageTags>gRPC, Xamarin,Message Queue,Offline support</PackageTags>
+    <PackageIconUrl>https://github.com/JoacimWall/CoreCom/blob/main/CoreCom.png</PackageIconUrl>
+    <PackageLicenseUrl>https://github.com/JoacimWall/CoreCom/blob/main/LICENSE</PackageLicenseUrl>
+    <PackageProjectUrl>https://github.com/JoacimWall/CoreCom</PackageProjectUrl>
+    <Summary>CoreCom gRPC and Messsage Queue</Summary>
+    <Title>CoreCom</Title>
   </PropertyGroup>
 
   <ItemGroup>

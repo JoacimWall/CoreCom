@@ -483,8 +483,8 @@ namespace WallTec.CoreCom.Server
             {
                 using (var dbContext = new CoreComContext(_dbContextOptions))
                 {
-                    //We need always responde with a message other vise loggin on client not work
-                    //and the same CoreComInternal_PullQueue from client will send and wo will have the same
+                    //We need always responde with a message otherwise loggin on client not work
+                    //and the same CoreComInternal_PullQueue from client will send and whe will have the same
                     //transactionId twice result in db error 
                     var outgoingMess = dbContext.OutgoingMessages.
                         Where(x => x.ClientId == request.ClientId &&
