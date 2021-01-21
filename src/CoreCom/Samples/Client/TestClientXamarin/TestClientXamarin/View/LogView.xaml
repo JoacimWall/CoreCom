@@ -1,0 +1,44 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<view:BaseContentPage  xmlns:view="clr-namespace:TestClientXamarin.View"
+             xmlns="http://xamarin.com/schemas/2014/forms"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:viewmodel="clr-namespace:TestClientXamarin.ViewModel"
+             x:Class="TestClientXamarin.View.LogView"
+            Shell.NavBarIsVisible="False"  >
+
+    <ContentPage.Content>
+         <Grid Style="{StaticResource pageGridStyleNoLeftRightMargin}"  RowDefinitions="auto,  *" >
+        <Label Grid.Row="0"  Text="Log:" />
+        <ListView Grid.Row="1" ItemsSource="{Binding LogEvents}" HasUnevenRows="True" >
+            <ListView.ItemTemplate>
+                <DataTemplate>
+                    <ViewCell>
+                         <Frame  >
+                            <Grid Padding="2" RowDefinitions="Auto, Auto" ColumnDefinitions="*,Auto" >
+                                <Label Grid.Row="0" Grid.Column="0"  HorizontalOptions="Fill" HorizontalTextAlignment="Start" Style="{StaticResource labelStyleNormalSmall}">
+                                    <Label.Text>
+                                        <MultiBinding Converter="{StaticResource MultiConnection_TransferStatusConverter}">
+                                            <Binding Path="ConnectionStatus" />
+                                            <Binding Path="TransferStatus" />
+                                        </MultiBinding>
+                                    </Label.Text>
+                                </Label>
+                            <Label Grid.Row="0" Grid.Column="1" Text="{Binding TimeStampUtc}" HorizontalTextAlignment="End" Style="{StaticResource labelStyleNormalSmall}"/>
+                               
+                                <Label Grid.Row="1" Grid.Column="0"  Text="{Binding Description}" LineBreakMode="WordWrap" Style="{StaticResource labelStyleNormalSmall}"/>
+                                <Label Grid.Row="1" Grid.Column="1" HorizontalTextAlignment="End"  Text="{Binding MessageSize,Converter={StaticResource MessageSizeToStringConverter}}" Style="{StaticResource labelStyleNormalSmall}"/>
+
+
+
+                                </Grid>
+                        </Frame>
+                    </ViewCell>
+                </DataTemplate>
+            </ListView.ItemTemplate>
+            
+        </ListView>
+           
+    </Grid>
+    </ContentPage.Content>
+</view:BaseContentPage>

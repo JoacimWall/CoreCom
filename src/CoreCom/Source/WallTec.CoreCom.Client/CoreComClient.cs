@@ -119,23 +119,23 @@ namespace WallTec.CoreCom.Client
         }
         public async void CheckServerQueue()
         {
-            await SendAsync(CoreComInternalSignatures.CoreComInternal_PullQueue).ConfigureAwait(false);
+            await SendAsync(CoreComInternalSignatures.CoreComInternal_PullQueue,false).ConfigureAwait(false);
         }
-        public async Task<bool> SendAsync(object outgoingObject, string messageSignature)
+        public async Task<bool> SendAsync(object outgoingObject, string messageSignature,bool noDeadline=false)
         {
-            return await SendInternalAsync(outgoingObject, messageSignature, false).ConfigureAwait(false);
+            return await SendInternalAsync(outgoingObject, messageSignature, false,noDeadline).ConfigureAwait(false);
         }
-        public async Task<bool> SendAsync(string messageSignature)
+        public async Task<bool> SendAsync(string messageSignature,bool noDeadline)
         {
-            return await SendInternalAsync(null, messageSignature, false).ConfigureAwait(false);
+            return await SendInternalAsync(null, messageSignature, false,  noDeadline).ConfigureAwait(false);
         }
-        public async Task<bool> SendAuthAsync(object outgoingObject, string messageSignature)
+        public async Task<bool> SendAuthAsync(object outgoingObject, string messageSignature, bool noDeadline)
         {
-            return await SendInternalAsync(outgoingObject, messageSignature, true).ConfigureAwait(false);
+            return await SendInternalAsync(outgoingObject, messageSignature, true,  noDeadline).ConfigureAwait(false);
         }
-        public async Task<bool> SendAuthAsync(string messageSignature)
+        public async Task<bool> SendAuthAsync(string messageSignature, bool noDeadline)
         {
-            return await SendInternalAsync(null, messageSignature, true).ConfigureAwait(false);
+            return await SendInternalAsync(null, messageSignature, true,  noDeadline).ConfigureAwait(false);
         }
         #endregion
 
@@ -161,35 +161,42 @@ namespace WallTec.CoreCom.Client
                     Where(x => x.TransferStatus < (int)TransferStatusEnum.Transferred).ToList();
 
                 if (outgoingMess.Count == 0)
-                    await SendInternalAsync(null, CoreComInternalSignatures.CoreComInternal_PullQueue, false);
+                    await SendInternalAsync(null, CoreComInternalSignatures.CoreComInternal_PullQueue, false,false);
                 else
                     await ProcessQueue().ConfigureAwait(false);
             }
         }
 
-        private CallOptions GetCallOptions(bool isConnectToServer = false, bool addAuth = false)
+        private CallOptions GetCallOptions(bool isConnectToServer = false, bool addAuth = false,bool noDeadline = false)
         {
             int deadlineSec;
             CallOptions calloptions;
             if (isConnectToServer)
                 deadlineSec = _coreComOptions.GrpcOptions.ConnectToServerDeadlineSec;
+            else if (noDeadline || _coreComOptions.GrpcOptions.ConnectToServerDeadlineSec == -1)
+            {
+                deadlineSec = 0;
+                Console.WriteLine("deadlineSec=NoDeadLine");
+            }
             else
             {
                 deadlineSec = _coreComOptions.GrpcOptions.MessageDeadlineSec * _coreComOptions.GrpcOptions.MessageDeadlineSecMultiplay;
                 Console.WriteLine("deadlineSec=" + deadlineSec.ToString());
+
             }
-          
             if (addAuth && !string.IsNullOrEmpty(_coreComOptions.ClientToken))
             {
                 var headers = new Metadata();
                 headers.Add("Authorization", $"Bearer {_coreComOptions.ClientToken}");
                 calloptions = new CallOptions(headers);//.WithWaitForReady(true)
-                calloptions = calloptions.WithDeadline(DateTime.UtcNow.AddSeconds(deadlineSec));
+                if (!noDeadline)
+                    calloptions = calloptions.WithDeadline(DateTime.UtcNow.AddSeconds(deadlineSec));
             }
             else
             {
                 calloptions = new CallOptions();//.WithWaitForReady(true)
-                calloptions = calloptions.WithDeadline(DateTime.UtcNow.AddSeconds(deadlineSec));
+                if (!noDeadline)
+                    calloptions = calloptions.WithDeadline(DateTime.UtcNow.AddSeconds(deadlineSec));
             }
             return calloptions;
         }
@@ -273,7 +280,7 @@ namespace WallTec.CoreCom.Client
             }
         }
         
-        private async Task<bool> ProcessQueue()
+        private async Task<bool> ProcessQueue(bool noDeadline = false)
         {
             if (_workingOnQueue || _connectionStatus != ConnectionStatusEnum.Connected)
                 return true;
@@ -293,7 +300,7 @@ namespace WallTec.CoreCom.Client
                         {
                             item.ClientId = _coreComOptions.ClientId.ToString();
                             LogEventOccurred(dbContext, item);
-                            using var streamingCall = _coreComClient.SubscribeServerToClientAuth(item, GetCallOptions(false, item.SendAuth));
+                            using var streamingCall = _coreComClient.SubscribeServerToClientAuth(item, GetCallOptions(false, item.SendAuth, noDeadline));
 
                             //Now the outgoing messages is sent
                             await foreach (var returnMessage in streamingCall.ResponseStream.ReadAllAsync().ConfigureAwait(false))
@@ -312,7 +319,7 @@ namespace WallTec.CoreCom.Client
                         {
                             item.ClientId = _coreComOptions.ClientId.ToString();
                             LogEventOccurred(dbContext, item);
-                            using var streamingCall = _coreComClient.SubscribeServerToClient(item, GetCallOptions(false, item.SendAuth));
+                            using var streamingCall = _coreComClient.SubscribeServerToClient(item, GetCallOptions(false, item.SendAuth, noDeadline));
 
                             //Now the outgoing messages is sent
                             await foreach (var returnMessage in streamingCall.ResponseStream.ReadAllAsync().ConfigureAwait(false))
@@ -381,7 +388,7 @@ namespace WallTec.CoreCom.Client
 
             return true;
         }
-        private async Task<bool> SendInternalAsync(object outgoingObject, string messageSignature, bool sendAuth)
+        private async Task<bool> SendInternalAsync(object outgoingObject, string messageSignature, bool sendAuth, bool noDeadline)
         {
             string jsonObject = string.Empty;
             CoreComMessage coreComMessage;
@@ -415,7 +422,7 @@ namespace WallTec.CoreCom.Client
                 }
 
 
-                await ProcessQueue().ConfigureAwait(false);
+                await ProcessQueue(noDeadline).ConfigureAwait(false);
             }
             catch (Exception ex)
             {

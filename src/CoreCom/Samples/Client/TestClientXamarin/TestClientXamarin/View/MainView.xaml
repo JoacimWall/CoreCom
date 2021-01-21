@@ -1,0 +1,61 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<view:BaseContentPage  xmlns:view="clr-namespace:TestClientXamarin.View"
+             xmlns="http://xamarin.com/schemas/2014/forms"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:d="http://xamarin.com/schemas/2014/forms/design"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:viewmodel="clr-namespace:TestClientXamarin.ViewModel"
+             Shell.NavBarIsVisible="False"  
+             mc:Ignorable="d"
+             x:Class="TestClientXamarin.View.MainView">
+    <ContentPage.BindingContext>
+        <viewmodel:MainViewModel  />
+    </ContentPage.BindingContext>
+
+
+    <Grid Style="{StaticResource pageGridStyleNoLeftRightMargin}"
+          RowDefinitions="Auto, Auto,35, 45,Auto, *,Auto,20" ColumnDefinitions="*, *,*,*">
+
+        <StackLayout Grid.ColumnSpan="4" Orientation="Horizontal" HorizontalOptions="Center">
+            <Label Text="Connection Status:" />
+            <Label Text="{Binding ServiceCoreCom.ConnectionStatus, Converter={StaticResource ConnectionStatusConverter}}" />
+        </StackLayout>
+        <Label Grid.Row="1" Grid.ColumnSpan="4" Text="{Binding ServiceCoreCom.LatestRpcException}" />
+
+        <Button Grid.Row="2" Grid.Column="0" Padding="5" Text="Check Queue" Command="{Binding  CheckQueueCommand}"  />
+        <Button Grid.Row="2" Grid.Column="1" Padding="5"  Text="Get Projects"  Command="{Binding  GetProjectsCommand}" />
+        <Button Grid.Row="2" Grid.Column="2" Padding="5"  Text="Reauthorize"  Command="{Binding  ConnectToServerCommand}"  />
+        <Button Grid.Row="2" Grid.Column="3" Padding="5"  Text="Image" Command="{Binding  PickImageCommand}"/>
+
+        <Button Grid.Row="3" Grid.Column="0"  Text="Add" Command="{Binding  AddProjectsCommand}" />
+        <Entry  Grid.Row="3" Grid.Column="1" Grid.ColumnSpan="2"  Placeholder="Project Name"  Text="{Binding AddProjectName}"  />
+        <Image  Grid.Row="3" Grid.Column="3" Source="{Binding ProjectImageSource}" HeightRequest="50" />
+
+        <Label Grid.Row="4" Grid.ColumnSpan="2" Text="Projects:" Style="{StaticResource labelStyleNormalXMedium}"/>
+        <ListView Grid.Row="5" Grid.ColumnSpan="4" HasUnevenRows="False" RowHeight="70" ItemsSource="{Binding Projects}">
+            <ListView.ItemTemplate>
+                <DataTemplate>
+                    <ViewCell>
+                        <Frame >
+                            <Grid RowDefinitions="*,Auto,Auto, *" ColumnDefinitions="Auto,*" >
+                                <Image Margin="3" Grid.Row="1" Grid.RowSpan="2" WidthRequest="70" Source="{Binding Base64Image,Converter={StaticResource Base64StringToImageSourceConverter}}"  />
+                                <Label  Grid.Row="1" Grid.Column="1" Text="{Binding Name}" FontAttributes="Bold" Style="{StaticResource labelStyleNormalSmall}"/>
+                                <Label  Grid.Row="2" Grid.Column="1" Text="{Binding Description}" VerticalOptions="Start" Style="{StaticResource labelStyleNormalSmall}"/>
+                            </Grid>
+                        </Frame>
+                    </ViewCell>
+                </DataTemplate>
+            </ListView.ItemTemplate>
+
+        </ListView>
+        <Label Grid.Row="6" Grid.ColumnSpan="2" Text="Latest log event:" HorizontalOptions="Fill" Style="{StaticResource labelStyleNormalSmall}"/>
+        <Label Grid.Row="6" Grid.Column="2" Grid.ColumnSpan="2" Text="{Binding ServiceCoreCom.LatestLogEvent.TimeStampUtc}" HorizontalOptions="End" HorizontalTextAlignment="End" Style="{StaticResource labelStyleNormalSmall}"/>
+
+        <Label Grid.Row="7" Grid.ColumnSpan="3" Text="{Binding ServiceCoreCom.LatestLogEvent.Description}" Style="{StaticResource labelStyleNormalSmall}"/>
+        <Label Grid.Row="7" Grid.Column="2" Grid.ColumnSpan="2" HorizontalTextAlignment="End"  Text="{Binding ServiceCoreCom.LatestLogEvent.MessageSize,Converter={StaticResource MessageSizeToStringConverter}}" Style="{StaticResource labelStyleNormalSmall}"/>
+
+
+
+    </Grid>
+
+</view:BaseContentPage>

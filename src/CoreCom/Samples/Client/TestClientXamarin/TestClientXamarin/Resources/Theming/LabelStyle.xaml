@@ -1,0 +1,102 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<?xaml-comp compile="true" ?>
+<ResourceDictionary xmlns="http://xamarin.com/schemas/2014/forms"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml">
+
+    <ResourceDictionary.MergedDictionaries>
+        <ResourceDictionary Source="SharedStyle.xaml"/>
+    </ResourceDictionary.MergedDictionaries>
+
+
+    <!-- Sizes
+    Micro=11
+    Small=14
+    Medium=17
+    XMedium=20
+    Large=24
+    Xlarge=32
+    XXLarge=40
+    XXLarge=58-->
+    <!--             LABEL STYLES         -->
+    <!--Base for all label styles-->
+    <Style TargetType="Label" ApplyToDerivedTypes="True">
+        <Setter Property="HorizontalTextAlignment" Value="Start" />
+        <Setter Property="VerticalTextAlignment" Value="Center" />
+        <Setter Property="TextColor" Value="{StaticResource WhiteColor}" />
+         <Setter Property="FontSize" Value="17" />
+
+    </Style>
+
+    <Style x:Key="labelBaseStyle" TargetType="Label">
+      
+    </Style>
+    
+    <!--NormalFont-->
+    <Style x:Key="labelNormalBaseStyle" BasedOn="{StaticResource labelBaseStyle}" TargetType="Label">
+        <Setter Property="FontFamily" Value="NormalFont" />
+    </Style>
+
+    <Style x:Key="labelStyleNormalMicro" BasedOn="{StaticResource labelNormalBaseStyle}" TargetType="Label">
+        <Setter Property="FontSize" Value="11" />
+    </Style>
+    
+
+    <Style x:Key="labelStyleNormalSmall" BasedOn="{StaticResource labelNormalBaseStyle}" TargetType="Label">
+        <Setter Property="FontSize" Value="14" />
+    </Style>
+    
+
+    <Style x:Key="labelStyleNormalMedium" BasedOn="{StaticResource labelNormalBaseStyle}" TargetType="Label">
+        <Setter Property="FontSize" Value="17" />
+    </Style>
+   
+    <Style x:Key="labelStyleNormalXMedium" BasedOn="{StaticResource labelNormalBaseStyle}" TargetType="Label">
+        <Setter Property="FontSize" Value="20" />
+    </Style>
+     <Style x:Key="labelStyleNormalLarge" BasedOn="{StaticResource labelNormalBaseStyle}" TargetType="Label">
+        <Setter Property="FontSize" Value="24" />
+    </Style>
+    <!--IconFont-->
+    
+  
+
+    <Style x:Key="labelIconBaseStyle" TargetType="Label">
+        <Setter Property="HorizontalOptions" Value="Center" />
+        <Setter Property="VerticalOptions" Value="Center" />
+        <Setter Property="HorizontalTextAlignment" Value="Center" />
+        <Setter Property="VerticalTextAlignment" Value="Center" />
+        <Setter Property="FontFamily" Value="AwesomeRegular" />
+        <Setter Property="TextColor" Value="{StaticResource WhiteColor}" />
+    </Style>
+
+    <Style x:Key="LabelStyleIconFontMicro" BasedOn="{StaticResource labelIconBaseStyle}" TargetType="Label">
+        <Setter Property="FontSize" Value="11" />
+    </Style>
+    
+    <Style x:Key="LabelStyleIconFontSmall" BasedOn="{StaticResource labelIconBaseStyle}" TargetType="Label">
+        <Setter Property="FontSize" Value="14" />
+    </Style>
+    
+    <Style x:Key="LabelStyleIconFontMedium" BasedOn="{StaticResource labelIconBaseStyle}" TargetType="Label">
+        <Setter Property="FontSize" Value="20" />
+    </Style>
+    
+
+    <Style x:Key="LabelStyleIconFontLarge" BasedOn="{StaticResource labelIconBaseStyle}" TargetType="Label">
+        <Setter Property="FontSize" Value="24" />
+    </Style>
+    
+     <Style x:Key="LabelStyleIconFontXLarge" BasedOn="{StaticResource labelIconBaseStyle}" TargetType="Label">
+        <Setter Property="FontSize" Value="32" />
+    </Style>
+     <Style x:Key="LabelStyleIconFontXXLarge" BasedOn="{StaticResource labelIconBaseStyle}" TargetType="Label">
+        <Setter Property="FontSize" Value="40" />
+    </Style>
+    
+    <Style x:Key="LabelStyleIconFontXXXLarge" BasedOn="{StaticResource labelIconBaseStyle}" TargetType="Label">
+        <Setter Property="FontSize" Value="50" />
+    </Style>
+
+
+  
+</ResourceDictionary>
