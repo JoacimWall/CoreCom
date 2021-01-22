@@ -10,7 +10,7 @@
     <ReleaseVersion>1.0.1</ReleaseVersion>
     <SynchReleaseVersion>false</SynchReleaseVersion>
     <PackageId>WallTec.CoreCom.Server</PackageId>
-    <PackageVersion>1.0.0-alpha</PackageVersion>
+    <PackageVersion>1.0.1-alpha</PackageVersion>
     <Copyright>Walltec</Copyright>
     <Owners>Walltec</Owners>
     <PackageTags>gRPC, Xamarin,Message Queue,Offline support</PackageTags>

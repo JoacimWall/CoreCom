@@ -10,7 +10,7 @@
     <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
     <Product>CoreCom</Product>
     <PackageId>WallTec.CoreCom.Client</PackageId>
-    <PackageVersion>1.0.0-alpha</PackageVersion>
+    <PackageVersion>1.0.1-alpha</PackageVersion>
     <Copyright>Walltec</Copyright>
     <PackageIconUrl>https://github.com/JoacimWall/CoreCom/blob/main/CoreCom.png</PackageIconUrl>
     <PackageLicenseUrl>https://github.com/JoacimWall/CoreCom/blob/main/LICENSE</PackageLicenseUrl>
