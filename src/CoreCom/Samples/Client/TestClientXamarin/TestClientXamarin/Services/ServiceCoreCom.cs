@@ -5,8 +5,7 @@ using System.Web;
 using Grpc.Core;
 using WallTec.CoreCom.Client;
 using WallTec.CoreCom.Client.Models;
-using WallTec.CoreCom.Sheard;
-using WallTec.CoreCom.Sheard.Models;
+using WallTec.CoreCom.Models;
 using Xamarin.Forms;
 
 namespace TestClientXamarin.Services
@@ -14,7 +13,7 @@ namespace TestClientXamarin.Services
 
     public class ServiceCoreCom : MvvmHelpers.ObservableObject
     {
-        public CoreComClient CoreComClient = new CoreComClient();
+        public  CoreComClient CoreComClient = new CoreComClient();
         private CoreComOptions _coreComOptions;
         
         public ServiceCoreCom()

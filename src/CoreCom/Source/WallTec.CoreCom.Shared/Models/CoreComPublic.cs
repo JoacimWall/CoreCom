@@ -1,5 +1,5 @@
-﻿using System;
-namespace WallTec.CoreCom.Sheard
+﻿
+namespace WallTec.CoreCom.Models
 {
     
     public enum TransferStatusEnum : byte

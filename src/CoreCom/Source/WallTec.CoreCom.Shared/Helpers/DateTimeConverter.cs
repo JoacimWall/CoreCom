@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Globalization;
 
-namespace WallTec.CoreCom.Sheard.Helpers
+namespace WallTec.CoreCom.Shared.Helpers
 {
     public static class DateTimeConverter
     {

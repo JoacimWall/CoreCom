@@ -1,7 +1,7 @@
 ﻿using System;
 using System.ComponentModel.DataAnnotations;
 
-namespace WallTec.CoreCom.Sheard.Models
+namespace WallTec.CoreCom.Models
 {
    internal class TransferStatus
     {

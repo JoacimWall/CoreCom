@@ -1,5 +1,7 @@
 ﻿using System;
-namespace WallTec.CoreCom.Sheard.Models
+using WallTec.CoreCom.Models;
+
+namespace WallTec.CoreCom.Models
 {
     public class LogEvent
     {

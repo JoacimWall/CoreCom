@@ -1,8 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using WallTec.CoreCom.Sheard;
-using WallTec.CoreCom.Sheard.Models;
+﻿
+using WallTec.CoreCom.Models;
 
 namespace WallTec.CoreCom.Client.Models
 {

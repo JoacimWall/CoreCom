@@ -39,10 +39,10 @@
     <Folder Include="Helpers\" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\..\..\Source\WallTec.CoreCom.Client\WallTec.CoreCom.Client.csproj" />
+    <EmbeddedResource Include="Resources\Fonts\Awesome_5_Free_Regular_400.otf" />
   </ItemGroup>
   <ItemGroup>
-    <EmbeddedResource Include="Resources\Fonts\Awesome_5_Free_Regular_400.otf" />
+    <ProjectReference Include="..\..\..\..\Source\WallTec.CoreCom.Client\WallTec.CoreCom.Client.csproj" />
   </ItemGroup>
   <Import Project="..\..\..\Shared\WallTec.CoreCom.Example.Shared\WallTec.CoreCom.Example.Shared.projitems" Label="Shared" />
 </Project>

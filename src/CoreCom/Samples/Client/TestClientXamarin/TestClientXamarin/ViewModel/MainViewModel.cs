@@ -7,7 +7,7 @@ using System.Windows.Input;
 using TestClientXamarin.Services;
 using WallTec.CoreCom.Example.Shared;
 using WallTec.CoreCom.Example.Shared.Entitys;
-using WallTec.CoreCom.Sheard.Models;
+using WallTec.CoreCom.Models;
 using Xamarin.Essentials;
 using Xamarin.Forms;
 
@@ -28,7 +28,7 @@ namespace TestClientXamarin.ViewModel
         private async Task ConnectCommandAsync()
         {
             ServiceCoreCom.LatestRpcException = string.Empty;
-            if (App.ServiceCoreCom.ConnectionStatus != WallTec.CoreCom.Sheard.ConnectionStatusEnum.Connected)
+            if (App.ServiceCoreCom.ConnectionStatus != ConnectionStatusEnum.Connected)
             {
                 await App.ServiceCoreCom.ConnectCoreComServer();
             }

@@ -31,5 +31,5 @@
   </ItemGroup>
 
 
-  <Import Project="..\WallTec.CoreCom.Sheard\WallTec.CoreCom.Sheard.projitems" Label="Shared" />
+  <Import Project="..\WallTec.CoreCom.Shared\WallTec.CoreCom.Shared.projitems" Label="Shared" />
 </Project>

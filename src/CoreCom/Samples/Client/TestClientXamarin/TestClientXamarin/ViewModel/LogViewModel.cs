@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.ObjectModel;
 using MvvmHelpers;
-using WallTec.CoreCom.Sheard.Models;
+using WallTec.CoreCom.Models;
 
 namespace TestClientXamarin.ViewModel
 {

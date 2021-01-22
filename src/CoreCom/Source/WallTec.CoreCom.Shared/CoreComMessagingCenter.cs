@@ -2,9 +2,9 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
-using WallTec.CoreCom.Sheard.Models;
+using WallTec.CoreCom.Models;
 
-namespace WallTec.CoreCom.Sheard
+namespace WallTec.CoreCom.Shared
 {
     internal interface ICoreComMessagingCenter
     {

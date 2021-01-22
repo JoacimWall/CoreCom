@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Globalization;
-using WallTec.CoreCom.Sheard;
+using WallTec.CoreCom.Models;
 using Xamarin.Forms;
 
 namespace TestClientXamarin.Converters

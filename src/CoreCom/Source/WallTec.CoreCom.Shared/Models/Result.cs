@@ -1,5 +1,5 @@
 ﻿
-namespace WallTec.CoreCom.Sheard.Models
+namespace WallTec.CoreCom.Models
 {
     public class Result<T>
     {

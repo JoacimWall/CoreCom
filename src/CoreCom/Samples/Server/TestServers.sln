@@ -11,14 +11,14 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "WallTec.CoreCom.TestServerA
 EndProject
 Project("{D954291E-2A0B-460D-934E-DC6B0785DB48}") = "WallTec.CoreCom.Example.Shared", "..\Shared\WallTec.CoreCom.Example.Shared\WallTec.CoreCom.Example.Shared.shproj", "{A1ED5317-A967-494E-98E5-749BC982BC67}"
 EndProject
-Project("{D954291E-2A0B-460D-934E-DC6B0785DB48}") = "WallTec.CoreCom.Sheard", "..\..\Source\WallTec.CoreCom.Sheard\WallTec.CoreCom.Sheard.shproj", "{CE4B9BF9-A212-4054-89F6-537697F9FBF2}"
+Project("{D954291E-2A0B-460D-934E-DC6B0785DB48}") = "WallTec.CoreCom.Shared", "..\..\Source\WallTec.CoreCom.Shared\WallTec.CoreCom.Shared.shproj", "{CE4B9BF9-A212-4054-89F6-537697F9FBF2}"
 EndProject
 Global
 	GlobalSection(SharedMSBuildProjectFiles) = preSolution
-		..\..\Source\WallTec.CoreCom.Sheard\WallTec.CoreCom.Sheard.projitems*{1829e6b9-4245-4b9b-8003-1252e5d9b60b}*SharedItemsImports = 5
+		..\..\Source\WallTec.CoreCom.Shared\WallTec.CoreCom.Shared.projitems*{1829e6b9-4245-4b9b-8003-1252e5d9b60b}*SharedItemsImports = 5
 		..\Shared\WallTec.CoreCom.Example.Shared\WallTec.CoreCom.Example.Shared.projitems*{63246566-bca7-435a-b76f-302d4cb73ceb}*SharedItemsImports = 5
 		..\Shared\WallTec.CoreCom.Example.Shared\WallTec.CoreCom.Example.Shared.projitems*{a1ed5317-a967-494e-98e5-749bc982bc67}*SharedItemsImports = 13
-		..\..\Source\WallTec.CoreCom.Sheard\WallTec.CoreCom.Sheard.projitems*{ce4b9bf9-a212-4054-89f6-537697f9fbf2}*SharedItemsImports = 13
+		..\..\Source\WallTec.CoreCom.Shared\WallTec.CoreCom.Shared.projitems*{ce4b9bf9-a212-4054-89f6-537697f9fbf2}*SharedItemsImports = 13
 	EndGlobalSection
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU

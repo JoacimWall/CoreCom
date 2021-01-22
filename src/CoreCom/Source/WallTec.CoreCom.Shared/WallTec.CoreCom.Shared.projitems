@@ -6,11 +6,10 @@
     <SharedGUID>ce4b9bf9-a212-4054-89f6-537697f9fbf2</SharedGUID>
   </PropertyGroup>
   <PropertyGroup Label="Configuration">
-    <Import_RootNamespace>WallTec.CoreCom.Sheard</Import_RootNamespace>
+    <Import_RootNamespace>WallTec.CoreCom.Shared</Import_RootNamespace>
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="$(MSBuildThisFileDirectory)CoreComInternal.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)CoreComPublic.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Models\CoreComUserInfo.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Models\LogEvent.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Models\TransferStatus.cs" />
@@ -19,6 +18,7 @@
     <Compile Include="$(MSBuildThisFileDirectory)Helpers\DateTimeConverter.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)CoreComMessagingCenter.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Models\Result.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Models\CoreComPublic.cs" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="$(MSBuildThisFileDirectory)Helpers\" />

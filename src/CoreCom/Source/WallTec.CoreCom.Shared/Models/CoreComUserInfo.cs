@@ -1,4 +1,5 @@
-﻿namespace WallTec.CoreCom.Sheard.Models
+﻿using System;
+namespace WallTec.CoreCom.Models
 {
     public class CoreComUserInfo
     {

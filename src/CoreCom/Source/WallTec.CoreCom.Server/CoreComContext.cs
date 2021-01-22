@@ -1,6 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using WallTec.CoreCom.Proto;
-using WallTec.CoreCom.Sheard.Models;
+using WallTec.CoreCom.Models;
 
 namespace WallTec.CoreCom.Server
 {

@@ -1,12 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
+﻿
 using WallTec.CoreCom.Example.Shared.Entitys;
 using WallTec.CoreCom.Example.Shared;
 using WallTec.CoreCom.Server;
-using WallTec.CoreCom.Sheard;
-using WallTec.CoreCom.Sheard.Models;
+using WallTec.CoreCom.Models;
 
 namespace WallTec.CoreCom.TestServerAppService.Service
 {
@@ -25,7 +21,7 @@ namespace WallTec.CoreCom.TestServerAppService.Service
             _coreComService.Register<Project>(CoreComSignatures.AddProject, AddProjectsToDb,true);
         }
         
-        private async void AddProjectsToDb(Project value, CoreComUserInfo arg)
+        private async void AddProjectsToDb(Project value,CoreComUserInfo arg)
         {
             //Validate input
             if (string.IsNullOrEmpty(value.Name))

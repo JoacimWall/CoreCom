@@ -4,8 +4,8 @@ using System.Threading.Tasks;
 using WallTec.CoreCom.Client.Models;
 using WallTec.CoreCom.Example.Shared.Entitys;
 using WallTec.CoreCom.Example.Shared;
-using WallTec.CoreCom.Sheard;
-using WallTec.CoreCom.Sheard.Models;
+using WallTec.CoreCom.Shared;
+using WallTec.CoreCom.Shared.Models;
 
 namespace TestClient
 {

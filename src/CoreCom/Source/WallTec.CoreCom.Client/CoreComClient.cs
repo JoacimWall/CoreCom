@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Threading.Tasks;
 using System.Text.Json;
-using WallTec.CoreCom.Sheard;
+using WallTec.CoreCom.Shared;
 using System.Linq;
 using System.Timers;
 using WallTec.CoreCom.Client.Models;
@@ -11,7 +11,7 @@ using Grpc.Net.Client.Web;
 using System.Net.Http;
 using WallTec.CoreCom.Proto;
 using Microsoft.EntityFrameworkCore;
-using WallTec.CoreCom.Sheard.Models;
+using WallTec.CoreCom.Models;
 using System.IO;
 using Xamarin.Essentials;
 
@@ -310,7 +310,7 @@ namespace WallTec.CoreCom.Client
                             if (item.TransferStatus == (int)TransferStatusEnum.New)
                             {
                                 item.TransferStatus = (int)TransferStatusEnum.Transferred;
-                                item.TransferredUtc = Sheard.Helpers.DateTimeConverter.DateTimeUtcNow();
+                                item.TransferredUtc = Shared.Helpers.DateTimeConverter.DateTimeUtcNow();
                                 LogEventOccurred(dbContext, item);
                             }
                             streamingCall.Dispose();
@@ -329,7 +329,7 @@ namespace WallTec.CoreCom.Client
                             if (item.TransferStatus == (int)TransferStatusEnum.New)
                             {
                                 item.TransferStatus = (int)TransferStatusEnum.Transferred;
-                                item.TransferredUtc = Sheard.Helpers.DateTimeConverter.DateTimeUtcNow();
+                                item.TransferredUtc = Shared.Helpers.DateTimeConverter.DateTimeUtcNow();
                                 LogEventOccurred(dbContext, item);
                             }
                             streamingCall.Dispose();
@@ -408,7 +408,7 @@ namespace WallTec.CoreCom.Client
                 {
                     CoreComMessageId = Guid.NewGuid().ToString(),
                     TransactionIdentifier = Guid.NewGuid().ToString(),
-                    NewUtc = Sheard.Helpers.DateTimeConverter.DateTimeUtcNow(),
+                    NewUtc = Shared.Helpers.DateTimeConverter.DateTimeUtcNow(),
                     MessageSignature = messageSignature,
                     JsonObject = jsonObject,
                     SendAuth = sendAuth
@@ -436,7 +436,7 @@ namespace WallTec.CoreCom.Client
             using (var dbContext = new CoreComContext(_dbContextOptions))
             {
                 request.TransferStatus = (int)TransferStatusEnum.Recived;
-                request.RecivedUtc = Sheard.Helpers.DateTimeConverter.DateTimeUtcNow();
+                request.RecivedUtc = Shared.Helpers.DateTimeConverter.DateTimeUtcNow();
 
                 if (request.MessageSignature == CoreComInternalSignatures.CoreComInternal_PullQueue)
                 {
