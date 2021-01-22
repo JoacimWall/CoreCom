@@ -95,14 +95,21 @@ namespace WallTec.CoreCom.Server
         {
             return await SendInternalAsync(null, messageSignature, coreComUserInfo);
         }
-       
-        public void Register(string message, Action<CoreComUserInfo> callback,Boolean authorizedRequired=false)
+        public void RegisterAuth(string message, Action<CoreComUserInfo> callback)
         {
-            CoreComMessagingCenter.Subscribe(message, callback, authorizedRequired);
+            CoreComMessagingCenter.Subscribe(message, callback, true);
         }
-        public void Register<Targs>(string message, Action<Targs, CoreComUserInfo> callback, Boolean authorizedRequired = false) where Targs : class
+        public void Register(string message, Action<CoreComUserInfo> callback)
         {
-            CoreComMessagingCenter.Subscribe(message, callback, authorizedRequired);
+            CoreComMessagingCenter.Subscribe(message, callback, false);
+        }
+        public void Register<Targs>(string message, Action<Targs, CoreComUserInfo> callback) where Targs : class
+        {
+            CoreComMessagingCenter.Subscribe(message, callback, false);
+        }
+        public void RegisterAuth<Targs>(string message, Action<Targs, CoreComUserInfo> callback) where Targs : class
+        {
+            CoreComMessagingCenter.Subscribe(message, callback, true);
         }
         public void UnRegister(string message)
         {

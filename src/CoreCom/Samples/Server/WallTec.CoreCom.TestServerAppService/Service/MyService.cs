@@ -18,7 +18,7 @@ namespace WallTec.CoreCom.TestServerAppService.Service
             _coreComService.Register(CoreComSignatures.RequestAllProjects, GetAllProjectsFromDb);
             //This need that the user got token
             // _coreComService.RegisterAuth(AddProjectsToDb, CoreComSignatures.AddProject, new Project().GetType());
-            _coreComService.Register<Project>(CoreComSignatures.AddProject, AddProjectsToDb,true);
+            _coreComService.RegisterAuth<Project>(CoreComSignatures.AddProject, AddProjectsToDb);
         }
         
         private async void AddProjectsToDb(Project value,CoreComUserInfo arg)
