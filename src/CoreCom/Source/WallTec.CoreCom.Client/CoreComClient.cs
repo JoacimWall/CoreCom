@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Threading.Tasks;
 using System.Text.Json;
-using WallTec.CoreCom.Shared;
 using System.Linq;
 using System.Timers;
 using WallTec.CoreCom.Client.Models;
@@ -310,7 +309,7 @@ namespace WallTec.CoreCom.Client
                             if (item.TransferStatus == (int)TransferStatusEnum.New)
                             {
                                 item.TransferStatus = (int)TransferStatusEnum.Transferred;
-                                item.TransferredUtc = Shared.Helpers.DateTimeConverter.DateTimeUtcNow();
+                                item.TransferredUtc = Helpers.DateTimeConverter.DateTimeUtcNowToUnixTime();
                                 LogEventOccurred(dbContext, item);
                             }
                             streamingCall.Dispose();
@@ -329,7 +328,7 @@ namespace WallTec.CoreCom.Client
                             if (item.TransferStatus == (int)TransferStatusEnum.New)
                             {
                                 item.TransferStatus = (int)TransferStatusEnum.Transferred;
-                                item.TransferredUtc = Shared.Helpers.DateTimeConverter.DateTimeUtcNow();
+                                item.TransferredUtc = Helpers.DateTimeConverter.DateTimeUtcNowToUnixTime();
                                 LogEventOccurred(dbContext, item);
                             }
                             streamingCall.Dispose();
@@ -408,7 +407,7 @@ namespace WallTec.CoreCom.Client
                 {
                     CoreComMessageId = Guid.NewGuid().ToString(),
                     TransactionIdentifier = Guid.NewGuid().ToString(),
-                    NewUtc = Shared.Helpers.DateTimeConverter.DateTimeUtcNow(),
+                    NewUtc = Helpers.DateTimeConverter.DateTimeUtcNowToUnixTime(),
                     MessageSignature = messageSignature,
                     JsonObject = jsonObject,
                     SendAuth = sendAuth
@@ -436,7 +435,7 @@ namespace WallTec.CoreCom.Client
             using (var dbContext = new CoreComContext(_dbContextOptions))
             {
                 request.TransferStatus = (int)TransferStatusEnum.Recived;
-                request.RecivedUtc = Shared.Helpers.DateTimeConverter.DateTimeUtcNow();
+                request.RecivedUtc = Helpers.DateTimeConverter.DateTimeUtcNowToUnixTime();
 
                 if (request.MessageSignature == CoreComInternalSignatures.CoreComInternal_PullQueue)
                 {

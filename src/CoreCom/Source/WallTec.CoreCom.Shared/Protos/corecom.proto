@@ -45,9 +45,9 @@ message DisconnectFromServerResponse {
 message CoreComMessage {
 	string CoreComMessageId=1;
 	string ClientId = 2;
-	string NewUtc = 3;
-	string RecivedUtc = 4;
-    string TransferredUtc = 5;
+	int32 NewUtc = 3;
+	int32 RecivedUtc = 4;
+    int32 TransferredUtc = 5;
 	string TransactionIdentifier = 6;
 	string MessageSignature = 7;
 	string JsonObject =8;
@@ -58,9 +58,9 @@ message CoreComMessage {
 message CoreComMessageResponse {
 	string CoreComMessageResponseId=1;
 	string ClientId = 2;
-	string NewUtc = 3;
-	string RecivedUtc = 4;
-    string TransferredUtc = 5;
+	int32 NewUtc = 3;
+	int32 RecivedUtc = 4;
+    int32 TransferredUtc = 5;
 	string TransactionIdentifier = 6;
 	string MessageSignature = 7;
 	string JsonObject =8;

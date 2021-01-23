@@ -1,18 +1,12 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.IdentityModel.Tokens.Jwt;
-using System.Linq;
 using System.Security.Claims;
-using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Http.Features;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
 using Microsoft.IdentityModel.Tokens;
-using WallTec.CoreCom.Example.Shared.Entitys;
 using WallTec.CoreCom.Server;
 using WallTec.CoreCom.TestServerAppService.Service;
 
@@ -34,8 +28,10 @@ namespace WallTec.CoreCom.TestServerAppService
                 options.MaxSendMessageSize = null; //When set to null, the message size is unlimited.
 
             });
-            
+            //This two is needed for the CoreCom
             services.AddSingleton<CoreComService>();
+            services.AddHostedService<CoreComBackgroundService>();
+            //Your service
             services.AddSingleton<IMyService,MyService>();
             
             services.AddAuthorization(options =>

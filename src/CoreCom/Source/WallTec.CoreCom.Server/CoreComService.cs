@@ -11,8 +11,8 @@ using System.Text.Json;
 using System.Threading.Tasks;
 using WallTec.CoreCom.Proto;
 using WallTec.CoreCom.Server.Models;
-using WallTec.CoreCom.Shared;
 using WallTec.CoreCom.Models;
+using System.Globalization;
 
 namespace WallTec.CoreCom.Server
 {
@@ -42,28 +42,33 @@ namespace WallTec.CoreCom.Server
                 _coreComOptions.LogSettings.LogEventTarget = (LogEventTargetEnum)System.Enum.Parse(typeof(LogEventTargetEnum), _config["CoreCom:CoreComOptions:LogSettings:LogEventTarget"]);
                 _coreComOptions.LogSettings.LogErrorTarget = (LogErrorTargetEnum)System.Enum.Parse(typeof(LogErrorTargetEnum), _config["CoreCom:CoreComOptions:LogSettings:LogErrorTarget"]);
 
+                _coreComOptions.LogSettings.LogMessageHistoryDays = Convert.ToInt32(_config["CoreCom:CoreComOptions:LogSettings:LogMessageHistoryDays"]);
+                _coreComOptions.LogSettings.LogEventHistoryDays = Convert.ToInt32(_config["CoreCom:CoreComOptions:LogSettings:LogEventHistoryDays"]);
+                _coreComOptions.LogSettings.LogErrorHistoryDays = Convert.ToInt32(_config["CoreCom:CoreComOptions:LogSettings:LogErrorHistoryDays"]);
+
                 _coreComOptions.DatabaseMode = (DatabaseModeEnum)System.Enum.Parse(typeof(DatabaseModeEnum), _config["CoreCom:CoreComOptions:Database:DatabaseMode"]);
 
                 string connectionstring = _config["CoreCom:CoreComOptions:Database:ConnectionString"];
+                var optionsBuilder = new DbContextOptionsBuilder<CoreComContext>();
 
                 switch (_coreComOptions.DatabaseMode)
                 {
                     case DatabaseModeEnum.UseImMemory:
-                        _dbContextOptions = new DbContextOptionsBuilder<CoreComContext>()
-                        .UseInMemoryDatabase(databaseName: "CoreComDb").Options;
+                        optionsBuilder.UseInMemoryDatabase(databaseName: "CoreComDb");
                         break;
                     case DatabaseModeEnum.UseSqlite:
-                        _dbContextOptions = new DbContextOptionsBuilder<CoreComContext>()
-                        .UseSqlite(connectionstring).Options;
+                        optionsBuilder.UseSqlite(connectionstring);
+                        optionsBuilder.UseBatchEF_Sqlite();
                         break;
                     case DatabaseModeEnum.UseSqlServer:
-                        _dbContextOptions = new DbContextOptionsBuilder<CoreComContext>()
-                        .UseSqlServer(connectionstring).Options;
+                        optionsBuilder.UseSqlServer(connectionstring);
+                        optionsBuilder.UseBatchEF_MSSQL();
                         break;
                     default:
                         break;
                 }
 
+                _dbContextOptions = optionsBuilder.Options;
             }
             catch (Exception ex)
             {
@@ -213,6 +218,8 @@ namespace WallTec.CoreCom.Server
             }
             return client;
         }
+
+
         internal async virtual void LogErrorOccurred(Exception exception, CoreComMessage coreComMessage)
         {
             LogErrorOccurred(exception.Message, coreComMessage, exception);
@@ -266,6 +273,8 @@ namespace WallTec.CoreCom.Server
                 handler(this, logError);
             }
         }
+
+
         internal async virtual void LogEventOccurred(CoreComContext dbContext, CoreComMessage coreComMessage)
         {
 
@@ -439,7 +448,32 @@ namespace WallTec.CoreCom.Server
                 handler(this, logEvent);
             }
         }
+        internal async Task RemoveHistory()
+        {
+            //remove 
+            using (var dbContext = new CoreComContext(_dbContextOptions))
+            {
 
+                //var date1 = Helpers.DateTimeConverter.DateTimeUtcNowToUnixTime(DateTime.Now.AddDays(-1));
+                //Console.WriteLine(DateTime.Now.AddDays(-1).ToUniversalTime());
+
+
+                //Messages tables
+                var messagesDate = Helpers.DateTimeConverter.DateTimeUtcNowToUnixTime(DateTime.Now.AddDays(_coreComOptions.LogSettings.LogMessageHistoryDays * -1).ToUniversalTime());
+                await dbContext.DeleteRangeAsync<CoreComMessage>(b => b.RecivedUtc < messagesDate);
+                await dbContext.DeleteRangeAsync<CoreComMessageResponse>(b => b.RecivedUtc < messagesDate);
+
+                //LogEvent Table
+                var eventDate = DateTime.Now.AddDays(_coreComOptions.LogSettings.LogEventHistoryDays * -1).ToUniversalTime();
+                await dbContext.DeleteRangeAsync<LogEvent>(b => b.TimeStampUtc < eventDate);
+
+                //LogError Table
+                var errorDate = DateTime.Now.AddDays(_coreComOptions.LogSettings.LogErrorHistoryDays * -1).ToUniversalTime();
+                await dbContext.DeleteRangeAsync<LogError>(b => b.TimeStampUtc < errorDate);
+
+            }
+
+        }
         #endregion
         #region "private functions"
         private async Task SubscribeServerToClientInternal( CoreComMessage request, IServerStreamWriter<CoreComMessageResponse> responseStream, ServerCallContext context)
@@ -450,7 +484,7 @@ namespace WallTec.CoreCom.Server
                 {
                     //Add loging
                     request.TransferStatus = (int)TransferStatusEnum.Recived;
-                    request.RecivedUtc = Shared.Helpers.DateTimeConverter.DateTimeUtcNow();
+                    request.RecivedUtc = Helpers.DateTimeConverter.DateTimeUtcNowToUnixTime();
 
                     //Check if we alread has responde to this
                     if (!dbContext.IncomingMessages.Any(x => x.TransactionIdentifier == request.TransactionIdentifier))
@@ -507,7 +541,7 @@ namespace WallTec.CoreCom.Server
                             await responseStream.WriteAsync(item);
                             //update messages
                             item.TransferStatus = (int)TransferStatusEnum.Transferred;
-                            item.TransferredUtc = Shared.Helpers.DateTimeConverter.DateTimeUtcNow();
+                            item.TransferredUtc = Helpers.DateTimeConverter.DateTimeUtcNowToUnixTime();
                             LogEventOccurred(dbContext, item);
                         }
 
@@ -595,7 +629,7 @@ namespace WallTec.CoreCom.Server
                         MessageSignature = CoreComInternalSignatures.CoreComInternal_PullQueue,
                         CoreComMessageResponseId = Guid.NewGuid().ToString(),
                         ClientId = request.ClientId,
-                        NewUtc = Shared.Helpers.DateTimeConverter.DateTimeUtcNow(),
+                        NewUtc = Helpers.DateTimeConverter.DateTimeUtcNowToUnixTime(),
                         TransactionIdentifier = Guid.NewGuid().ToString()
                     };
                     LogEventOccurred(dbContext, internalMess);
@@ -686,7 +720,7 @@ namespace WallTec.CoreCom.Server
                 {
                     CoreComMessageResponseId = Guid.NewGuid().ToString(),
                     ClientId = coreComUserInfo.ClientId,
-                    NewUtc = Shared.Helpers.DateTimeConverter.DateTimeUtcNow(),
+                    NewUtc = Helpers.DateTimeConverter.DateTimeUtcNowToUnixTime(),
                     TransactionIdentifier = Guid.NewGuid().ToString(),
                     MessageSignature = messageSignature,
                     JsonObject = jsonObject

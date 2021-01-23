@@ -1,16 +1,31 @@
 ﻿using System;
 using System.Globalization;
 
-namespace WallTec.CoreCom.Shared.Helpers
+namespace WallTec.CoreCom.Helpers
 {
     public static class DateTimeConverter
     {
-        public static string DateTimeUtcNow()
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <returns></returns>
+        public static Int32 DateTimeUtcNowToUnixTime()
         {
+            
+            return  (Int32)(DateTime.UtcNow.Subtract(new DateTime(1970, 1, 1))).TotalSeconds;
+           
+        }
+        public static Int32 DateTimeUtcNowToUnixTime(DateTime dateTime)
+        {
+            return (Int32)(dateTime.Subtract(new DateTime(1970, 1, 1))).TotalSeconds;
+           
+        }
+        public static DateTime UnixTimeDateTimeUtc(Int32 unixTimeStamp)
+        {
+            System.DateTime dtDateTime = new DateTime(1970, 1, 1, 0, 0, 0, 0, System.DateTimeKind.Utc);
+            dtDateTime = dtDateTime.AddSeconds(unixTimeStamp).ToUniversalTime();
+            return dtDateTime;
 
-            // ISO8601 with 3 decimal places this used for ba albe to save fae in database from proto file
-            return  DateTime.UtcNow.ToString("yyyy-MM-dd'T'HH:mm:ss.fffK", CultureInfo.InvariantCulture);
-            //=> "2017-06-26T20:45:00.070Z"
         }
     }
 }

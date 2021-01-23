@@ -4,7 +4,7 @@ using System.Linq;
 using System.Reflection;
 using WallTec.CoreCom.Models;
 
-namespace WallTec.CoreCom.Shared
+namespace WallTec.CoreCom
 {
     internal interface ICoreComMessagingCenter
     {

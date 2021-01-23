@@ -1,4 +1,4 @@
-﻿namespace WallTec.CoreCom.Shared
+﻿namespace WallTec.CoreCom
 {
     internal static class CoreComInternalSignatures
     {
