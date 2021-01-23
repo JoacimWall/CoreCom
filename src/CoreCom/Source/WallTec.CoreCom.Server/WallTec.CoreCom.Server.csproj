@@ -10,7 +10,7 @@
     <ReleaseVersion>1.0.1</ReleaseVersion>
     <SynchReleaseVersion>false</SynchReleaseVersion>
     <PackageId>WallTec.CoreCom.Server</PackageId>
-    <PackageVersion>1.0.1-alpha</PackageVersion>
+    <PackageVersion>1.0.2-alpha</PackageVersion>
     <Copyright>Walltec</Copyright>
     <Owners>Walltec</Owners>
     <PackageTags>gRPC, Xamarin,Message Queue,Offline support</PackageTags>
@@ -19,6 +19,7 @@
     <PackageProjectUrl>https://github.com/JoacimWall/CoreCom</PackageProjectUrl>
     <Summary>CoreCom gRPC and Messsage Queue</Summary>
     <Title>CoreCom</Title>
+    <PackageReleaseNotes>Change logtime to Unix Time integer and added settings for remove history</PackageReleaseNotes>
   </PropertyGroup>
 
   <ItemGroup>
