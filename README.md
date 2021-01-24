@@ -377,7 +377,8 @@ The server use a Entity Framework Core connected database to store/handle messag
 ## LogSettings
 Loggsettings is the rull of how and if you would like to logincoming and outgoing messages, Events and Erros. There is also possible to listen to events for this. 
 
-### LogMessageTarget
+### LogMessageTarget  
+
 #### Database
 The server log all messages to the Entity Framework Core connected database. You should not use this if you have Queue in memory mode. The tables are named OutgoingMessages and IncommingMessages. If you use this setting the framework will use a sqllite database.   
 
@@ -425,7 +426,7 @@ You can use standard ASP.net web token to validate that the client is Authorize 
 
 ## DatabaseMode 
 The server support in Memory database, Sqlite and SQL server. 
-To browse the database if you chose sqlite use sqlite viewer https://sqlitebrowser.org/dl/ The db file shoud be in your AppService folder 
+To browse the database if you chose sqlite use sqlite viewer https://sqlitebrowser.org/dl/ The db file should be in your AppService folder 
 
 ### UseImMemory
 The server use a Entity Framework Core in memory database. All current clients and messages is stored in the memory and when a client has received its message the message is removed from the memory. If you restart the server alla outgoing queues is removed.  
@@ -435,14 +436,15 @@ The server use a Entity Framework Core connected database to store/handle messag
 
 in this case you also need to set the connectionstring options in appsettings.json file.
 
-LogMessageTarget
+## LogMessageTarget  
+
 #### Database
 The server log all messages to the Entity Framework Core connected database. You should not use this if you have Queue in memory mode. The tables are named OutgoingMessages and IncommingMessages. If you use this setting the framework will use a sqllite database.   
 
-#### Message logging to file
+#### TextFile
 The server log all messages to the files IncommingMessages.log and utgoningMessages.log that are stored in the app folder. In this case the messageobject is parsed as json in the logfile.
 
-#### No message Logging 
+#### NoLoging 
 We do no logging of messages.
 
 ### LogEventTarget
