@@ -12,37 +12,89 @@ Detailed logging can be turned on. All transactions are written to the database 
 # Client
 Client side use gRPC-Web as framework to handle communication between clients and server. The client can run in different modes depending on the need for logging and offline support. 
 
+## Instructions
+Project support .Net Core 5.0 or .NetStandard 2.1  
+
+Step 1, Install NuGet Package:  
+WallTec.CoreCom.Client in the .NetSandrad or 5.0 project.    
+
+Step 2: Declare a client, connection options and setup-function.  
+For more information about the diffrent settings read documentation below.   
+```csharp
+public  CoreComClient CoreComClient = new CoreComClient();
+private CoreComOptions _coreComOptions;
+
+public bool SetupCoreComServer()
+{
+    _coreComOptions = new CoreComOptions
+    {   //debug on android emulator
+        ServerAddress = (Device.RuntimePlatform == Device.Android ? "https://10.0.2.2:5001" : "https://localhost:5001"),
+        DatabaseMode = DatabaseModeEnum.UseImMemory,
+        GrpcOptions = new GrpcOptions
+        {
+            RequestServerQueueIntervalSec = 30,
+            MessageDeadlineSec = 30
+        },
+        LogSettings = new LogSettings
+        {
+            LogErrorTarget = LogErrorTargetEnum.NoLoging,
+            LogEventTarget = LogEventTargetEnum.NoLoging,
+            LogMessageTarget = LogMessageTargetEnum.NoLoging
+        }
+    };
+//Debug local on mac where the server is running in "Kestrel": { "EndpointDefaults": { "Protocols": "Http1"  }  }
+#if DEBUG
+      _coreComOptions.DangerousAcceptAnyServerCertificateValidator = true;
+#endif
+  return true;
+}
+ ```       
+
+## DatabaseMode
+
 ### Queue in memory mode
 The server use a Entity Framework Core in momory database. All current messages is stored in the memory and when a client has sent its message to the server it's removed from the memory. If you restart the app alla outgoing queues is removed.
 
-### Queue in databas mode (in development)
+### Queue in databas mode 
 The server use a Entity Framework Core connected database to store/handle messages queue. In this mode the server keep a database row for all messages that goes in and out from the server. We only store messages that are in progress when the are deliverd the are removed. To keep all transactions in the database select the logging setting "Logging to database". The database that are use in this senario is SQLite database. 
 
-## Message logging
-Message logging is the rull of how and if you would like to save alla incoming and outgoing messages.
+## LogSettings
+Loggsettings is the rull of how and if you would like to logincoming and outgoing messages, Events and Erros. There is also possible to listen to events for this. 
 
-### Message logging to database
-The server log all messages to the Entity Framework Core connected database. You should not use this if you have Queue in memory mode. The tables are named OutgoingMessages and IncommingMessages.  
+### LogMessageTarget
+#### Database
+The server log all messages to the Entity Framework Core connected database. You should not use this if you have Queue in memory mode. The tables are named OutgoingMessages and IncommingMessages. If you use this setting the framework will use a sqllite database.   
 
-### Message logging to file
-The server log all messages to the files IncommingMessages.log and utgoningMessages.log that are stored in the app folder. in this case the messageobject is parsed as json in the logfile.
+#### Message logging to file
+The server log all messages to the files IncommingMessages.log and utgoningMessages.log that are stored in the app folder. In this case the messageobject is parsed as json in the logfile.
 
-### No message Logging 
+#### No message Logging 
 We do no logging of messages.
 
-## Event logging
+### LogEventTarget
 Event logging is the rull of how and if you would like to save loggs of all transactions of messages and connection changes. The table EventLogs store this information if you target database and if you target file it will be named EventLogs.log 
 
-### Event logging to database
+#### Event logging to database
 The server log all transaction to the Entity Framework Core connected database. You should not use this if you have Queue in memory mode. Just the typ of message and size will be logged not the containing object.  
 
-### Event logging to file
+#### Event logging to file
 The server log all messages to the files EventLogs.log that are stored in the app folder. 
 
-### No Event logging 
+#### No Event logging 
 We do no logging of events.
 
-## automatically increase deadline time on timeout messages (in development)
+### LogErrorTarget
+Error logging is the rull of how and if you would like to save loggs of all handled errors in the framework. The table ErrorLogs store this information if you target database and if you target file it will be named ErrorLogs.log 
+
+#### Error logging to database
+The server log all errors to the Entity Framework Core connected database. You should not use this if you have Queue in memory mode. Just the typ of message and size will be logged not the containing object.  
+
+#### Error logging to file
+The server log all errors to the files errosLogs.log that are stored in the app folder. 
+
+#### No Error logging 
+We do no logging of erros.
+
 
 # Server
 Server side use gRPC-Web as framework to handle communication between server and clients. The server can run in different modes depending on the need for logging and offline support. 
