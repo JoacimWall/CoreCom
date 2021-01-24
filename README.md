@@ -13,7 +13,8 @@ Detailed logging can be turned on. All transactions are written to the database 
 ## Instructions server implementation
 Project support .Net Core 5.0 or .NetCore 3.1  
 
-Step 1, Install NuGet Package:  
+Step 1,Create gRPC service project and Install NuGet Package: 
+Select the template gRPC Service and create then add 
 WallTec.CoreCom.Server in the .Net Core 5.0 or .NetCore 3.1 project.    
 
 Step 2: Add the settings sections into the Appsettings.json file  
@@ -199,7 +200,8 @@ public class Startup
 ## Instructions setup client
 Project support .Net Core 5.0 or .NetStandard 2.1  
 
-Step 1, Install NuGet Package:  
+Step 1, create Xamarin Forms App and Install NuGet Package:  
+Select the Xamarin Forms Template and then target .NetStandard 2.1 in the shared project.  
 WallTec.CoreCom.Client in the .NetSandrad or 5.0 project.    
 
 Step 2: Declare a client, connection options and setup-function.  
@@ -409,6 +411,8 @@ The server log all errors to the files errosLogs.log that are stored in the app 
 #### No Error logging 
 We do no logging of erros.
 
+### LogXxxxHistoryDays
+LogMessageHistoryDays, LogEventHistoryDays,LogErrorHistoryDays property is used to clean database table from old rows. the default property for this is 7 days.  
 
 # Server
 Server side use gRPC-Web as framework to handle communication between server and clients. The server can run in different modes depending on the need for logging and offline support. 
@@ -464,6 +468,9 @@ The server log all errors to the files errosLogs.log that are stored in the app 
 
 #### No Error logging 
 We do no logging of erros.
+
+### LogXxxxHistoryDays
+LogMessageHistoryDays, LogEventHistoryDays,LogErrorHistoryDays property is used to clean database table from old rows. the default property for this is 7 days.  
 
 
 # Sample code
