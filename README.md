@@ -1,14 +1,14 @@
 # CoreCom
-Framework for wrapping gRPC to be used in project that targets .Net standard (Xamarin) on the client side and .Net Core on server side.
+Framework for wrapping gRPC to be used in project that targets .Net standard (Xamarin) or NetCore 5.0 on the client side and .Net Core 50 or 3.1 on server side.
 To use this please use the nuget's WallTec.CoreCom.Client and WallTec.CoreCom.Server throw nuget manager in Visual studio. The solution build on top of grpc-web and are able to be hosted in azure or any other hosting that support ASP.NET Core. 
 
-The framework wrapping the Proto files and gRPC logic so the client only register functions that listen to diffrent messages on the server and client side. Please view the sample more information.       
+The framework wrapping the Proto files and gRPC logic so the client only register functions that listen to diffrent messages on the server and client side. Please view the sample for more information.       
 
 ### Offline suport
-The framework takes care of any connection or transmission errors and queues them to make a new transmission when connection is restored.
+The framework takes care of any connection or transmission errors and queues them to make a new transmission when connection is restored.  
+
 ### Detailed logging
 Detailed logging can be turned on. All transactions are written to the database or text file.
-
 
 ## Instructions server implementation
 Project support .Net Core 5.0 or .NetCore 3.1  
@@ -16,7 +16,7 @@ Project support .Net Core 5.0 or .NetCore 3.1
 Step 1, Install NuGet Package:  
 WallTec.CoreCom.Server in the .Net Core 5.0 or .NetCore 3.1 project.    
 
-Step 2: Add the settings sections into the Appsettings.  
+Step 2: Add the settings sections into the Appsettings.json file  
 If you are going to debug this on a Mac please add the section Kestrel to the appsettings.Development.json
 and change the the "Protocols": "Http1"
 For more information about the diffrent settings read documentation below or view the sample code. 
@@ -49,7 +49,7 @@ For more information about the diffrent settings read documentation below or vie
 }
 ``` 
 Step 3: Create a service to handle the CoreCom implementation.  
-For mer info regarding the jwtoken implementation that is used in the RegisterAuth functions se the sample code. 
+ 
 ```csharp
 interface IMyService
 {
@@ -232,12 +232,79 @@ public bool SetupCoreComServer()
 #endif
   return true;
 }
+//This is needed if you would like to use jwt tooken for validate users
+public async Task<bool> Authenticate(string username, string password)
+{
+    try
+    {
+       App.ConsoleWriteLineDebug($"Authenticating as {username}...");
+        var httpClientHandler = new HttpClientHandler();
+        //this is so you can debug on mac and emulator the server has "EndpointDefaults": { "Protocols": "Http1"
+        // Return `true` to allow certificates that are untrusted/invalid
+        if (_coreComOptions.DangerousAcceptAnyServerCertificateValidator)
+            httpClientHandler.ServerCertificateCustomValidationCallback = HttpClientHandler.DangerousAcceptAnyServerCertificateValidator;
 
-// Connect to the server for example in a service class or from your App.xaml.cs 
+        var httpClient = new HttpClient(httpClientHandler);
+
+        var request = new HttpRequestMessage
+        {
+            RequestUri = new Uri($"{_coreComOptions.ServerAddress}/generateJwtToken?username={HttpUtility.UrlEncode(username)}&password=    {HttpUtility.UrlEncode(password)}"),
+            Method = HttpMethod.Get,
+            Version = new Version(2, 0),
+
+        };
+        var tokenResponse = await httpClient.SendAsync(request);
+        tokenResponse.EnsureSuccessStatusCode();
+
+        var token = await tokenResponse.Content.ReadAsStringAsync();
+        App.ConsoleWriteLineDebug("Successfully authenticated.");
+        string[] values = token.Split("|");
+
+        _coreComOptions.ClientToken = values[0];
+        _coreComOptions.ClientId = values[1];
+
+        return true;
+    }
+    catch (Exception ex)
+    {
+        await App.Current.MainPage.DisplayAlert("CoreCom", ex.Message + " Press Reauthorize try again", "Ok");
+        return false;
+    }
+}
+
+public async Task<bool> ConnectCoreComServer()
+{
+    //This is anly needed if you want to use the validate/login users on the server side
+    #region "Authentication with backen token and clientId from database"
+    //coreComOptions.ClientId and coreComOptions.ClientToken is set inside the Authenticate method
+    string username = (Device.RuntimePlatform == Device.Android ? "demoDroid" : "demoIos"); //simulate diffrent user
+    var token = await Authenticate(username, "1234").ConfigureAwait(false);
+    if (!token)
+        return false;
+    #endregion
+
+    #region "No Authentication"
+    //Cross-Platform Identifier for the app stay the same as long the app is installed
+    //in this senario all backend API is public and the server use guid below to seperate diffrent users requests
+    //var id = Preferences.Get("my_id", string.Empty);
+    //if (string.IsNullOrWhiteSpace(id))
+    //{
+    //    id = System.Guid.NewGuid().ToString();
+    //    Preferences.Set("my_id", id);
+    //}
+    //coreComOptions.ClientId = id;
+    #endregion
+
+    CoreComClient.Connect(_coreComOptions);
+
+    return true;
+}
+
+// Setup the server for example in a service class or from your App.xaml.cs 
 protected async override void OnStart()
 {
     SetupCoreComServer();
-    await ServiceCoreCom.ConnectCoreComServer();
+    await ConnectCoreComServer();
 }
 ```       
 Step 3: Register function for incoming messages.   
