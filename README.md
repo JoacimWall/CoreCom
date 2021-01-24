@@ -163,24 +163,239 @@ sqlite viewer https://sqlitebrowser.org/dl/
 
 Scenarios of user verifications can be built outside the framework and thus were independent of the framework. After verifying users, the framework is provided with a client ID which is then used to verify the user between client and server.
 
-## JSON Web Token support 
+### JSON Web Token support 
 You can use standard ASP.net web token to validate that the client is Authorize to send messages to the server. In this senario you able to have both public API and API that require Authorize by valid token. You only set this token once then the framwark handle when to add it or not to the request to server. 
 
-## Different server modes 
+## Instructions
+Project support .Net Core 5.0 or .NetCore 3.1  
 
-### Queue in memory mode
-The server use a Entity Framework Core in momory database. All current clients and messages is stored in the memory and when a client has received its message the message is removed from the memory. If you restart the server alla outgoing queues is removed.
-### Queue in databas mode
-The server use a Entity Framework Core connected database to store/handle messages queue. In this mode the server keep a database row for all messages that goes in and out from the server. We only store messages that are in progress when the are deliverd the are removed. to keep all transactions in the database select the logging setting "Logging to database" 
+Step 1, Install NuGet Package:  
+WallTec.CoreCom.Server in the .Net Core 5.0 or .NetCore 3.1 project.    
 
-### Logging to database
-The server log all messages to the Entity Framework Core connected database. You should not use this if you have Queue in memory mode.
+Step 2: Add the settings sections into the Appsettings.  
+If you are going to debug this on a Mac please add the section Kestrel to the appsettings.Development.json
+and change the the "Protocols": "Http1"
+For more information about the diffrent settings read documentation below or view the sample code. 
+```csharp
+{
+  .....
+  },
+  "AllowedHosts": "*",
+  "Kestrel": {
+    "EndpointDefaults": {
+      "Protocols": "Http2"
+  }
+  },
+  "CoreCom": {
+    "CoreComOptions": {
+      "LogSettings": {
+        "LogMessageTarget": "Database",
+        "LogMessageHistoryDays": "10",
+        "LogEventTarget": "NoLoging",
+        "LogEventHistoryDays": "10",
+        "LogErrorTarget": "NoLoging",
+        "LogErrorHistoryDays": "10"
+      },
+      "Database": {
+        "DatabaseMode": "UseSqlite",
+        "ConnectionString": "Data Source=CoreComDb.db"
+      }
+    }
+  } 
+}
+``` 
+Step 3: Create a service to handle the CoreCom implementation.  
+For mer info regarding the jwtoken implementation that is used in the RegisterAuth functions se the sample code. 
+```csharp
+interface IMyService
+{
+}
+public class MyService : IMyService
+{
+    private CoreComService _coreComService;
+    private List<Projecs> _fakeDb = new List<Projecs>;
+    public MyService(CoreComService coreComService)
+    {
+        _coreComService = coreComService;
+        //This public
+        _coreComService.Register(CoreComSignatures.RequestAllProjects, GetAllProjectsFromDb);
+        //This need that the have a token
+        _coreComService.RegisterAuth<Project>(CoreComSignatures.AddProject, AddProjectsToDb);
+        _coreComService.RegisterAuth<Project>(CoreComSignatures.DeleteProject, DeleteProject);
+    }    
+    
+    private async void AddProjectsToDb(Project value,CoreComUserInfo arg)
+    {
+        //Validate input
+        if (string.IsNullOrEmpty(value.Name))
+        {
+            var error = new Result<Project>("The project need a name");
+            await _coreComService.SendAsync(error, CoreComSignatures.AddProject, arg);
+            return;
+        }
+        _fakeDb.Add(value );
+        //send the new projet to all client that are connected 
+        foreach (var item in _coreComService.Clients)
+        {
+            await _coreComService.SendAsync(value, CoreComSignatures.AddProject, new CoreComUserInfo { ClientId = item.CoreComUserInfo.ClientId });
+        }
 
-### Logging all transations to file
-The server log all messages to IncommingMessages.log and utgoningMessages.log
+     }
+     private async void GetAllProjectsFromDb(CoreComUserInfo coreComUserInfo)
+    {
+        await _coreComService.SendAsync(_fakeDb, CoreComSignatures.ResponseAllProjects, coreComUserInfo);
+     }
+}       
+``` 
+Step 4: Modify the Startup.cs   
+```csharp
+public class Startup
+{
+    //This two lines is if you would like to AddAuthorization
+    private readonly JwtSecurityTokenHandler JwtTokenHandler = new JwtSecurityTokenHandler();
+    private readonly SymmetricSecurityKey SecurityKey = new SymmetricSecurityKey(Guid.NewGuid().ToByteArray());
+    
+    public void ConfigureServices(IServiceCollection services)
+    {   //this so you would be able to send large messags like images and more.
+        services.AddGrpc(options => 
+        {
+            options.EnableDetailedErrors = true;
+            options.MaxReceiveMessageSize = null; //When set to null, the message size is unlimited. or 2 * 1024 * 1024; // 2 MB
+            options.MaxSendMessageSize = null; //When set to null, the message size is unlimited.
+        });
+            
+         //This two is needed for the CoreCom
+        services.AddSingleton<CoreComService>();
+        services.AddHostedService<CoreComBackgroundService>();
+        //Your service
+        services.AddSingleton<IMyService,MyService>();
 
-### No Logging 
-We do no logging.
+        //This is if you would like to AddAuthorization
+        services.AddAuthorization(options =>
+        {
+            options.AddPolicy(JwtBearerDefaults.AuthenticationScheme, policy =>
+            {
+                policy.AddAuthenticationSchemes(JwtBearerDefaults.AuthenticationScheme);
+                policy.RequireClaim(ClaimTypes.Name);
+            });
+        });
+        //This is if you would like to AddAuthorization
+        services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+            .AddJwtBearer(options =>
+            {
+                options.TokenValidationParameters =
+                    new TokenValidationParameters
+                    {
+                        ValidateAudience = false,
+                        ValidateIssuer = false,
+                        ValidateActor = false,
+                        ValidateLifetime = true,
+                        IssuerSigningKey = SecurityKey
+                    };
+            });
+        }
+    }
+    
+    public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
+    {
+        //Warm it up to register handlers 
+        app.ApplicationServices.GetService<IMyService>();
+
+        app.UseRouting();
+        //This two lines is if you would like to AddAuthorization
+        app.UseAuthentication();
+        app.UseAuthorization();
+        
+        //This is for the gRPC framwork to work  
+        app.UseGrpcWeb();
+
+
+        app.UseEndpoints(endpoints =>
+        {
+            //Register the CoreCom framework 
+            endpoints.MapGrpcService<CoreComService>().EnableGrpcWeb();
+            
+            //This  if you would like to AddAuthorization
+            endpoints.MapGet("/generateJwtToken", context =>
+            {
+                return context.Response.WriteAsync(GenerateJwtToken(context.Request.Query["username"], context.Request.Query["password"]));
+            });
+        });
+    }
+    //Demo of a simple jwtToken implementation
+    private String GenerateJwtToken(string username, string password)
+    {
+        string clientId_From_Db;
+        if (string.IsNullOrEmpty(username) || string.IsNullOrEmpty(password))
+        {
+            throw new InvalidOperationException("Name or password is not specified.");
+        }
+
+        if ((username != "demoIos" || username != "demoDroid") && password != "1234")
+        {
+            throw new InvalidOperationException("Name or password is not specified.");
+        }
+        else
+        {
+            if (username != "demoIos")
+                clientId_From_Db = "Ios_clientid";
+            else
+                clientId_From_Db = "Droid_clientid";
+        }
+        var claims = new[] { new Claim(ClaimTypes.Name, username), new Claim("ClientId", clientId_From_Db) };
+        var credentials = new SigningCredentials(SecurityKey, SecurityAlgorithms.HmacSha256);
+        var token = new JwtSecurityToken("ExampleServer", "ExampleClients", claims, expires: DateTime.Now.AddMinutes(60), signingCredentials: credentials);
+        return String.Format("{0}|{1}", JwtTokenHandler.WriteToken(token), clientId_From_Db);
+
+    }
+    
+}
+``` 
+
+## DatabaseMode 
+The server support in Memory database, Sqlite and SQL server.  
+
+### UseImMemory
+The server use a Entity Framework Core in memory database. All current clients and messages is stored in the memory and when a client has received its message the message is removed from the memory. If you restart the server alla outgoing queues is removed.  
+
+### UseSqlite and UseSqlServer
+The server use a Entity Framework Core connected database to store/handle messages queue. In this mode the server keep a database row for all messages that goes in and out from the server. We only store messages that are in progress when the are deliverd the are removed. to keep all transactions in the database select the logging setting "Logging to database"   
+
+in this case you also need to set the connectionstring options in appsettings.json file.
+
+LogMessageTarget
+#### Database
+The server log all messages to the Entity Framework Core connected database. You should not use this if you have Queue in memory mode. The tables are named OutgoingMessages and IncommingMessages. If you use this setting the framework will use a sqllite database.   
+
+#### Message logging to file
+The server log all messages to the files IncommingMessages.log and utgoningMessages.log that are stored in the app folder. In this case the messageobject is parsed as json in the logfile.
+
+#### No message Logging 
+We do no logging of messages.
+
+### LogEventTarget
+Event logging is the rull of how and if you would like to save loggs of all transactions of messages and connection changes. The table EventLogs store this information if you target database and if you target file it will be named EventLogs.log 
+
+#### Event logging to database
+The server log all transaction to the Entity Framework Core connected database. You should not use this if you have Queue in memory mode. Just the typ of message and size will be logged not the containing object.  
+
+#### Event logging to file
+The server log all messages to the files EventLogs.log that are stored in the app folder. 
+
+#### No Event logging 
+We do no logging of events.
+
+### LogErrorTarget
+Error logging is the rull of how and if you would like to save loggs of all handled errors in the framework. The table ErrorLogs store this information if you target database and if you target file it will be named ErrorLogs.log 
+
+#### Error logging to database
+The server log all errors to the Entity Framework Core connected database. You should not use this if you have Queue in memory mode. Just the typ of message and size will be logged not the containing object.  
+
+#### Error logging to file
+The server log all errors to the files errosLogs.log that are stored in the app folder. 
+
+#### No Error logging 
+We do no logging of erros.
 
 
 # Sample code
