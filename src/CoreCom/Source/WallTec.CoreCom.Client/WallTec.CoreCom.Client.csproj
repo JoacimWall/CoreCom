@@ -10,7 +10,7 @@
     <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
     <Product>CoreCom</Product>
     <PackageId>WallTec.CoreCom.Client</PackageId>
-    <PackageVersion>1.0.2-alpha</PackageVersion>
+    <PackageVersion>1.0.3-alpha</PackageVersion>
     <Copyright>Walltec</Copyright>
     <PackageIconUrl>https://github.com/JoacimWall/CoreCom/blob/main/CoreCom.png</PackageIconUrl>
     <PackageLicenseUrl>https://github.com/JoacimWall/CoreCom/blob/main/LICENSE</PackageLicenseUrl>
@@ -18,7 +18,7 @@
     <PackageProjectUrl>https://github.com/JoacimWall/CoreCom</PackageProjectUrl>
     <Summary>CoreCom gRPC and Messsage Queue</Summary>
     <Title>CoreCom</Title>
-    <PackageReleaseNotes>Change logtime to Unix Time integer and added settings for remove history </PackageReleaseNotes>
+    <PackageReleaseNotes>Implementing clear history settins for client and server side and miner bug fixes</PackageReleaseNotes>
   </PropertyGroup>
 
   <ItemGroup>
