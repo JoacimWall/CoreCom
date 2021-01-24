@@ -48,8 +48,67 @@ public bool SetupCoreComServer()
 #endif
   return true;
 }
- ```       
 
+// Connect to the server for example in a service class or from your App.xaml.cs 
+protected async override void OnStart()
+{
+    SetupCoreComServer();
+    await ServiceCoreCom.ConnectCoreComServer();
+}
+```       
+Step 3: Register function for incoming messages.   
+First create constants for the diffrent messages you would likte to send.  
+after that Register the function that you whant the framework to trigger on recive messages and implement the functions.    
+
+```csharp
+public static string AddProject = "AddProject";
+public static string DeleteProject = "DeleteProject";
+public static string RequestAllProjects = "RequestAllProjects";
+public static string ResponseAllProjects = "ResponseAllProjects";
+
+CoreComClient.Register<List<Project>>(CoreComSignatures.ResponseAllProjects, GetAllProjects);
+CoreComClient.Register<Result<Project>>(CoreComSignatures.AddProject, GetAddedProject);
+
+private async void GetAllProjects(List<Project> projects)
+{
+  Projects = new ObservableCollection<Project>(projects);
+}
+
+private async void GetAddedProject(Result<Project> result)
+{
+    //the server wrapps in a result object to be able to return errors/validation 
+    if (!result.WasSuccessful)
+    {
+        MainThread.BeginInvokeOnMainThread(async () =>
+        {
+            // Code to run on the main thread
+            await DialogService.ShowAlertAsync(result.UserMessage, "CoreCom", "Ok");
+        });
+
+        return;
+    }
+    Projects.Add(result.Model);
+
+}
+``` 
+Step 4: Send messges to server.  
+Below you se two different send implementations one with authentication and one not. For more information regarding authentication se the sample code. 
+```csharp
+ await CoreComClient.SendAuthAsync(new Project 
+        { Name = "Mac Os Test", Description = "project added from client",Base64Image = _base64 }, CoreComSignatures.AddProject);  
+        
+ await CoreComClient.SendAsync(CoreComSignatures.RequestAllProjects);
+     
+``` 
+
+There are som more features that can be good to know about that you can implement.
+Some event listners for connection changes and more. 
+
+```csharp
+CoreComClient.OnConnectionStatusChange += _coreComClient_OnConnectionStatusChange;
+CoreComClient.OnLatestRpcExceptionChange += _coreComClient_OnLatestRpcExceptionChange;
+CoreComClient.OnLogEventOccurred += _coreComClient_OnLogEventOccurred;
+``` 
 ## DatabaseMode
 
 ### Queue in memory mode
