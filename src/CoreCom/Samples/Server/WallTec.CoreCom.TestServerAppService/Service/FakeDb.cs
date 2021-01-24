@@ -31,6 +31,11 @@ namespace WallTec.CoreCom.TestServerAppService.Service
             return newProject;
 
         }
+        public void DeleteProject(Project project)
+        {
+            var proj = _projects.Find(x => x.Name == project.Name);
+            _projects.Remove(proj);
+        }
         #endregion
 
     }

@@ -16,9 +16,9 @@ namespace WallTec.CoreCom.TestServerAppService.Service
             _coreComService = coreComService;
             //This public
             _coreComService.Register(CoreComSignatures.RequestAllProjects, GetAllProjectsFromDb);
-            //This need that the user got token
-            // _coreComService.RegisterAuth(AddProjectsToDb, CoreComSignatures.AddProject, new Project().GetType());
+            //This need that the user have token
             _coreComService.RegisterAuth<Project>(CoreComSignatures.AddProject, AddProjectsToDb);
+            _coreComService.RegisterAuth<Project>(CoreComSignatures.DeleteProject, DeleteProject);
         }
         
         private async void AddProjectsToDb(Project value,CoreComUserInfo arg)
@@ -31,16 +31,21 @@ namespace WallTec.CoreCom.TestServerAppService.Service
                 return;
             }
 
-            _fakeDb.AddProject(value as Project);
+            _fakeDb.AddProject(value );
             //send the new projet to all client that are connected 
             foreach (var item in _coreComService.Clients)
             {
-                await _coreComService.SendAsync(value as Project, CoreComSignatures.AddProject, new CoreComUserInfo { ClientId = item.CoreComUserInfo.ClientId });
+                await _coreComService.SendAsync(value, CoreComSignatures.AddProject, new CoreComUserInfo { ClientId = item.CoreComUserInfo.ClientId });
             }
             
         }
+        private void DeleteProject(Project value, CoreComUserInfo arg)
+        {
+            _fakeDb.DeleteProject(value );
 
-       
+        }
+
+
         private async void GetAllProjectsFromDb(CoreComUserInfo coreComUserInfo)
         {
             await _coreComService.SendAsync(_fakeDb.GetAllProjects(), CoreComSignatures.ResponseAllProjects, coreComUserInfo);

@@ -53,7 +53,7 @@ namespace WallTec.CoreCom.Server
 
                 switch (_coreComOptions.DatabaseMode)
                 {
-                    case DatabaseModeEnum.UseImMemory:
+                    case DatabaseModeEnum.UseInMemory:
                         optionsBuilder.UseInMemoryDatabase(databaseName: "CoreComDb");
                         break;
                     case DatabaseModeEnum.UseSqlite:
@@ -450,29 +450,41 @@ namespace WallTec.CoreCom.Server
         }
         internal async Task RemoveHistory()
         {
-            //remove 
-            using (var dbContext = new CoreComContext(_dbContextOptions))
+            try
             {
+                if (_coreComOptions.DatabaseMode == DatabaseModeEnum.UseInMemory)
+                    return;
 
-                //var date1 = Helpers.DateTimeConverter.DateTimeUtcNowToUnixTime(DateTime.Now.AddDays(-1));
-                //Console.WriteLine(DateTime.Now.AddDays(-1).ToUniversalTime());
+                //remove 
+                using (var dbContext = new CoreComContext(_dbContextOptions))
+                {
+
+                    //var date1 = Helpers.DateTimeConverter.DateTimeUtcNowToUnixTime(DateTime.Now.AddDays(-1));
+                    //Console.WriteLine(DateTime.Now.AddDays(-1).ToUniversalTime());
 
 
-                //Messages tables
-                var messagesDate = Helpers.DateTimeConverter.DateTimeUtcNowToUnixTime(DateTime.Now.AddDays(_coreComOptions.LogSettings.LogMessageHistoryDays * -1).ToUniversalTime());
-                await dbContext.DeleteRangeAsync<CoreComMessage>(b => b.RecivedUtc < messagesDate);
-                await dbContext.DeleteRangeAsync<CoreComMessageResponse>(b => b.RecivedUtc < messagesDate);
+                    //Messages tables
+                    var messagesDate = Helpers.DateTimeConverter.DateTimeUtcNowToUnixTime(DateTime.Now.AddDays(_coreComOptions.LogSettings.LogMessageHistoryDays * -1).ToUniversalTime());
+                    await dbContext.DeleteRangeAsync<CoreComMessage>(b => b.RecivedUtc < messagesDate);
+                    await dbContext.DeleteRangeAsync<CoreComMessageResponse>(b => b.RecivedUtc < messagesDate);
 
-                //LogEvent Table
-                var eventDate = DateTime.Now.AddDays(_coreComOptions.LogSettings.LogEventHistoryDays * -1).ToUniversalTime();
-                await dbContext.DeleteRangeAsync<LogEvent>(b => b.TimeStampUtc < eventDate);
+                    //LogEvent Table
+                    var eventDate = DateTime.Now.AddDays(_coreComOptions.LogSettings.LogEventHistoryDays * -1).ToUniversalTime();
+                    await dbContext.DeleteRangeAsync<LogEvent>(b => b.TimeStampUtc < eventDate);
 
-                //LogError Table
-                var errorDate = DateTime.Now.AddDays(_coreComOptions.LogSettings.LogErrorHistoryDays * -1).ToUniversalTime();
-                await dbContext.DeleteRangeAsync<LogError>(b => b.TimeStampUtc < errorDate);
-
+                    //LogError Table
+                    var errorDate = DateTime.Now.AddDays(_coreComOptions.LogSettings.LogErrorHistoryDays * -1).ToUniversalTime();
+                    await dbContext.DeleteRangeAsync<LogError>(b => b.TimeStampUtc < errorDate);
+                }
             }
-
+            catch (Exception ex)
+            {
+                LogErrorOccurred(ex, new CoreComMessage
+                {
+                    ClientId = ""
+                }); 
+            }
+        
         }
         #endregion
         #region "private functions"

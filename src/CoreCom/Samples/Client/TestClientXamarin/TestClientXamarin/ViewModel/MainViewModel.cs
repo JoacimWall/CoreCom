@@ -42,6 +42,7 @@ namespace TestClientXamarin.ViewModel
         public ICommand GetProjectsCommand => new Command(async () => await GetProjectsAsync());
         public ICommand AddProjectsCommand => new Command(async () => await AddProjectsAsync());
         public ICommand PickImageCommand => new Command(async () => await PickImageAsync());
+        public ICommand DeleteProjectCommand => new Command(async () => await DeleteProjectAsync());
 
        
 
@@ -73,6 +74,16 @@ namespace TestClientXamarin.ViewModel
                 Console.WriteLine($"CapturePhotoAsync THREW: {ex.Message}");
             }
         }
+        private async Task DeleteProjectAsync()
+        {
+            if (_selectedProject != null)
+            {
+                //We test sending messge where the server implementation don't have a response object
+               await App.ServiceCoreCom.CoreComClient.SendAuthAsync(_selectedProject, CoreComSignatures.DeleteProject);
+                Projects.Remove(_selectedProject);
+            }
+            
+        }
         private ImageSource _projectImageSource;
 
         public ImageSource ProjectImageSource
@@ -90,17 +101,24 @@ namespace TestClientXamarin.ViewModel
         //}
         private async Task AddProjectsAsync()
         {
-            App.ServiceCoreCom.SendAuthAsync(new Project { Name = AddProjectName, Description = "project added from client",Base64Image = _base64 }, CoreComSignatures.AddProject);
+           await App.ServiceCoreCom.CoreComClient.SendAuthAsync(new Project { Name = AddProjectName, Description = "project added from client",Base64Image = _base64 }, CoreComSignatures.AddProject);
             
         }
         private async Task CheckQueueCommandAsync()
         {
-            App.ServiceCoreCom.CheckServerQueue();
+            await App.ServiceCoreCom.CoreComClient.CheckServerQueue();
         }
         private async Task GetProjectsAsync()
         {
-            App.ServiceCoreCom.SendAsync(CoreComSignatures.RequestAllProjects,true);
+            await App.ServiceCoreCom.CoreComClient.SendAsync(CoreComSignatures.RequestAllProjects,true);
         }
+        private Project _selectedProject;
+        public Project SelectedProject
+        {
+            get { return _selectedProject; }
+            set { SetProperty(ref _selectedProject, value); }
+        }
+        
 
         private ObservableCollection<Project> _projects;
         public ObservableCollection<Project> Projects

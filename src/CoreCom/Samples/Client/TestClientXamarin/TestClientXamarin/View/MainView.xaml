@@ -25,14 +25,23 @@
         <Button Grid.Row="2" Grid.Column="0" Padding="5" Text="Check Queue" Command="{Binding  CheckQueueCommand}"  />
         <Button Grid.Row="2" Grid.Column="1" Padding="5"  Text="Get Projects"  Command="{Binding  GetProjectsCommand}" />
         <Button Grid.Row="2" Grid.Column="2" Padding="5"  Text="Reauthorize"  Command="{Binding  ConnectToServerCommand}"  />
-        <Button Grid.Row="2" Grid.Column="3" Padding="5"  Text="Image" Command="{Binding  PickImageCommand}"/>
+        <Button Grid.Row="2" Grid.Column="3" Padding="5"  Text="Delete"  Command="{Binding  DeleteProjectCommand}"  />
+        
 
         <Button Grid.Row="3" Grid.Column="0"  Text="Add" Command="{Binding  AddProjectsCommand}" />
         <Entry  Grid.Row="3" Grid.Column="1" Grid.ColumnSpan="2"  Placeholder="Project Name"  Text="{Binding AddProjectName}"  />
-        <Image  Grid.Row="3" Grid.Column="3" Source="{Binding ProjectImageSource}" HeightRequest="50" />
+
+        <!--<Button Grid.Row="3" Grid.Column="3" Padding="5"  Text="Image" Command="{Binding  PickImageCommand}"/>-->
+        <Label Grid.Row="3" Grid.Column="3" VerticalOptions="Center" HorizontalOptions="Center" HorizontalTextAlignment="Center" Text="Pick Image"/>
+        <Image  Grid.Row="3" Grid.Column="3"  Source="{Binding ProjectImageSource}" HeightRequest="50" >
+            <Image.GestureRecognizers>
+                <TapGestureRecognizer Command="{Binding PickImageCommand}"/>
+            </Image.GestureRecognizers>
+        </Image>
 
         <Label Grid.Row="4" Grid.ColumnSpan="2" Text="Projects:" Style="{StaticResource labelStyleNormalXMedium}"/>
-        <ListView Grid.Row="5" Grid.ColumnSpan="4" HasUnevenRows="False" RowHeight="70" ItemsSource="{Binding Projects}">
+        <ListView Grid.Row="5" Grid.ColumnSpan="4" HasUnevenRows="False" RowHeight="70" ItemsSource="{Binding Projects}"
+                  SelectedItem="{Binding SelectedProject}">
             <ListView.ItemTemplate>
                 <DataTemplate>
                     <ViewCell>

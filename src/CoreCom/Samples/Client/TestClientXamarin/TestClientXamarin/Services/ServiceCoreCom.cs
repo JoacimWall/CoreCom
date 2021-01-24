@@ -139,32 +139,29 @@ namespace TestClientXamarin.Services
 
         public bool SetupCoreComServer()
         {
-
-            
-
-            //local debug
             _coreComOptions = new CoreComOptions
             {   //debug on android emulator
                 ServerAddress = (Device.RuntimePlatform == Device.Android ? "https://10.0.2.2:5001" : "https://localhost:5001"),
                 //azure debug
                 //ServerAddress = "https://wallteccorecomtestserver.azurewebsites.net",
-                DatabaseMode = DatabaseModeEnum.UseImMemory,
+                DatabaseMode = DatabaseModeEnum.UseSqlite,
                 GrpcOptions = new GrpcOptions
                 {
                     RequestServerQueueIntervalSec = 30,
                     MessageDeadlineSec = 30
                 },
                 LogSettings = new LogSettings
-                    {
-                        LogErrorTarget = LogErrorTargetEnum.NoLoging,
-                        LogEventTarget = LogEventTargetEnum.NoLoging,
-                        LogMessageTarget = LogMessageTargetEnum.NoLoging
-
+                {
+                    LogMessageTarget = LogMessageTargetEnum.Database,
+                    LogMessageHistoryDays = 10,
+                    LogEventTarget = LogEventTargetEnum.NoLoging,
+                    LogEventHistoryDays = 10,
+                    LogErrorTarget = LogErrorTargetEnum.NoLoging,
+                    LogErrorHistoryDays =10 
                 }
-
-            };
+             };
             
-            //Debug local on mac where the server is running in "Kestrel": { "EndpointDefaults": { "Protocols": "Http1"  }  }
+//Debug local on mac where the server is running in "Kestrel": { "EndpointDefaults": { "Protocols": "Http1"  }  }
 #if DEBUG
             _coreComOptions.DangerousAcceptAnyServerCertificateValidator = true;
 #endif
@@ -199,35 +196,9 @@ namespace TestClientXamarin.Services
             return true;
         }
 
-        public bool DisconnectCoreComServer()
-        {
-            CoreComClient.Disconnect();
-
-          
-            return true;
-        }
-        public void CheckServerQueue()
-        {
-            CoreComClient.CheckServerQueue();
-           
-        }
+       
         
-        public async void SendAsync(object outgoingObject, string messageSignature, bool noDeadline = false)
-        {
-            await CoreComClient.SendAsync(outgoingObject, messageSignature,noDeadline);
-        }
-        public async void SendAsync(string messageSignature, bool noDeadline = false)
-        {
-            await CoreComClient.SendAsync(null,messageSignature, noDeadline);
-        }
-        public async void SendAuthAsync(object outgoingObject, string messageSignature, bool noDeadline = false)
-        {
-            await CoreComClient.SendAuthAsync(outgoingObject, messageSignature, noDeadline);
-        }
-        public async void SendAuthAsync(string messageSignature, bool noDeadline = false)
-        {
-            await CoreComClient.SendAuthAsync(null,messageSignature, noDeadline);
-        }
+        
        
     }
 }

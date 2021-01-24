@@ -86,22 +86,26 @@ namespace WallTec.CoreCom.Client
             _timer.Enabled = true;
 
             _checkQueueTimer.Interval = Convert.ToDouble(coreComOptions.GrpcOptions.RequestServerQueueIntervalSec * 1000);
+
+            var optionsBuilder = new DbContextOptionsBuilder<CoreComContext>();
+
             switch (coreComOptions.DatabaseMode)
             {
-                case DatabaseModeEnum.UseImMemory:
-                    _dbContextOptions = new DbContextOptionsBuilder<CoreComContext>()
-                    .UseInMemoryDatabase(databaseName: "CoreComDb").Options;
+                case DatabaseModeEnum.UseInMemory:
+                    optionsBuilder.UseInMemoryDatabase(databaseName: "CoreComDb");
+                    optionsBuilder.UseBatchEF_Sqlite();
                     break;
                 case DatabaseModeEnum.UseSqlite:
                     string dbPath = Path.Combine(FileSystem.AppDataDirectory, "CoreComDb.db3");
-                    _dbContextOptions = new DbContextOptionsBuilder<CoreComContext>()
-                    .UseSqlite($"Filename={dbPath}").Options;
-
+                    optionsBuilder.UseSqlite($"Filename={dbPath}");
+                    optionsBuilder.UseBatchEF_Sqlite();
                     break;
 
                 default:
                     break;
             }
+            _dbContextOptions = optionsBuilder.Options;
+            RemoveHistory();
             return true;
         }
         public void Register(string message, Action callback) 
@@ -116,30 +120,64 @@ namespace WallTec.CoreCom.Client
         {
             CoreComMessagingCenter.Unsubscribe(message);
         }
-        public async void CheckServerQueue()
+        public async Task<bool> CheckServerQueue()
         {
-            await SendAsync(CoreComInternalSignatures.CoreComInternal_PullQueue,false).ConfigureAwait(false);
+           return await SendAsync(CoreComInternalSignatures.CoreComInternal_PullQueue,false).ConfigureAwait(false);
         }
         public async Task<bool> SendAsync(object outgoingObject, string messageSignature,bool noDeadline=false)
         {
             return await SendInternalAsync(outgoingObject, messageSignature, false,noDeadline).ConfigureAwait(false);
         }
-        public async Task<bool> SendAsync(string messageSignature,bool noDeadline)
+        public async Task<bool> SendAsync(string messageSignature,bool noDeadline=false)
         {
             return await SendInternalAsync(null, messageSignature, false,  noDeadline).ConfigureAwait(false);
         }
-        public async Task<bool> SendAuthAsync(object outgoingObject, string messageSignature, bool noDeadline)
+        public async Task<bool> SendAuthAsync(object outgoingObject, string messageSignature, bool noDeadline = false)
         {
             return await SendInternalAsync(outgoingObject, messageSignature, true,  noDeadline).ConfigureAwait(false);
         }
-        public async Task<bool> SendAuthAsync(string messageSignature, bool noDeadline)
+        public async Task<bool> SendAuthAsync(string messageSignature, bool noDeadline = false)
         {
             return await SendInternalAsync(null, messageSignature, true,  noDeadline).ConfigureAwait(false);
         }
         #endregion
 
         #region Private Functions
+        private async void RemoveHistory()
+        {
+            try
+            {
+                await Task.Delay(10000);
+                if (_coreComOptions.DatabaseMode == DatabaseModeEnum.UseInMemory)
+                    return;
+            //remove 
+            using (var dbContext = new CoreComContext(_dbContextOptions))
+            {
 
+                //Messages tables
+                var messagesDate = Helpers.DateTimeConverter.DateTimeUtcNowToUnixTime(DateTime.Now.AddDays(_coreComOptions.LogSettings.LogMessageHistoryDays * -1).ToUniversalTime());
+                await dbContext.DeleteRangeAsync<CoreComMessage>(b => b.RecivedUtc < messagesDate);
+                await dbContext.DeleteRangeAsync<CoreComMessageResponse>(b => b.RecivedUtc < messagesDate);
+
+                //LogEvent Table
+                var eventDate = DateTime.Now.AddDays(_coreComOptions.LogSettings.LogEventHistoryDays * -1).ToUniversalTime();
+                await dbContext.DeleteRangeAsync<LogEvent>(b => b.TimeStampUtc < eventDate);
+
+                //LogError Table
+                var errorDate = DateTime.Now.AddDays(_coreComOptions.LogSettings.LogErrorHistoryDays * -1).ToUniversalTime();
+                await dbContext.DeleteRangeAsync<LogError>(b => b.TimeStampUtc < errorDate);
+
+            }
+            }
+            catch (Exception ex)
+            {
+                LogErrorOccurred(ex, new CoreComMessageResponse
+                {
+                    ClientId = _coreComOptions.ClientId
+                });
+
+            }
+        }
         private async void OnConnectTimedEvent(object sender, ElapsedEventArgs e)
         {
             _timer.Enabled = false;

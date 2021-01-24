@@ -25,7 +25,7 @@ namespace WallTec.CoreCom.Client.Models
     }
     public enum DatabaseModeEnum : byte
     {
-        UseImMemory = 0,
+        UseInMemory = 0,
         UseSqlite = 1
        
 

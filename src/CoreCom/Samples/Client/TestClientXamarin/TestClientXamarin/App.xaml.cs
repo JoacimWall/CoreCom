@@ -29,9 +29,9 @@ namespace TestClientXamarin
            await ServiceCoreCom.ConnectCoreComServer();
         }
         
-        protected override void OnSleep()
+        protected async override void OnSleep()
         {
-            ServiceCoreCom.DisconnectCoreComServer();
+            await ServiceCoreCom.CoreComClient.Disconnect();
         }
 
         protected async override void OnResume()

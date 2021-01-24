@@ -9,12 +9,12 @@ namespace WallTec.CoreCom.Server.Models
         public CoreComOptions()
         {
             LogSettings = new LogSettings();
-            DatabaseMode = DatabaseModeEnum.UseImMemory;
+            DatabaseMode = DatabaseModeEnum.UseInMemory;
         }
     }
     public enum DatabaseModeEnum : byte
     {
-        UseImMemory = 0,
+        UseInMemory = 0,
         UseSqlite = 1,
         UseSqlServer = 2
 
