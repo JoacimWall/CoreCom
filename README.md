@@ -1,5 +1,5 @@
 # CoreCom
-Framework for wrapping gRPC to be used in project that targets .Net standard (Xamarin) or NetCore 5.0 on the client side and .Net Core 50 or 3.1 on server side.
+Framework for wrapping gRPC to be used in project that targets .Net standard (Xamarin) or NetCore 5.0 on the client side and .Net Core 5.0 or 3.1 on server side.
 To use this please use the nuget's WallTec.CoreCom.Client and WallTec.CoreCom.Server throw nuget manager in Visual studio. The solution build on top of grpc-web and are able to be hosted in azure or any other hosting that support ASP.NET Core. 
 
 The framework wrapping the Proto files and gRPC logic so the client only register functions that listen to diffrent messages on the server and client side. Please view the sample for more information.       
