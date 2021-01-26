@@ -4,13 +4,13 @@
     <TargetFrameworks>netstandard2.1;net5.0</TargetFrameworks>
     <Authors>Joacim Wall</Authors>
     <Company>WallTec</Company>
-    <Description>Framework for simplifying communication between client and server with gRPC. Main features: offline support, message queue</Description>
+    <Description>Framework for simplifying communication between client(Xamarin or .net 5.0) and server with gRPC. Main features: offline support, message queue</Description>
     <PackageTags>gRPC, Xamarin,Message Queue,Offline support</PackageTags>
     <NeutralLanguage>en</NeutralLanguage>
     <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
     <Product>CoreCom</Product>
     <PackageId>WallTec.CoreCom.Client</PackageId>
-    <PackageVersion>1.0.3-alpha</PackageVersion>
+    <PackageVersion>1.0.4-alpha</PackageVersion>
     <Copyright>Walltec</Copyright>
     <PackageIconUrl>https://github.com/JoacimWall/CoreCom/blob/main/CoreCom.png</PackageIconUrl>
     <PackageLicenseUrl>https://github.com/JoacimWall/CoreCom/blob/main/LICENSE</PackageLicenseUrl>
