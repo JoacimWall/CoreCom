@@ -1,5 +1,5 @@
 # CoreCom
-Framework for wrapping gRPC to be used in project that targets .Net standard (Xamarin) or NetCore 5.0 on the client side and .Net Core 50 or 3.1 on server side.
+Framework for wrapping gRPC to be used in project that targets .Net standard (Xamarin) or NetCore 5.0 on the client side and .Net Core 5.0 or 3.1 on server side.
 To use this please use the nuget's WallTec.CoreCom.Client and WallTec.CoreCom.Server throw nuget manager in Visual studio. The solution build on top of grpc-web and are able to be hosted in azure or any other hosting that support ASP.NET Core. 
 
 The framework wrapping the Proto files and gRPC logic so the client only register functions that listen to diffrent messages on the server and client side. Please view the sample for more information.       
@@ -55,18 +55,16 @@ Step 3: Create a service to handle the CoreCom implementation.
 interface IMyService
 {
 }
-public class MyService : IMyService
+public class MyService : CoreComService
 {
-    private CoreComService _coreComService;
     private List<Projecs> _fakeDb = new List<Projecs>;
-    public MyService(CoreComService coreComService)
+    public MyService(CoreComOptions coreComOptions) : base (coreComOptions)
     {
-        _coreComService = coreComService;
-        //This public
-        _coreComService.Register(CoreComSignatures.RequestAllProjects, GetAllProjectsFromDb);
-        //This need that the have a token
-        _coreComService.RegisterAuth<Project>(CoreComSignatures.AddProject, AddProjectsToDb);
-        _coreComService.RegisterAuth<Project>(CoreComSignatures.DeleteProject, DeleteProject);
+        //this functions are public
+        base.Register(CoreComSignatures.RequestAllProjects, GetAllProjectsFromDb);
+        //This need that the user have token
+        RegisterAuth<Project>(CoreComSignatures.AddProject, AddProjectsToDb);
+        RegisterAuth<Project>(CoreComSignatures.DeleteProject, DeleteProject);
     }    
     
     private async void AddProjectsToDb(Project value,CoreComUserInfo arg)
@@ -75,20 +73,20 @@ public class MyService : IMyService
         if (string.IsNullOrEmpty(value.Name))
         {
             var error = new Result<Project>("The project need a name");
-            await _coreComService.SendAsync(error, CoreComSignatures.AddProject, arg);
+            await SendAsync(error, CoreComSignatures.AddProject, arg);
             return;
         }
         _fakeDb.Add(value );
         //send the new projet to all client that are connected 
         foreach (var item in _coreComService.Clients)
         {
-            await _coreComService.SendAsync(value, CoreComSignatures.AddProject, new CoreComUserInfo { ClientId = item.CoreComUserInfo.ClientId });
+            await SendAsync(value, CoreComSignatures.AddProject, new CoreComUserInfo { ClientId = item.CoreComUserInfo.ClientId });
         }
 
      }
      private async void GetAllProjectsFromDb(CoreComUserInfo coreComUserInfo)
     {
-        await _coreComService.SendAsync(_fakeDb, CoreComSignatures.ResponseAllProjects, coreComUserInfo);
+        await SendAsync(_fakeDb, CoreComSignatures.ResponseAllProjects, coreComUserInfo);
      }
 }       
 ``` 
@@ -109,11 +107,11 @@ public class Startup
             options.MaxSendMessageSize = null; //When set to null, the message size is unlimited.
         });
             
-         //This two is needed for the CoreCom
-        services.AddSingleton<CoreComService>();
-        services.AddHostedService<CoreComBackgroundService>();
-        //Your service
-        services.AddSingleton<IMyService,MyService>();
+         //This is needed we only have one instance of CoreComOptions
+         services.AddSingleton<CoreComOptions>();
+
+         //If you would like to use scoped remove this lines,you need to injects a Scoped service
+         services.AddSingleton<MyService>();
 
         //This is if you would like to AddAuthorization
         services.AddAuthorization(options =>
@@ -143,8 +141,8 @@ public class Startup
     
     public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
     {
-        //Warm it up to register handlers 
-        app.ApplicationServices.GetService<IMyService>();
+        //Warm it up to get settings from appsettings.json 
+        app.ApplicationServices.GetService<CoreComOptions>();
 
         app.UseRouting();
         //This two lines is if you would like to AddAuthorization
@@ -158,7 +156,7 @@ public class Startup
         app.UseEndpoints(endpoints =>
         {
             //Register the CoreCom framework 
-            endpoints.MapGrpcService<CoreComService>().EnableGrpcWeb();
+            endpoints.MapGrpcService<MyService>().EnableGrpcWeb();
             
             //This  if you would like to AddAuthorization
             endpoints.MapGet("/generateJwtToken", context =>
