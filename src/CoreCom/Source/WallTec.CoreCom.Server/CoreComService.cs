@@ -1,8 +1,6 @@
 ﻿using Google.Protobuf.WellKnownTypes;
 using Grpc.Core;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Configuration;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -12,70 +10,28 @@ using System.Threading.Tasks;
 using WallTec.CoreCom.Proto;
 using WallTec.CoreCom.Server.Models;
 using WallTec.CoreCom.Models;
-using System.Globalization;
+
 
 namespace WallTec.CoreCom.Server
 {
     public class CoreComService : Proto.CoreCom.CoreComBase
     {
         #region Public propertys
-        public List<Client> Clients = new List<Client>();
+        //public List<Client> Clients = new List<Client>();
         public event EventHandler<LogEvent> OnLogEventOccurred;
         public event EventHandler<LogError> OnLogErrorOccurred;
 
         #endregion
         #region Private proppertys
         private CoreComOptions _coreComOptions;
-        private IConfiguration _config;
-        private DbContextOptions _dbContextOptions;
+       
+        
 
         #endregion
         #region public functions
-        public CoreComService(IConfiguration config)
+        public CoreComService(CoreComOptions coreComOptions)
         {
-            _coreComOptions = new CoreComOptions();
-
-            _config = config;
-            try
-            {
-                _coreComOptions.LogSettings.LogMessageTarget = (LogMessageTargetEnum)System.Enum.Parse(typeof(LogMessageTargetEnum), _config["CoreCom:CoreComOptions:LogSettings:LogMessageTarget"]);
-                _coreComOptions.LogSettings.LogEventTarget = (LogEventTargetEnum)System.Enum.Parse(typeof(LogEventTargetEnum), _config["CoreCom:CoreComOptions:LogSettings:LogEventTarget"]);
-                _coreComOptions.LogSettings.LogErrorTarget = (LogErrorTargetEnum)System.Enum.Parse(typeof(LogErrorTargetEnum), _config["CoreCom:CoreComOptions:LogSettings:LogErrorTarget"]);
-
-                _coreComOptions.LogSettings.LogMessageHistoryDays = Convert.ToInt32(_config["CoreCom:CoreComOptions:LogSettings:LogMessageHistoryDays"]);
-                _coreComOptions.LogSettings.LogEventHistoryDays = Convert.ToInt32(_config["CoreCom:CoreComOptions:LogSettings:LogEventHistoryDays"]);
-                _coreComOptions.LogSettings.LogErrorHistoryDays = Convert.ToInt32(_config["CoreCom:CoreComOptions:LogSettings:LogErrorHistoryDays"]);
-
-                _coreComOptions.DatabaseMode = (DatabaseModeEnum)System.Enum.Parse(typeof(DatabaseModeEnum), _config["CoreCom:CoreComOptions:Database:DatabaseMode"]);
-
-                string connectionstring = _config["CoreCom:CoreComOptions:Database:ConnectionString"];
-                var optionsBuilder = new DbContextOptionsBuilder<CoreComContext>();
-
-                switch (_coreComOptions.DatabaseMode)
-                {
-                    case DatabaseModeEnum.UseInMemory:
-                        optionsBuilder.UseInMemoryDatabase(databaseName: "CoreComDb");
-                        break;
-                    case DatabaseModeEnum.UseSqlite:
-                        optionsBuilder.UseSqlite(connectionstring);
-                        optionsBuilder.UseBatchEF_Sqlite();
-                        break;
-                    case DatabaseModeEnum.UseSqlServer:
-                        optionsBuilder.UseSqlServer(connectionstring);
-                        optionsBuilder.UseBatchEF_MSSQL();
-                        break;
-                    default:
-                        break;
-                }
-
-                _dbContextOptions = optionsBuilder.Options;
-            }
-            catch (Exception ex)
-            {
-                LogErrorOccurred(ex, null);
-
-            }
-
+            _coreComOptions = coreComOptions;
         }
 
 
@@ -131,6 +87,7 @@ namespace WallTec.CoreCom.Server
             try
             {
                 //Add Client
+                //TODO:Write Client to db
                 AddClient(request.ClientId);
                 LogEventOccurred(new LogEvent { ClientId = request.ClientId, Description = "Client are connected" });
 
@@ -198,23 +155,23 @@ namespace WallTec.CoreCom.Server
         #region Internal functions
         internal bool RemoveClient(string clientId)
         {
-            Clients.Remove(Clients.FirstOrDefault(c => c.CoreComUserInfo.ClientId == clientId));
+           _coreComOptions.Clients.Remove(_coreComOptions.Clients.FirstOrDefault(c => c.CoreComUserInfo.ClientId == clientId));
             //Todo: remove memory Queue 
             return true;
         }
         internal Client AddClient(string clientId)
         {
             Client client;
-            if (!Clients.Any(c => c.CoreComUserInfo.ClientId == clientId))
+            if (!_coreComOptions.Clients.Any(c => c.CoreComUserInfo.ClientId == clientId))
             {
                 Console.WriteLine("Client connected" + clientId);
                 client = new Client { CoreComUserInfo = new CoreComUserInfo { ClientId = clientId } };
-                Clients.Add(client); //, Stream = stream
+                _coreComOptions.Clients.Add(client); //, Stream = stream
             }
             else
             {   //reconnect
                 Console.WriteLine("Client reconnected" + clientId);
-                client = Clients.FirstOrDefault(c => c.CoreComUserInfo.ClientId == clientId);
+                client = _coreComOptions.Clients.FirstOrDefault(c => c.CoreComUserInfo.ClientId == clientId);
             }
             return client;
         }
@@ -240,7 +197,7 @@ namespace WallTec.CoreCom.Server
             if (ex != null)
                 logError.Stacktrace = ex.StackTrace;
 
-            using (var dbContext = new CoreComContext(_dbContextOptions))
+            using (var dbContext = new CoreComContext(_coreComOptions.DbContextOptions))
             {
                 //Messages
                 switch (_coreComOptions.LogSettings.LogErrorTarget)
@@ -419,7 +376,7 @@ namespace WallTec.CoreCom.Server
         }
         internal async virtual void LogEventOccurred(LogEvent logEvent)
         {
-            using (var dbContext = new CoreComContext(_dbContextOptions))
+            using (var dbContext = new CoreComContext(_coreComOptions.DbContextOptions))
             {
                 //Events
                 switch (_coreComOptions.LogSettings.LogEventTarget)
@@ -456,7 +413,7 @@ namespace WallTec.CoreCom.Server
                     return;
 
                 //remove 
-                using (var dbContext = new CoreComContext(_dbContextOptions))
+                using (var dbContext = new CoreComContext(_coreComOptions.DbContextOptions))
                 {
 
                     //var date1 = Helpers.DateTimeConverter.DateTimeUtcNowToUnixTime(DateTime.Now.AddDays(-1));
@@ -492,7 +449,7 @@ namespace WallTec.CoreCom.Server
         {
             try
             {
-                using (var dbContext = new CoreComContext(_dbContextOptions))
+                using (var dbContext = new CoreComContext(_coreComOptions.DbContextOptions))
                 {
                     //Add loging
                     request.TransferStatus = (int)TransferStatusEnum.Recived;
@@ -522,19 +479,19 @@ namespace WallTec.CoreCom.Server
         private async Task<bool> ProcessQueue(CoreComMessage request, IServerStreamWriter<CoreComMessageResponse> responseStream, ServerCallContext context)
         {
             //we have null ifall server restarted while client was connected
-            if (!Clients.Any(x => x.CoreComUserInfo.ClientId == request.ClientId))
+            if (!_coreComOptions.Clients.Any(x => x.CoreComUserInfo.ClientId == request.ClientId))
                 AddClient(request.ClientId);
 
             //check if we are sending allready
-            if (Clients.FirstOrDefault(x => x.CoreComUserInfo.ClientId == request.ClientId).ClientIsSending)
+            if (_coreComOptions.Clients.FirstOrDefault(x => x.CoreComUserInfo.ClientId == request.ClientId).ClientIsSending)
                 return true;
 
 
-            Clients.FirstOrDefault(x => x.CoreComUserInfo.ClientId == request.ClientId).ClientIsSending = true;
+            _coreComOptions.Clients.FirstOrDefault(x => x.CoreComUserInfo.ClientId == request.ClientId).ClientIsSending = true;
 
             try
             {
-                using (var dbContext = new CoreComContext(_dbContextOptions))
+                using (var dbContext = new CoreComContext(_coreComOptions.DbContextOptions))
                 {
                     //We need always responde with a message otherwise loggin on client not work
                     //and the same CoreComInternal_PullQueue from client will send and whe will have the same
@@ -593,7 +550,7 @@ namespace WallTec.CoreCom.Server
             }
             finally
             {
-                Clients.FirstOrDefault(x => x.CoreComUserInfo.ClientId == request.ClientId).ClientIsSending = false;
+                _coreComOptions.Clients.FirstOrDefault(x => x.CoreComUserInfo.ClientId == request.ClientId).ClientIsSending = false;
 
             }
             return true;
@@ -630,7 +587,7 @@ namespace WallTec.CoreCom.Server
             //We need always responde with a message other vise loggin on client not work
             //and the same CoreComInternal_PullQueue from client will send and wo will have the same
             //transactionId twice result in db error
-            using (var dbContext = new CoreComContext(_dbContextOptions))
+            using (var dbContext = new CoreComContext(_coreComOptions.DbContextOptions))
             {
                 //queue is empty then create response message
                 if (!dbContext.OutgoingMessages.Any(x => x.ClientId == request.ClientId && x.TransferStatus < (int)TransferStatusEnum.Transferred))
@@ -737,7 +694,7 @@ namespace WallTec.CoreCom.Server
                     MessageSignature = messageSignature,
                     JsonObject = jsonObject
                 };
-                using (var dbContext = new CoreComContext(_dbContextOptions))
+                using (var dbContext = new CoreComContext(_coreComOptions.DbContextOptions))
                 {
                     LogEventOccurred(dbContext, coreComMessage);
 

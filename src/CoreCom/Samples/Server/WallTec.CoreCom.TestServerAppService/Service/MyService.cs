@@ -3,22 +3,22 @@ using WallTec.CoreCom.Example.Shared.Entitys;
 using WallTec.CoreCom.Example.Shared;
 using WallTec.CoreCom.Server;
 using WallTec.CoreCom.Models;
+using WallTec.CoreCom.Server.Models;
 
 namespace WallTec.CoreCom.TestServerAppService.Service
 {
-    public class MyService : IMyService
+    public class MyService : CoreComService
     {
-        private CoreComService _coreComService;
+       // private CoreComService _coreComService;
         private FakeDb _fakeDb = new FakeDb();
 
-        public MyService(CoreComService coreComService)
+        public MyService(CoreComOptions coreComOptions) : base (coreComOptions)
         {
-            _coreComService = coreComService;
-            //This public
-            _coreComService.Register(CoreComSignatures.RequestAllProjects, GetAllProjectsFromDb);
+            //this functions are public
+            Register(CoreComSignatures.RequestAllProjects, GetAllProjectsFromDb);
             //This need that the user have token
-            _coreComService.RegisterAuth<Project>(CoreComSignatures.AddProject, AddProjectsToDb);
-            _coreComService.RegisterAuth<Project>(CoreComSignatures.DeleteProject, DeleteProject);
+            RegisterAuth<Project>(CoreComSignatures.AddProject, AddProjectsToDb);
+            RegisterAuth<Project>(CoreComSignatures.DeleteProject, DeleteProject);
         }
         
         private async void AddProjectsToDb(Project value,CoreComUserInfo arg)
@@ -27,16 +27,15 @@ namespace WallTec.CoreCom.TestServerAppService.Service
             if (string.IsNullOrEmpty(value.Name))
             {
                 var error = new Result<Project>("The project need a name");
-                await _coreComService.SendAsync(error, CoreComSignatures.AddProject, arg);
+                await SendAsync(error, CoreComSignatures.AddProject, arg);
                 return;
             }
 
-            _fakeDb.AddProject(value );
-            //send the new projet to all client that are connected 
-            foreach (var item in _coreComService.Clients)
-            {
-                await _coreComService.SendAsync(value, CoreComSignatures.AddProject, new CoreComUserInfo { ClientId = item.CoreComUserInfo.ClientId });
-            }
+            _fakeDb.AddProject(value);
+            //send the new projet to client 
+            
+            await SendAsync(new Result<Project>(value), CoreComSignatures.AddProject, new CoreComUserInfo { ClientId = arg.ClientId });
+            
             
         }
         private void DeleteProject(Project value, CoreComUserInfo arg)
@@ -48,7 +47,7 @@ namespace WallTec.CoreCom.TestServerAppService.Service
 
         private async void GetAllProjectsFromDb(CoreComUserInfo coreComUserInfo)
         {
-            await _coreComService.SendAsync(_fakeDb.GetAllProjects(), CoreComSignatures.ResponseAllProjects, coreComUserInfo);
+            await SendAsync(_fakeDb.GetAllProjects(), CoreComSignatures.ResponseAllProjects, coreComUserInfo);
         }
 
     

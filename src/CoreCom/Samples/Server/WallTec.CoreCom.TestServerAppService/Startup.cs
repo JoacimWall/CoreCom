@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
 using WallTec.CoreCom.Server;
+using WallTec.CoreCom.Server.Models;
 using WallTec.CoreCom.TestServerAppService.Service;
 
 namespace WallTec.CoreCom.TestServerAppService
@@ -28,11 +29,11 @@ namespace WallTec.CoreCom.TestServerAppService
                 options.MaxSendMessageSize = null; //When set to null, the message size is unlimited.
 
             });
-            //This two is needed for the CoreCom
-            services.AddSingleton<CoreComService>();
-            services.AddHostedService<CoreComBackgroundService>();
-            //Your service
-            services.AddSingleton<IMyService,MyService>();
+            //This is needed we only have one instance of CoreComOptions
+            services.AddSingleton<CoreComOptions>();
+
+            //If you would like to use scoped remove this lines,you need to injects a Scoped service,
+            //services.AddSingleton<MyService>();
             
             services.AddAuthorization(options =>
             {
@@ -60,9 +61,10 @@ namespace WallTec.CoreCom.TestServerAppService
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
         {
-            //Warm it up to register handlers 
-            app.ApplicationServices.GetService<IMyService>();
 
+            //Warm it up to get settings from appsettings.json 
+            app.ApplicationServices.GetService<CoreComOptions>();
+           
 
             app.UseRouting();
             app.UseAuthentication();
@@ -72,13 +74,14 @@ namespace WallTec.CoreCom.TestServerAppService
            
             app.UseEndpoints(endpoints =>
             {
-                endpoints.MapGrpcService<CoreComService>().EnableGrpcWeb();
-
+                endpoints.MapGrpcService<MyService>().EnableGrpcWeb();
                 endpoints.MapGet("/generateJwtToken", context =>
                 {
                     return context.Response.WriteAsync(GenerateJwtToken(context.Request.Query["username"], context.Request.Query["password"]));
                 });
             });
+
+            
         }
 
         private String GenerateJwtToken(string username, string password)
