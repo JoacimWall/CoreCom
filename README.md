@@ -112,7 +112,7 @@ public class Startup
          //This two is needed for the CoreCom
         services.AddSingleton<CoreComService>();
         services.AddHostedService<CoreComBackgroundService>();
-        //Your service
+        //Your service as singelton or Transient
         services.AddSingleton<IMyService,MyService>();
 
         //This is if you would like to AddAuthorization
@@ -143,7 +143,7 @@ public class Startup
     
     public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
     {
-        //Warm it up to register handlers 
+        //Warm it up to register handlers this so your functions get registerd 
         app.ApplicationServices.GetService<IMyService>();
 
         app.UseRouting();
