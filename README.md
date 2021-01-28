@@ -57,17 +57,17 @@ interface IMyService
 }
 public class MyService : CoreComService
 {
-    private List<Projecs> _fakeDb = new List<Projecs>;
-    public MyService(CoreComOptions coreComOptions) : base (coreComOptions)
+    private IServiceScopeFactory _serviceScopeFactory;
+    public MyService(IServiceScopeFactory serviceScopeFactory, CoreComOptions coreComOptions) : base (coreComOptions)
     {
+        _serviceScopeFactory = serviceScopeFactory;
         //this functions are public
         base.Register(CoreComSignatures.RequestAllProjects, GetAllProjectsFromDb);
         //This need that the user have token
         RegisterAuth<Project>(CoreComSignatures.AddProject, AddProjectsToDb);
-        RegisterAuth<Project>(CoreComSignatures.DeleteProject, DeleteProject);
     }    
     
-    private async void AddProjectsToDb(Project value,CoreComUserInfo arg)
+     private async void AddProjectsToDb(Project value,CoreComUserInfo arg)
     {
         //Validate input
         if (string.IsNullOrEmpty(value.Name))
@@ -76,18 +76,32 @@ public class MyService : CoreComService
             await SendAsync(error, CoreComSignatures.AddProject, arg);
             return;
         }
-        _fakeDb.Add(value );
-        //send the new projet to all client that are connected 
-        foreach (var item in _coreComService.Clients)
+        using (var scope = _serviceScopeFactory.CreateScope())
         {
-            await SendAsync(value, CoreComSignatures.AddProject, new CoreComUserInfo { ClientId = item.CoreComUserInfo.ClientId });
+            var dbContext = scope.ServiceProvider.GetService<MyDbContext>();
+
+            value.ProjectId = System.Guid.NewGuid();
+            dbContext.Projects.Add(value);
+
+            dbContext.SaveChanges();
+            //send the new projet to client 
+            await SendAsync(new Result<Project>(value), CoreComSignatures.AddProject, new CoreComUserInfo { ClientId = arg.ClientId });
+
         }
 
-     }
-     private async void GetAllProjectsFromDb(CoreComUserInfo coreComUserInfo)
+    }
+
+    private async void GetAllProjectsFromDb(CoreComUserInfo coreComUserInfo)
     {
-        await SendAsync(_fakeDb, CoreComSignatures.ResponseAllProjects, coreComUserInfo);
-     }
+        using (var scope = _serviceScopeFactory.CreateScope())
+        {
+            var dbContext = scope.ServiceProvider.GetService<MyDbContext>();
+
+            var list = dbContext.Projects.ToList();
+            await SendAsync(list, CoreComSignatures.ResponseAllProjects, coreComUserInfo);
+        }
+
+    }
 }       
 ``` 
 Step 4: Modify the Startup.cs   
