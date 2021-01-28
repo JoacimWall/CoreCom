@@ -64,6 +64,7 @@ namespace WallTec.CoreCom.Server
         {
             CoreComMessagingCenter.Subscribe(message, callback, false);
         }
+        
         public void Register<Targs>(string message, Action<Targs, CoreComUserInfo> callback) where Targs : class
         {
             CoreComMessagingCenter.Subscribe(message, callback, false);

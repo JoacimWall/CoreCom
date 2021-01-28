@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
 using WallTec.CoreCom.Server;
@@ -29,12 +30,17 @@ namespace WallTec.CoreCom.TestServerAppService
                 options.MaxSendMessageSize = null; //When set to null, the message size is unlimited.
 
             });
+
+            services.AddDbContext<MyDbContext>(options =>
+                options.UseSqlite("Data Source=MyDb.db"));
+
             //This is needed we only have one instance of CoreComOptions
             services.AddSingleton<CoreComOptions>();
+            
 
             //If you would like to use scoped remove this lines,you need to injects a Scoped service,
             //services.AddSingleton<MyService>();
-            
+
             services.AddAuthorization(options =>
             {
                 options.AddPolicy(JwtBearerDefaults.AuthenticationScheme, policy =>
@@ -75,6 +81,7 @@ namespace WallTec.CoreCom.TestServerAppService
             app.UseEndpoints(endpoints =>
             {
                 endpoints.MapGrpcService<MyService>().EnableGrpcWeb();
+                
                 endpoints.MapGet("/generateJwtToken", context =>
                 {
                     return context.Response.WriteAsync(GenerateJwtToken(context.Request.Query["username"], context.Request.Query["password"]));
