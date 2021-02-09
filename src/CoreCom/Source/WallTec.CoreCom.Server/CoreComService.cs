@@ -232,7 +232,6 @@ namespace WallTec.CoreCom.Server
             }
         }
 
-
         internal async virtual void LogEventOccurred(CoreComContext dbContext, CoreComMessage coreComMessage)
         {
 
